@@ -32,7 +32,7 @@ export function CityInsightsPanel({
   onBackToGuide,
 }: CityInsightsPanelProps) {
   const { user } = useAppStore();
-  const isUserMode = user?.role === 'user'; // Modalità utente finale
+  const isUserMode = user?.mode === 'use'; // Modalità utente finale
   const summary = buildBlockSummary(block || undefined, isUserMode ? 'user' : 'designer');
 
   // Don't render panel in guide mode (guide is now in bottom toolbar)

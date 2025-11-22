@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Segno - Valutazione Rischi AI
 
-## Getting Started
+Strumento interattivo per valutare i rischi e l'impatto dell'utilizzo e progettazione di sistemi AI. Scopri come proteggere i dati, rispettare GDPR e AI Act.
 
-First, run the development server:
+## 🎯 Caratteristiche
+
+- **Onboarding Interattivo**: Guida passo-passo per definire il tuo scenario AI
+- **City Builder**: Visualizza il tuo sistema AI come una città interattiva
+- **Analisi Rischi**: Valutazione automatica dei rischi e conformità normativa
+- **Wiki Integrata**: Documentazione su GDPR, AI Act e best practices
+- **News Panel**: Aggiornamenti in tempo reale su AI, privacy e regolamentazione
+
+## 🚀 Getting Started
+
+### Prerequisiti
+
+- Node.js 20 o superiore
+- npm, yarn, pnpm o bun
+
+### Installazione
 
 ```bash
+# Installa le dipendenze
+npm install
+
+# Avvia il server di sviluppo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Apri [http://localhost:3000](http://localhost:3000) nel browser per vedere l'applicazione.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Script Disponibili
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Sviluppo
+npm run dev
 
-## Learn More
+# Build di produzione
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# Avvia server di produzione
+npm start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Lint
+npm run lint
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Type check
+npm run type-check
+```
 
-## Deploy on Vercel
+## 📁 Struttura del Progetto
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+Segno/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Homepage
+├── components/            # Componenti UI riutilizzabili
+│   └── ui/               # Componenti base (shadcn/ui)
+├── modules/              # Moduli principali dell'applicazione
+│   ├── onboarding/       # Modulo onboarding
+│   ├── city-builder/     # Builder interattivo
+│   ├── analysis/         # Analisi rischi
+│   └── wiki/            # Wiki integrata
+├── store/                # Zustand store (state management)
+├── lib/                  # Utility functions
+└── docs/                 # Documentazione
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Tecnologie
+
+- **Next.js 16** - Framework React
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Zustand** - State management
+- **Framer Motion** - Animazioni
+- **Radix UI** - Componenti accessibili
+- **RSS Parser** - Feed news
+
+## 📚 Documentazione
+
+Documentazione dettagliata disponibile in `/docs`:
+
+- [Production Checklist](./docs/PRODUCTION_CHECKLIST.md) - Checklist pre-deploy
+- [Netlify Deploy Guide](./docs/NETLIFY_DEPLOY.md) - Guida al deploy su Netlify
+- [News Panel Setup](./docs/NEWS_PANEL_SETUP.md) - Configurazione news panel
+- [Risk Analysis](./docs/RISK_ANALYSIS_REVIEW.md) - Documentazione analisi rischi
+
+## 🚀 Deploy
+
+### Netlify (Consigliato)
+
+Il progetto è configurato per il deploy su Netlify. Vedi [NETLIFY_DEPLOY.md](./docs/NETLIFY_DEPLOY.md) per istruzioni dettagliate.
+
+**Quick Deploy:**
+1. Connetti il repository a Netlify
+2. Netlify rileverà automaticamente le impostazioni da `netlify.toml`
+3. Il deploy partirà automaticamente
+
+### Altri Provider
+
+Il progetto può essere deployato su qualsiasi provider che supporta Next.js:
+- Vercel
+- AWS Amplify
+- Railway
+- Render
+
+## 🤝 Contribuire
+
+1. Fork del repository
+2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
+3. Commit delle modifiche (`git commit -m 'Add some AmazingFeature'`)
+4. Push al branch (`git push origin feature/AmazingFeature`)
+5. Apri una Pull Request
+
+## 📝 License
+
+Questo progetto è privato.
+
+## 🔗 Link Utili
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com)
+- [Zustand](https://github.com/pmndrs/zustand)
+- [GDPR](https://gdpr.eu)
+- [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)
+
+---
+
+Costruito con ❤️ per aiutare a valutare i rischi dell'AI

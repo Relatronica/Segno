@@ -10,10 +10,10 @@ type WhiteboardAnnotationsProps = {
   visibleBlocks: PositionedBlock[]; // Blocks to check which columns have content
 };
 
-const stageOrder = CITY_THEME.layout.categoryOrder as FlowStageKey[];
+const stageOrder = [...CITY_THEME.layout.categoryOrder] as FlowStageKey[];
 
 // Filter out risk and impact columns (they are shown as notes, not columns)
-const visibleStages = stageOrder.filter((key) => key !== 'risk' && key !== 'impact');
+const visibleStages = stageOrder.filter((key) => key !== 'risk' && key !== 'impact') as FlowStageKey[];
 
 export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   width,
@@ -28,9 +28,10 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   // Determine which columns have blocks
   const columnsWithBlocks = new Set<FlowStageKey>();
   visibleBlocks.forEach(({ block }) => {
-    const blockType = block.type as FlowStageKey;
-    if (visibleStages.includes(blockType)) {
-      columnsWithBlocks.add(blockType);
+    const blockType = block.type;
+    // Only include if it's a valid FlowStageKey and not risk/impact
+    if ((blockType === 'input' || blockType === 'process' || blockType === 'storage' || blockType === 'output') && visibleStages.includes(blockType as FlowStageKey)) {
+      columnsWithBlocks.add(blockType as FlowStageKey);
     }
   });
 

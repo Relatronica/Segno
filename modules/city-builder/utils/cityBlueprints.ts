@@ -2078,8 +2078,8 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
   },
 
   // --- Rischi per utenti ---
-  'risk-privacy': {
-    key: 'risk-privacy',
+  'risk-privacy-user': {
+    key: 'risk-privacy-user',
     title: 'Privacy Dati Personali',
     description: 'Preoccupato per la privacy',
     primaryType: 'risk',
@@ -2476,7 +2476,7 @@ export const CITY_ACTION_GROUPS_USER: CityActionGroup[] = [
   {
     label: 'DOMANDA: Quali rischi ti preoccupano di più?',
     actions: [
-      { key: 'risk-privacy', title: 'I miei dati personali rubati o usati male', description: 'Temo che i miei dati vengano rubati, venduti o usati senza il mio consenso.' },
+      { key: 'risk-privacy-user', title: 'I miei dati personali rubati o usati male', description: 'Temo che i miei dati vengano rubati, venduti o usati senza il mio consenso.' },
       { key: 'risk-work', title: 'Informazioni di lavoro esposte', description: 'Preoccupato che dati aziendali o informazioni confidenziali finiscano nelle mani sbagliate.' },
       { key: 'risk-bias-user', title: 'Essere discriminato o escluso', description: 'Preoccupato che il sistema possa prendere decisioni ingiuste o discriminatorie su di me.' },
       { key: 'risk-decisions', title: 'Decisioni automatiche sbagliate su di me', description: 'Temo che il sistema prenda decisioni importanti per me senza che possa controllarle.' },
