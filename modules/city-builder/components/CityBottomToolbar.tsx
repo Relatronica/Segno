@@ -7,6 +7,7 @@ import { ZoomIn, ZoomOut, RotateCcw, BookOpen, ChevronUp, ChevronDown, ArrowRigh
 import { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import { useAppStore } from '@/store/useAppStore';
 import { saveBoardToFile, loadBoardFromFile, isValidSegnoFile } from '../utils/boardStorage';
+import { useTranslations } from '@/lib/i18n/useTranslations';
 
 type CityBottomToolbarProps = {
   transformRef: React.RefObject<ReactZoomPanPinchContentRef | null>;
@@ -22,12 +23,13 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { scenarioBlocks, connections, user, loadBoard } = useAppStore();
+  const t = useTranslations();
 
   const handleSave = () => {
     try {
       saveBoardToFile(scenarioBlocks, connections, user);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Errore nel salvataggio della board');
+      alert(error instanceof Error ? error.message : t.cityBuilder.saveError);
     }
   };
 
@@ -45,7 +47,7 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
     try {
       // Valida file
       if (!isValidSegnoFile(file)) {
-        alert('Il file selezionato non è un file Segno valido. Per favore seleziona un file .segno');
+        alert(t.cityBuilder.invalidFile);
         return;
       }
 
@@ -54,9 +56,7 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
 
       // Chiedi conferma se ci sono dati nella board corrente
       if (scenarioBlocks.length > 0 || connections.length > 0) {
-        const confirmLoad = confirm(
-          'Caricando un file, i dati attuali verranno sostituiti. Vuoi continuare?'
-        );
+        const confirmLoad = confirm(t.cityBuilder.confirmLoad);
         if (!confirmLoad) return;
       }
 
@@ -67,9 +67,9 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
         connections: boardData.connections,
       });
 
-      alert('Board caricata con successo!');
+      alert(t.cityBuilder.loadSuccess);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Errore nel caricamento del file');
+      alert(error instanceof Error ? error.message : t.cityBuilder.loadError);
     }
   };
 
@@ -95,7 +95,7 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
             className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-6 w-full max-w-2xl mb-2"
           >
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">Guida rapida</h3>
+              <h3 className="text-lg font-semibold text-slate-800">{t.cityBuilder.guideTitle}</h3>
               <Button
                 variant="ghost"
                 size="icon"
@@ -109,31 +109,31 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
             <div className="space-y-5 max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
               {/* Come iniziare */}
               <div>
-                <h4 className="text-base font-semibold text-slate-800 mb-2">Come iniziare</h4>
+                <h4 className="text-base font-semibold text-slate-800 mb-2">{t.cityBuilder.howToStart}</h4>
                 <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
-                  <li>Guarda la <strong>barra laterale a sinistra</strong>: contiene 9 domande chiave</li>
-                  <li>Seleziona una domanda (es. "Che tipo di informazioni raccogli?")</li>
-                  <li>Scegli una o più risposte dalla lista che appare</li>
-                  <li>I blocchi vengono aggiunti automaticamente alla mappa</li>
+                  <li>{t.cityBuilder.howToStartStep1}</li>
+                  <li>{t.cityBuilder.howToStartStep2}</li>
+                  <li>{t.cityBuilder.howToStartStep3}</li>
+                  <li>{t.cityBuilder.howToStartStep4}</li>
                 </ol>
               </div>
 
               {/* Come usare la mappa */}
               <div>
-                <h4 className="text-base font-semibold text-slate-800 mb-2">Come leggere la mappa</h4>
+                <h4 className="text-base font-semibold text-slate-800 mb-2">{t.cityBuilder.howToReadMap}</h4>
                 <p className="text-sm text-slate-600 mb-2">
-                  La mappa mostra come i dati si muovono nel tuo sistema, da sinistra a destra:
+                  {t.cityBuilder.howToReadMapDesc}
                 </p>
                 <ul className="text-sm text-slate-600 space-y-1 list-disc list-inside mb-3">
-                  <li><strong>Sinistra</strong>: da dove arrivano i dati (input)</li>
-                  <li><strong>Centro</strong>: come vengono elaborati (processo AI) e dove vengono conservati (storage)</li>
-                  <li><strong>Destra</strong>: cosa vede l'utente finale (output)</li>
+                  <li><strong>{t.cityBuilder.mapLeft}</strong></li>
+                  <li><strong>{t.cityBuilder.mapCenter}</strong></li>
+                  <li><strong>{t.cityBuilder.mapRight}</strong></li>
                 </ul>
                 <p className="text-sm text-slate-600 mb-3">
-                  <strong>Clicca su qualsiasi blocco</strong> per vedere una spiegazione semplice, cosa dice la legge, e cosa potresti rischiare.
+                  <strong>{t.cityBuilder.clickBlock}</strong>
                 </p>
                 <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 leading-snug">
-                  💡 <strong>Suggerimento:</strong> le note colorate accanto ai blocchi mostrano controlli e rischi. Cliccaci sopra per approfondire.
+                  {t.cityBuilder.notesTip}
                 </div>
               </div>
 
@@ -141,13 +141,11 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
               <div className="pt-4 border-t border-slate-200">
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 mb-3">
                   <p className="text-xs text-amber-800 leading-snug">
-                    <strong>⚠️ Disclaimer:</strong> Questo strumento ha finalità di consapevolezza, formative e di supporto informativo. 
-                    Non deve essere inteso come sostituto di una consulenza legale, tecnica o professionale specializzata. 
-                    Per valutazioni approfondite e assistenza specifica, è consigliabile rivolgersi a consulenti qualificati.
+                    <strong>⚠️ {t.cityBuilder.disclaimer}</strong> {t.cityBuilder.disclaimerText}
                   </p>
                 </div>
                 <div className="text-xs text-slate-500 text-center">
-                  <p>Strumento sviluppato da</p>
+                  <p>{t.cityBuilder.developedBy}</p>
                   <p className="mt-1">
                     <a 
                       href="https://relatronica.com" 
@@ -175,7 +173,7 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
           className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
         >
           <BookOpen className="h-4 w-4" />
-          <span className="text-sm font-medium">Guida rapida</span>
+          <span className="text-sm font-medium">{t.cityBuilder.quickGuide}</span>
           {isGuideOpen ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
@@ -227,12 +225,12 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
           {showNotes ? (
             <>
               <EyeOff className="h-4 w-4" />
-              <span className="text-sm font-medium">Nascondi note</span>
+              <span className="text-sm font-medium">{t.cityBuilder.hideNotes}</span>
             </>
           ) : (
             <>
               <Eye className="h-4 w-4" />
-              <span className="text-sm font-medium">Mostra note</span>
+              <span className="text-sm font-medium">{t.cityBuilder.showNotes}</span>
             </>
           )}
         </Button>
@@ -241,14 +239,14 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
         <div className="w-px h-6 bg-slate-200" />
 
         {/* News Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleNews}
-          className={`flex items-center gap-2 ${isNewsPanelOpen ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:text-slate-900'}`}
-        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleNews}
+            className={`flex items-center gap-2 ${isNewsPanelOpen ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:text-slate-900'}`}
+          >
           <Newspaper className="h-4 w-4" />
-          <span className="text-sm font-medium">News</span>
+          <span className="text-sm font-medium">{t.cityBuilder.news}</span>
         </Button>
 
         {/* Divider */}
@@ -261,20 +259,20 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
             size="sm"
             onClick={handleSave}
             className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-            title="Salva la board in un file protetto"
+            title={t.cityBuilder.saveTitle}
           >
             <Save className="h-4 w-4" />
-            <span className="text-sm font-medium">Salva</span>
+            <span className="text-sm font-medium">{t.cityBuilder.save}</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLoad}
             className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-            title="Carica una board da file"
+            title={t.cityBuilder.loadTitle}
           >
             <Upload className="h-4 w-4" />
-            <span className="text-sm font-medium">Carica</span>
+            <span className="text-sm font-medium">{t.cityBuilder.load}</span>
           </Button>
         </div>
 
@@ -297,7 +295,7 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
           size="sm"
           className="bg-blue-600 hover:bg-blue-700 text-white shadow disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Analizza Rischi <ArrowRight className="ml-2 h-4 w-4" />
+          {t.cityBuilder.analyzeRisks} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>

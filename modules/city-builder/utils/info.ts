@@ -1,6 +1,11 @@
-import { ScenarioBlock } from '@/store/useAppStore';
+'use client';
 
-// Guide per PROGETTISTI
+import { ScenarioBlock } from '@/store/useAppStore';
+import { useAppStore } from '@/store/useAppStore';
+import { getTypeGuideTranslation, getInsightTranslation } from '@/lib/i18n/knowledgeTranslations';
+import type { Locale } from '@/lib/i18n/translations';
+
+// Guide per PROGETTISTI (fallback italiano, sarà tradotto dinamicamente)
 const TYPE_GUIDE_DESIGNER: Record<
   ScenarioBlock['type'],
   { title: string; description: string; friendly: string }
@@ -49,65 +54,110 @@ type Insight = {
   tone: 'neutral' | 'warning' | 'positive';
 };
 
-const buildInsights = (block: ScenarioBlock, userRole?: 'user' | 'designer'): Insight[] => {
+const buildInsights = (block: ScenarioBlock, userRole?: 'user' | 'designer', locale: Locale = 'it'): Insight[] => {
   const hints: Insight[] = [];
   const isUser = userRole === 'user';
 
   if (block.config?.dataTypes?.includes('Biometrici') || block.label.toLowerCase().includes('video')) {
-    hints.push({
-      label: 'Dati delicati',
-      detail: isUser
-        ? 'Questi sono dati biometrici molto sensibili. Hai dato il consenso esplicito? Hai verificato come vengono protetti?'
-        : 'Contiene informazioni biometriche. Richiede consenso esplicito e canali di archiviazione sicuri.',
-      tone: 'warning',
-    });
+    const translation = getInsightTranslation(locale, 'Dati delicati', isUser ? 'user' : 'designer');
+    if (translation) {
+      hints.push({
+        label: translation.label,
+        detail: translation.detail,
+        tone: 'warning',
+      });
+    } else {
+      // Fallback italiano
+      hints.push({
+        label: 'Dati delicati',
+        detail: isUser
+          ? 'Questi sono dati biometrici molto sensibili. Hai dato il consenso esplicito? Hai verificato come vengono protetti?'
+          : 'Contiene informazioni biometriche. Richiede consenso esplicito e canali di archiviazione sicuri.',
+        tone: 'warning',
+      });
+    }
   }
 
   if (block.type === 'process' && !block.config?.humanInTheLoop && block.label.toLowerCase().includes('decision')) {
-    hints.push({
-      label: 'Decisione solo automatica',
-      detail: isUser
-        ? 'Il sistema prende decisioni automaticamente senza controllo umano. Puoi contestare queste decisioni? C\'è qualcuno che può rivederle?'
-        : 'Valuta se introdurre una revisione umana per spiegare o correggere l\'esito.',
-      tone: 'warning',
-    });
+    const translation = getInsightTranslation(locale, 'Decisione solo automatica', isUser ? 'user' : 'designer');
+    if (translation) {
+      hints.push({
+        label: translation.label,
+        detail: translation.detail,
+        tone: 'warning',
+      });
+    } else {
+      hints.push({
+        label: 'Decisione solo automatica',
+        detail: isUser
+          ? 'Il sistema prende decisioni automaticamente senza controllo umano. Puoi contestare queste decisioni? C\'è qualcuno che può rivederle?'
+          : 'Valuta se introdurre una revisione umana per spiegare o correggere l\'esito.',
+        tone: 'warning',
+      });
+    }
   }
 
   if (block.type === 'storage' && block.label.toLowerCase().includes('usa')) {
-    hints.push({
-      label: 'Trasferimento extra-UE',
-      detail: isUser
-        ? 'I tuoi dati vengono salvati su server americani. Le autorità USA possono accedervi. Hai verificato le protezioni?'
-        : 'Ricorda di documentare le clausole contrattuali standard (SCC) e la cifratura end-to-end dei dati.',
-      tone: 'warning',
-    });
+    const translation = getInsightTranslation(locale, 'Trasferimento extra-UE', isUser ? 'user' : 'designer');
+    if (translation) {
+      hints.push({
+        label: translation.label,
+        detail: translation.detail,
+        tone: 'warning',
+      });
+    } else {
+      hints.push({
+        label: 'Trasferimento extra-UE',
+        detail: isUser
+          ? 'I tuoi dati vengono salvati su server americani. Le autorità USA possono accedervi. Hai verificato le protezioni?'
+          : 'Ricorda di documentare le clausole contrattuali standard (SCC) e la cifratura end-to-end dei dati.',
+        tone: 'warning',
+      });
+    }
   }
 
   if (block.config?.isEncrypted) {
-    hints.push({
-      label: 'Cifratura attiva',
-      detail: isUser
-        ? 'I tuoi dati sono cifrati, quindi sono più protetti. Ottima cosa!'
-        : 'Questo nodo prevede la cifratura dei dati, ottima pratica di sicurezza.',
-      tone: 'positive',
-    });
+    const translation = getInsightTranslation(locale, 'Cifratura attiva', isUser ? 'user' : 'designer');
+    if (translation) {
+      hints.push({
+        label: translation.label,
+        detail: translation.detail,
+        tone: 'positive',
+      });
+    } else {
+      hints.push({
+        label: 'Cifratura attiva',
+        detail: isUser
+          ? 'I tuoi dati sono cifrati, quindi sono più protetti. Ottima cosa!'
+          : 'Questo nodo prevede la cifratura dei dati, ottima pratica di sicurezza.',
+        tone: 'positive',
+      });
+    }
   }
 
   if (block.config?.humanInTheLoop) {
-    hints.push({
-      label: 'Supervisione umana',
-      detail: isUser
-        ? 'C\'è un controllo umano sulle decisioni: puoi chiedere a una persona di rivedere le decisioni del sistema. Buono!'
-        : 'È previsto un controllo umano sul risultato: punto a favore della trasparenza.',
-      tone: 'positive',
-    });
+    const translation = getInsightTranslation(locale, 'Supervisione umana', isUser ? 'user' : 'designer');
+    if (translation) {
+      hints.push({
+        label: translation.label,
+        detail: translation.detail,
+        tone: 'positive',
+      });
+    } else {
+      hints.push({
+        label: 'Supervisione umana',
+        detail: isUser
+          ? 'C\'è un controllo umano sulle decisioni: puoi chiedere a una persona di rivedere le decisioni del sistema. Buono!'
+          : 'È previsto un controllo umano sul risultato: punto a favore della trasparenza.',
+        tone: 'positive',
+      });
+    }
   }
 
-  // Non aggiungere hint generico: mostriamo "Punti da ricordare" solo se ci sono hints reali
   return hints;
 };
 
-// Guide per UTENTI FINALI
+// Guide per UTENTI FINALI (fallback italiano, sarà tradotto dinamicamente)
 const TYPE_GUIDE_USER: Record<
   ScenarioBlock['type'],
   { title: string; description: string; friendly: string }
@@ -146,14 +196,20 @@ const TYPE_GUIDE_USER: Record<
 
 export const buildBlockSummary = (
   block: ScenarioBlock | null | undefined,
-  userRole?: 'user' | 'designer'
+  userRole?: 'user' | 'designer',
+  locale?: Locale
 ) => {
   if (!block) return null;
-  const guide = userRole === 'user' ? TYPE_GUIDE_USER[block.type] : TYPE_GUIDE_DESIGNER[block.type];
-  const hints = buildInsights(block, userRole);
+  
+  // Get locale from store if not provided
+  const currentLocale = locale || useAppStore.getState().locale;
+  
+  // Get translated guide
+  const translatedGuide = getTypeGuideTranslation(currentLocale, block.type, userRole || 'designer');
+  const hints = buildInsights(block, userRole, currentLocale);
 
   return {
-    ...guide,
+    ...translatedGuide,
     hints,
   };
 };

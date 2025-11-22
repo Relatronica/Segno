@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { ScenarioBlock } from '@/store/useAppStore';
+import { ScenarioBlock, useAppStore } from '@/store/useAppStore';
 import { BUILDING_TYPES, CITY_THEME, mapBlockToBuilding } from '../utils/cityMappings';
 import { PositionedBlock } from '../utils/layout';
 import { getStageTheme } from '../utils/flowchartTheme';
+import { translateBlockLabel } from '@/lib/i18n/blockLabelTranslations';
+import { getBuildingTypeDescription } from '@/lib/i18n/buildingTypeTranslations';
 
 interface CityBlockProps {
   block: ScenarioBlock;
@@ -13,10 +15,11 @@ interface CityBlockProps {
 }
 
 export function CityBlock({ block, isSelected, onClick, layout, selectedBlockId }: CityBlockProps) {
+  const { locale } = useAppStore();
   const buildingTypeKey = mapBlockToBuilding(block.type, block.label);
   const buildingInfo = BUILDING_TYPES[buildingTypeKey] || BUILDING_TYPES['input-personal'];
   const visual = block.config?.visual;
-  const stageTheme = getStageTheme(block);
+  const stageTheme = getStageTheme(block, locale);
   const BadgeIcon = stageTheme.icon;
   const widthScale = layout.size.width / CITY_THEME.blockDimensions.width;
   const contentHeight = Math.max(48, layout.size.height - 32);
@@ -124,7 +127,7 @@ export function CityBlock({ block, isSelected, onClick, layout, selectedBlockId 
             wordBreak: 'break-word',
           }}
         >
-          {block.label}
+          {translateBlockLabel(block.label, locale)}
         </span>
         <p
           className="leading-snug text-slate-100/80"
@@ -139,7 +142,7 @@ export function CityBlock({ block, isSelected, onClick, layout, selectedBlockId 
             wordBreak: 'break-word',
           }}
         >
-          {buildingInfo.description}
+          {getBuildingTypeDescription(buildingTypeKey, locale) || buildingInfo.description}
         </p>
       </div>
     </motion.div>

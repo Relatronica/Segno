@@ -1161,24 +1161,46 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
 
 /**
  * Get educational knowledge for a note based on its label
+ * @param label - The label of the note
+ * @param locale - Optional: locale for translation ('it' | 'en')
  */
-export function getNoteKnowledge(label: string): NoteKnowledge | null {
-  return NOTE_KNOWLEDGE[label] || null;
+export function getNoteKnowledge(label: string, locale: 'it' | 'en' = 'it'): NoteKnowledge | null {
+  const knowledge = NOTE_KNOWLEDGE[label];
+  if (!knowledge) return null;
+  
+  // If locale is 'it', return as-is
+  if (locale === 'it') {
+    return knowledge;
+  }
+  
+  // For 'en', try to translate
+  if (locale === 'en') {
+    // Dynamic import to avoid circular dependencies
+    const { translateNoteKnowledge } = require('@/lib/i18n/noteKnowledgeTranslations');
+    const translated = translateNoteKnowledge(knowledge, label);
+    return translated || knowledge; // Use Italian as fallback if no translation
+  }
+  
+  return knowledge;
 }
 
 /**
  * Get a critical question for the note (fallback to generic if not found)
  */
-export function getNoteQuestion(label: string, type: 'risk' | 'impact'): string {
-  const knowledge = getNoteKnowledge(label);
+export function getNoteQuestion(label: string, type: 'risk' | 'impact', locale: 'it' | 'en' = 'it'): string {
+  const knowledge = getNoteKnowledge(label, locale);
   if (knowledge?.question) {
     return knowledge.question;
   }
 
   // Generic questions based on type (orientate all'utente finale)
   if (type === 'risk') {
-    return 'Quali rischi vedi nell\'uso di questo sistema? Cosa potrebbe andare storto?';
+    return locale === 'en' 
+      ? 'What risks do you see in using this system? What could go wrong?'
+      : 'Quali rischi vedi nell\'uso di questo sistema? Cosa potrebbe andare storto?';
   }
-  return 'Quale impatto ha questo sistema su di te o su altre persone?';
+  return locale === 'en'
+    ? 'What impact does this system have on you or other people?'
+    : 'Quale impatto ha questo sistema su di te o su altre persone?';
 }
 

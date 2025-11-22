@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Search, BookOpen, Scale, Cpu, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslations } from '@/lib/i18n/useTranslations';
 
 export function WikiModule() {
   const { setStep, currentArticleId, setCurrentArticleId } = useAppStore();
+  const t = useTranslations();
   const [search, setSearch] = useState('');
 
   const activeArticle = currentArticleId ? WIKI_ARTICLES.find(a => a.id === currentArticleId) : null;
@@ -33,7 +35,7 @@ export function WikiModule() {
       <div className="min-h-screen bg-slate-50 p-8">
         <div className="max-w-3xl mx-auto">
           <Button variant="ghost" onClick={() => setCurrentArticleId(null)} className="mb-6 text-slate-500">
-            <ArrowLeft className="mr-2 w-4 h-4" /> Torna alla Libreria
+            <ArrowLeft className="mr-2 w-4 h-4" /> {t.wiki.backToLibrary}
           </Button>
           
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -66,19 +68,19 @@ export function WikiModule() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
               <BookOpen className="h-8 w-8 text-blue-600" />
-              Knowledge Hub
+              {t.wiki.title}
             </h1>
-            <p className="text-slate-500 mt-1">Impara i concetti fondamentali di AI e Compliance.</p>
+            <p className="text-slate-500 mt-1">{t.wiki.subtitle}</p>
           </div>
           <Button variant="outline" onClick={() => setStep('builder')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Torna al Builder
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t.wiki.backToBuilder}
           </Button>
         </div>
 
         <div className="relative mb-8">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <Input 
-            placeholder="Cerca argomenti (es. AI Act, RAG...)" 
+            placeholder={t.wiki.searchPlaceholder}
             className="pl-10 bg-white border-slate-200 shadow-sm h-12"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

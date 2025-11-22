@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { CITY_THEME } from '../utils/cityMappings';
 import type { FlowStageKey } from '../utils/flowchartTheme';
 import { getStageThemeByKey } from '../utils/flowchartTheme';
+import { useAppStore } from '@/store/useAppStore';
 
 type FlowchartBackdropProps = {
   width: number;
@@ -28,7 +29,8 @@ export const FlowchartBackdrop = memo(function FlowchartBackdrop({ width, height
       />
 
       {stageOrder.map((stageKey, index) => {
-        const stage = getStageThemeByKey(stageKey);
+        const locale = useAppStore.getState().locale;
+        const stage = getStageThemeByKey(stageKey, locale);
         const columnCenter = baseCenter + index * CITY_THEME.layout.clusterGapX;
         const left = Math.max(0, columnCenter - columnWidth / 2);
 

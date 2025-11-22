@@ -1,6 +1,8 @@
 import { ScenarioBlock, Connection } from '@/store/useAppStore';
-import { KNOWLEDGE_BASE, Rule } from './knowledgeBase';
+import { KNOWLEDGE_BASE, Rule, getTranslatedRule } from './knowledgeBase';
 import { buildFindingContext, getAffectedBlocks } from './riskHelpers';
+import { useAppStore } from '@/store/useAppStore';
+import type { Locale } from '@/lib/i18n/translations';
 
 export type RiskAssessment = {
   level: 'low' | 'medium' | 'high' | 'critical';
@@ -141,7 +143,8 @@ function validateBlocks(blocks: ScenarioBlock[], connections: Connection[]): { v
   return { valid: true };
 }
 
-export function calculateRisk(blocks: ScenarioBlock[] = [], connections: Connection[] = []): RiskAssessment {
+export function calculateRisk(blocks: ScenarioBlock[] = [], connections: Connection[] = [], locale?: Locale): RiskAssessment {
+  const currentLocale = locale || useAppStore.getState().locale;
   // Validazione input più permissiva - solo se ci sono errori gravi
   if (!blocks || !Array.isArray(blocks)) {
     return {
@@ -211,13 +214,16 @@ export function calculateRisk(blocks: ScenarioBlock[] = [], connections: Connect
           hasProhibitedViolation = true;
         }
         
+        // Get translated rule
+        const translatedRule = getTranslatedRule(rule, currentLocale);
+        
         // Costruisci context specifico e descrittivo
-        const context = buildFindingContext(rule, blocksToAnalyze, connections);
+        const context = buildFindingContext(translatedRule, blocksToAnalyze, connections, currentLocale);
         const affectedBlocks = getAffectedBlocks(rule, blocksToAnalyze);
         
         // Aggiungi finding con context e blocchi interessati
         findings.push({
-          rule,
+          rule: translatedRule,
           context,
           affectedBlocks
         });

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CityActionGroup } from '../utils/cityBlueprints';
+import { useTranslations } from '@/lib/i18n/useTranslations';
+import { useQuestionTranslations } from '@/lib/i18n/translateQuestions';
 
 type QuestionDrawerProps = {
   isOpen: boolean;
@@ -20,6 +22,12 @@ export function QuestionDrawer({
   selectedBlueprints,
   onAction,
 }: QuestionDrawerProps) {
+  const t = useTranslations();
+  const { translateQuestionGroup, translateQuestionLabel } = useQuestionTranslations();
+  
+  // Translate the question group
+  const translatedQuestion = translateQuestionGroup(question);
+  
   if (!isOpen) return null;
 
   return (
@@ -49,10 +57,10 @@ export function QuestionDrawer({
             <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold text-slate-800">
-                  {question.label.replace('DOMANDA: ', '')}
+                  {translatedQuestion.label}
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  Scegli una o più opzioni che descrivono meglio il tuo scenario
+                  {t.common.chooseOneOrMore}
                 </p>
               </div>
               <Button
@@ -68,7 +76,7 @@ export function QuestionDrawer({
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
               <div className="space-y-3">
-                {question.actions.map((action) => {
+                {translatedQuestion.actions.map((action) => {
                   const isSelected = selectedBlueprints.has(action.key);
                   return (
                     <button
@@ -94,7 +102,7 @@ export function QuestionDrawer({
                       </p>
                       {isSelected && (
                         <div className="mt-2 text-xs text-blue-600 font-medium">
-                          ✓ Selezionato
+                          ✓ {t.common.selected}
                         </div>
                       )}
                     </button>
@@ -106,13 +114,13 @@ export function QuestionDrawer({
             {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
               <p className="text-xs text-slate-500">
-                {question.actions.filter(a => selectedBlueprints.has(a.key)).length} di {question.actions.length} selezionati
+                {question.actions.filter(a => selectedBlueprints.has(a.key)).length} {t.common.of} {question.actions.length} {t.common.selectedLower}
               </p>
               <Button
                 onClick={onClose}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Chiudi
+                {t.common.close}
               </Button>
             </div>
           </motion.div>

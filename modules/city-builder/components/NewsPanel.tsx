@@ -6,7 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Newspaper, ExternalLink, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { it, enUS } from 'date-fns/locale';
+import { useAppStore } from '@/store/useAppStore';
+import { useTranslations } from '@/lib/i18n/useTranslations';
 
 export type NewsItem = {
   id: string;
@@ -25,11 +27,21 @@ type NewsPanelProps = {
 };
 
 
-const CATEGORY_LABELS: Record<NewsItem['category'], string> = {
-  'ai-ethics': 'Etica IA',
-  'regulation': 'Normativa',
-  'ai-news': 'Notizie IA',
-  'privacy': 'Privacy',
+const getCategoryLabels = (locale: 'it' | 'en'): Record<NewsItem['category'], string> => {
+  if (locale === 'en') {
+    return {
+      'ai-ethics': 'AI Ethics',
+      'regulation': 'Regulation',
+      'ai-news': 'AI News',
+      'privacy': 'Privacy',
+    };
+  }
+  return {
+    'ai-ethics': 'Etica IA',
+    'regulation': 'Normativa',
+    'ai-news': 'Notizie IA',
+    'privacy': 'Privacy',
+  };
 };
 
 const CATEGORY_COLORS: Record<NewsItem['category'], string> = {
@@ -40,9 +52,13 @@ const CATEGORY_COLORS: Record<NewsItem['category'], string> = {
 };
 
 export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
+  const { locale } = useAppStore();
+  const t = useTranslations();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const categoryLabels = getCategoryLabels(locale);
+  const dateLocale = locale === 'en' ? enUS : it;
 
   const fetchNews = async () => {
     setIsLoading(true);
@@ -101,7 +117,7 @@ export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
                   <div>
                     <h3 className="text-lg font-bold text-slate-800">News & Aggiornamenti</h3>
                     <p className="text-xs text-slate-500">
-                      {lastUpdate && `Aggiornato ${formatDistanceToNow(lastUpdate, { addSuffix: true, locale: it })}`}
+                      {lastUpdate && `${locale === 'en' ? 'Updated' : 'Aggiornato'} ${formatDistanceToNow(lastUpdate, { addSuffix: true, locale: dateLocale })}`}
                     </p>
                   </div>
                 </div>
@@ -131,7 +147,7 @@ export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
                 {news.length === 0 ? (
                   <div className="text-center py-8 text-slate-500">
                     <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">Nessuna notizia disponibile</p>
+                    <p className="text-sm">{locale === 'en' ? 'No news available' : 'Nessuna notizia disponibile'}</p>
                   </div>
                 ) : (
                   news.map((item) => (
@@ -174,7 +190,7 @@ export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
                           )}
                           {/* Badge categoria sotto la descrizione */}
                           <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded border ${CATEGORY_COLORS[item.category]}`}>
-                            {CATEGORY_LABELS[item.category]}
+                            {categoryLabels[item.category]}
                           </span>
                         </div>
                       </div>
@@ -182,7 +198,7 @@ export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
                       <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100">
                         <span className="text-xs text-slate-500">{item.source}</span>
                         <span className="text-xs text-slate-400">
-                          {formatDistanceToNow(item.publishedAt, { addSuffix: true, locale: it })}
+                          {formatDistanceToNow(item.publishedAt, { addSuffix: true, locale: dateLocale })}
                         </span>
                       </div>
                     </motion.a>
@@ -193,7 +209,7 @@ export function NewsPanel({ isOpen, onToggle }: NewsPanelProps) {
               {/* Footer */}
               <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex-shrink-0">
                 <p className="text-xs text-slate-500 text-center">
-                  Fonti: RSS feeds, API normative, aggiornamenti istituzionali
+                  {locale === 'en' ? 'Sources: RSS feeds, regulatory APIs, institutional updates' : 'Fonti: RSS feeds, API normative, aggiornamenti istituzionali'}
                 </p>
               </div>
             </Card>

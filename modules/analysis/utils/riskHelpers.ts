@@ -4,6 +4,9 @@
  */
 
 import { ScenarioBlock, Connection } from '@/store/useAppStore';
+import { getContextTranslation } from '@/lib/i18n/analysisTranslations';
+import { useAppStore } from '@/store/useAppStore';
+import type { Locale } from '@/lib/i18n/translations';
 
 /**
  * Normalizza una label per matching flessibile
@@ -174,9 +177,20 @@ export function findBlocksByLabel(
 export function buildFindingContext(
   rule: { id: string; description: string },
   blocks: ScenarioBlock[],
-  connections: Connection[]
+  connections: Connection[],
+  locale?: Locale
 ): string {
-  // Context specifici basati sul tipo di regola
+  const currentLocale = locale || useAppStore.getState().locale;
+  
+  // Try to get translated context first
+  if (currentLocale === 'en') {
+    const translatedContext = getContextTranslation(rule.id, currentLocale, blocks, connections);
+    if (translatedContext) {
+      return translatedContext;
+    }
+  }
+  
+  // Context specifici basati sul tipo di regola (Italian fallback)
   const ruleContexts: Record<string, (blocks: ScenarioBlock[], connections: Connection[]) => string> = {
     'aiact-prohibited-biometric': (b, c) => {
       const biometric = findBlocksByLabel(b, ['Analisi Biometrica'])[0];

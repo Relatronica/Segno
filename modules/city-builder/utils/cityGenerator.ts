@@ -1,6 +1,8 @@
-import { ScenarioBlock } from '@/store/useAppStore';
+import { ScenarioBlock, useAppStore } from '@/store/useAppStore';
 import { CITY_THEME } from './cityMappings';
 import { CITY_BLUEPRINTS, CityBlueprint, DEFAULT_BLUEPRINT_FOR_TYPE } from './cityBlueprints';
+import { getBlueprintClusterLabel, getBlueprintTitle } from '@/lib/i18n/blueprintTranslations';
+import type { Locale } from '@/lib/i18n/translations';
 
 type SimpleConnection = { from: string; to: string };
 
@@ -15,13 +17,21 @@ type InstantiatedBlueprint = {
 
 const randomId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
-const instantiateBlueprint = (key: string, orderSeed = Date.now()): InstantiatedBlueprint => {
+const instantiateBlueprint = (key: string, orderSeed = Date.now(), locale?: Locale): InstantiatedBlueprint => {
   const blueprint = CITY_BLUEPRINTS[key];
   if (!blueprint) {
     throw new Error(`Missing city blueprint: ${key}`);
   }
 
+  const currentLocale = locale || useAppStore.getState().locale;
   const clusterId = `${key}-${orderSeed}-${Math.random().toString(36).substr(2, 5)}`;
+  
+  // Get translated cluster label
+  const clusterLabel = getBlueprintClusterLabel(
+    key,
+    currentLocale,
+    blueprint.clusterLabel ?? blueprint.title
+  ) ?? getBlueprintTitle(key, currentLocale, blueprint.clusterLabel ?? blueprint.title);
 
   const blocks = blueprint.nodes.map((node, index) => {
     const widthUnits = node.footprint?.widthUnits ?? 3.5;
@@ -46,7 +56,7 @@ const instantiateBlueprint = (key: string, orderSeed = Date.now()): Instantiated
         cluster: {
           id: clusterId,
           order: orderSeed,
-          label: blueprint.clusterLabel ?? blueprint.title,
+          label: clusterLabel,
           offset: node.offset ?? { x: index * 2, y: 0 },
           category: blueprint.primaryType,
         },
@@ -88,6 +98,7 @@ const ensureForType = (
   pendingBlocks: ScenarioBlock[],
   pendingConnections: SimpleConnection[],
   orderSeed: number,
+  locale: Locale,
   parentBlueprintKey?: string // Track which blueprint triggered creation of this block
 ): ScenarioBlock | undefined => {
   const existing = findLatestByType(workingBlocks, type);
@@ -96,7 +107,7 @@ const ensureForType = (
   const fallbackKey = DEFAULT_BLUEPRINT_FOR_TYPE[type];
   if (!fallbackKey) return undefined;
 
-  const addition = instantiateBlueprint(fallbackKey, orderSeed + pendingBlocks.length + Math.random());
+  const addition = instantiateBlueprint(fallbackKey, orderSeed + pendingBlocks.length + Math.random(), locale);
   // Mark these blocks as created by the parent blueprint if provided
   if (parentBlueprintKey) {
     addition.blocks.forEach((block) => {
@@ -123,6 +134,7 @@ const ensureSystemicImpacts = (
   pendingBlocks: ScenarioBlock[],
   pendingConnections: SimpleConnection[],
   orderSeed: number,
+  locale: Locale,
   attachFrom?: ScenarioBlock
 ) => {
   const systemicKeys = ['impact-energy', 'impact-social', 'impact-political'] as const;
@@ -136,7 +148,7 @@ const ensureSystemicImpacts = (
     const exists = workingBlocks.some((b) => b.label === labelMatch);
     if (exists) return;
 
-    const systemic = instantiateBlueprint(key, orderSeed + 9000 + idx * 100);
+    const systemic = instantiateBlueprint(key, orderSeed + 9000 + idx * 100, locale);
     pendingBlocks.push(...systemic.blocks);
     pendingConnections.push(...systemic.connections);
     systemic.blocks.forEach((block) => workingBlocks.push(block));
@@ -155,7 +167,8 @@ const ensureSystemicImpacts = (
 
 export const generateCityElements = (
   blueprintKey: string,
-  existingBlocks: ScenarioBlock[]
+  existingBlocks: ScenarioBlock[],
+  locale?: Locale
 ): CityGenerationResult => {
   // Check if this specific blueprint has already been instantiated
   const blueprintAlreadyExists = existingBlocks.some(
@@ -167,8 +180,9 @@ export const generateCityElements = (
     return { blocks: [], connections: [] };
   }
 
+  const currentLocale = locale || useAppStore.getState().locale;
   const orderSeed = Date.now();
-  const base = instantiateBlueprint(blueprintKey, orderSeed);
+  const base = instantiateBlueprint(blueprintKey, orderSeed, currentLocale);
 
   const newBlocks: ScenarioBlock[] = [...base.blocks];
   const newConnections: SimpleConnection[] = [...base.connections];
@@ -186,7 +200,7 @@ export const generateCityElements = (
         // Solo se non c'è un process esistente, creane uno generico (solo per progettisti)
         const isUserInput = blueprintKey.includes('-user') || blueprintKey === 'input-work' || blueprintKey === 'input-sensitive' || blueprintKey === 'input-others' || blueprintKey === 'input-public-user';
         if (!isUserInput) {
-      const process = ensureForType('process', workingBlocks, newBlocks, newConnections, orderSeed, blueprintKey);
+      const process = ensureForType('process', workingBlocks, newBlocks, newConnections, orderSeed, currentLocale, blueprintKey);
       connect(primary, process, newConnections);
         }
       }
@@ -203,10 +217,10 @@ export const generateCityElements = (
       // Per utenti finali, storage e output vengono selezionati manualmente
       const isUserProcess = blueprintKey.startsWith('use-') && !blueprintKey.startsWith('use-case-');
       if (!isUserProcess) {
-      const storage = ensureForType('storage', workingBlocks, newBlocks, newConnections, orderSeed, blueprintKey);
+      const storage = ensureForType('storage', workingBlocks, newBlocks, newConnections, orderSeed, currentLocale, blueprintKey);
       connect(primary, storage, newConnections);
 
-      const output = ensureForType('output', workingBlocks, newBlocks, newConnections, orderSeed, blueprintKey);
+      const output = ensureForType('output', workingBlocks, newBlocks, newConnections, orderSeed, currentLocale, blueprintKey);
       connect(primary, output, newConnections);
       } else {
         // Per utenti finali: connetti solo agli output esistenti (casi d'uso)
@@ -248,7 +262,7 @@ export const generateCityElements = (
         if (existingProcess) {
           connect(existingProcess, primary, newConnections);
         } else {
-      const process = ensureForType('process', workingBlocks, newBlocks, newConnections, orderSeed, blueprintKey);
+      const process = ensureForType('process', workingBlocks, newBlocks, newConnections, orderSeed, currentLocale, blueprintKey);
       connect(process, primary, newConnections);
         }
 
@@ -256,7 +270,7 @@ export const generateCityElements = (
         if (existingOutput) {
           connect(existingOutput, primary, newConnections);
         } else {
-      const output = ensureForType('output', workingBlocks, newBlocks, newConnections, orderSeed, blueprintKey);
+      const output = ensureForType('output', workingBlocks, newBlocks, newConnections, orderSeed, currentLocale, blueprintKey);
       connect(primary, output, newConnections);
         }
       }
@@ -265,7 +279,7 @@ export const generateCityElements = (
       if (base.blueprint.key === 'storage-us') {
         const hasTransferGuard = workingBlocks.some((b) => b.label === 'Supervisione Transfer');
         if (!hasTransferGuard) {
-          const transfer = instantiateBlueprint('risk-transfer', orderSeed + 5000);
+          const transfer = instantiateBlueprint('risk-transfer', orderSeed + 5000, currentLocale);
           // Mark these blocks as created by the parent blueprint
           transfer.blocks.forEach((block) => {
             block.config = { ...block.config, parentBlueprintKey: blueprintKey };
@@ -297,7 +311,7 @@ export const generateCityElements = (
       const hasOversight = workingBlocks.some((b) => b.label === 'Oversight Board');
       const isUserOutput = blueprintKey.startsWith('use-case-');
       if (!hasOversight && !isUserOutput) {
-        const oversight = instantiateBlueprint('risk-oversight', orderSeed + 6000);
+        const oversight = instantiateBlueprint('risk-oversight', orderSeed + 6000, currentLocale);
         // Mark these blocks as created by the parent blueprint
         oversight.blocks.forEach((block) => {
           block.config = { ...block.config, parentBlueprintKey: blueprintKey };
@@ -354,7 +368,7 @@ export const generateCityElements = (
   const hasBiometric = workingBlocks.some((b) => b.config?.dataTypes?.includes('Biometrici'));
   const hasStorage = workingBlocks.some((b) => b.type === 'storage');
   if (hasBiometric && !hasStorage) {
-    const storage = instantiateBlueprint('storage-eu', orderSeed + 7000);
+    const storage = instantiateBlueprint('storage-eu', orderSeed + 7000, currentLocale);
     // Mark these blocks as created by the parent blueprint
     storage.blocks.forEach((block) => {
       block.config = { ...block.config, parentBlueprintKey: blueprintKey };
@@ -369,7 +383,7 @@ export const generateCityElements = (
   const hasAutoDecision = workingBlocks.some((b) => b.label === 'Decisione Automatica');
   const hasHumanLoop = workingBlocks.some((b) => b.config?.humanInTheLoop);
   if (hasAutoDecision && !hasHumanLoop) {
-    const oversight = instantiateBlueprint('risk-oversight', orderSeed + 8000);
+    const oversight = instantiateBlueprint('risk-oversight', orderSeed + 8000, currentLocale);
     // Mark these blocks as created by the parent blueprint
     oversight.blocks.forEach((block) => {
       block.config = { ...block.config, parentBlueprintKey: blueprintKey };

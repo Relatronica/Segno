@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { CITY_THEME } from '../utils/cityMappings';
 import type { FlowStageKey } from '../utils/flowchartTheme';
 import { getStageThemeByKey } from '../utils/flowchartTheme';
+import { useAppStore } from '@/store/useAppStore';
 import type { PositionedBlock } from '../utils/layout';
 
 type WhiteboardAnnotationsProps = {
@@ -44,7 +45,8 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
           return null;
         }
         
-        const stage = getStageThemeByKey(stageKey);
+        const locale = useAppStore.getState().locale;
+        const stage = getStageThemeByKey(stageKey, locale);
         const columnCenter = baseCenter + index * gapX;
 
         return (

@@ -722,33 +722,53 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
  * Get educational knowledge for a block based on its type and label
  * @param block - The block to get knowledge for
  * @param userMode - Optional: 'use' for end users, 'design' for designers
+ * @param locale - Optional: locale for translation ('it' | 'en')
  */
 export function getBlockKnowledge(
   block: { type: string; label: string },
-  userMode?: 'use' | 'design'
+  userMode?: 'use' | 'design',
+  locale: 'it' | 'en' = 'it'
 ): BlockKnowledge | null {
-  // First try label-specific knowledge (questo è già adattato per utenti finali dove necessario)
+  // Get Italian knowledge first (source of truth)
+  let knowledge: BlockKnowledge | null = null;
+  
+  // First try label-specific knowledge
   if (LABEL_KNOWLEDGE[block.label]) {
-    return LABEL_KNOWLEDGE[block.label];
-  }
-  
-  // Fallback to type-specific knowledge - usa la versione corretta in base al ruolo
-  if (userMode === 'use') {
-    if (TYPE_KNOWLEDGE_USER[block.type]) {
-      return TYPE_KNOWLEDGE_USER[block.type];
-    }
+    knowledge = LABEL_KNOWLEDGE[block.label];
   } else {
-    if (TYPE_KNOWLEDGE_DESIGNER[block.type]) {
-      return TYPE_KNOWLEDGE_DESIGNER[block.type];
+    // Fallback to type-specific knowledge - usa la versione corretta in base al ruolo
+    if (userMode === 'use') {
+      if (TYPE_KNOWLEDGE_USER[block.type]) {
+        knowledge = TYPE_KNOWLEDGE_USER[block.type];
+      }
+    } else {
+      if (TYPE_KNOWLEDGE_DESIGNER[block.type]) {
+        knowledge = TYPE_KNOWLEDGE_DESIGNER[block.type];
+      }
+    }
+    
+    // Fallback ulteriore se non esiste la versione specifica
+    if (!knowledge && TYPE_KNOWLEDGE_DESIGNER[block.type]) {
+      knowledge = TYPE_KNOWLEDGE_DESIGNER[block.type];
     }
   }
   
-  // Fallback ulteriore se non esiste la versione specifica
-  if (TYPE_KNOWLEDGE_DESIGNER[block.type]) {
-    return TYPE_KNOWLEDGE_DESIGNER[block.type];
+  if (!knowledge) return null;
+  
+  // If locale is 'it', return as-is
+  if (locale === 'it') {
+    return knowledge;
   }
   
-  return null;
+  // For 'en', try to translate
+  if (locale === 'en') {
+    // Dynamic import to avoid circular dependencies
+    const { translateBlockKnowledge } = require('@/lib/i18n/blockKnowledgeTranslations');
+    const translated = translateBlockKnowledge(knowledge, block.label, block.type, userMode);
+    return translated || knowledge; // Use Italian as fallback if no translation
+  }
+  
+  return knowledge;
 }
 
 /**

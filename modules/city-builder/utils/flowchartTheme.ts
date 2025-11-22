@@ -1,6 +1,11 @@
+'use client';
+
 import type { BlockCategory, ScenarioBlock } from '@/store/useAppStore';
 import type { LucideIcon } from 'lucide-react';
 import { Activity, Cpu, Database, Globe2, Inbox, Share2, ShieldCheck } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
+import { getTranslations } from '@/lib/i18n/translations';
+import type { Locale } from '@/lib/i18n/translations';
 
 export type FlowStageKey = BlockCategory;
 
@@ -109,11 +114,25 @@ export const getStageKey = (block?: ScenarioBlock | null): FlowStageKey => {
   return block.config?.cluster?.category ?? block.type ?? 'process';
 };
 
-export const getStageTheme = (block?: ScenarioBlock | null): FlowStageTheme => {
+export const getStageTheme = (block?: ScenarioBlock | null, locale?: Locale): FlowStageTheme => {
   const stageKey = getStageKey(block);
-  return FLOW_STAGES[stageKey] ?? FLOW_STAGES.process;
+  return getStageThemeByKey(stageKey, locale);
 };
 
-export const getStageThemeByKey = (stageKey: FlowStageKey): FlowStageTheme =>
-  FLOW_STAGES[stageKey] ?? FLOW_STAGES.process;
+export const getStageThemeByKey = (stageKey: FlowStageKey, locale?: Locale): FlowStageTheme => {
+  const currentLocale = locale || useAppStore.getState().locale;
+  const t = getTranslations(currentLocale);
+  const baseStage = FLOW_STAGES[stageKey] ?? FLOW_STAGES.process;
+  
+  // Get translated texts for this stage
+  const columnTexts = t.columns[stageKey];
+  
+  return {
+    ...baseStage,
+    label: columnTexts?.label || baseStage.label,
+    title: columnTexts?.title || baseStage.title,
+    subtitle: columnTexts?.subtitle || baseStage.subtitle,
+    description: columnTexts?.description || baseStage.description,
+  };
+};
 

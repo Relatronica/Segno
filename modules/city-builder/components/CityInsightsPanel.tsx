@@ -3,10 +3,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Shield, AlertTriangle, Lightbulb, ExternalLink, Info } from 'lucide-react';
 import { ScenarioBlock, useAppStore } from '@/store/useAppStore';
-import { buildBlockSummary, TYPE_GUIDE_MAP } from '../utils/info';
+import { buildBlockSummary } from '../utils/info';
 import { RiskAssessment } from '@/modules/analysis/utils/calculateRisk';
 import { getNoteKnowledge } from '../utils/noteKnowledge';
 import { getBlockKnowledge } from '../utils/blockKnowledge';
+import { useTranslations } from '@/lib/i18n/useTranslations';
+import { translateBlockLabel } from '@/lib/i18n/blockLabelTranslations';
 
 type CityInsightsPanelProps = {
   mode: 'guide' | 'block' | 'analysis';
@@ -31,9 +33,10 @@ export function CityInsightsPanel({
   onRequestAnalyze,
   onBackToGuide,
 }: CityInsightsPanelProps) {
-  const { user } = useAppStore();
+  const { user, locale } = useAppStore();
+  const t = useTranslations();
   const isUserMode = user?.mode === 'use'; // Modalità utente finale
-  const summary = buildBlockSummary(block || undefined, isUserMode ? 'user' : 'designer');
+  const summary = buildBlockSummary(block || undefined, isUserMode ? 'user' : 'designer', locale);
 
   // Don't render panel in guide mode (guide is now in bottom toolbar)
   if (mode === 'guide') {
@@ -59,9 +62,9 @@ export function CityInsightsPanel({
           <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 flex-shrink-0">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 mb-1">
-                {TYPE_GUIDE_MAP[block.type].title}
+                {summary?.title || ''}
               </p>
-              <h3 className="text-2xl font-bold text-slate-800">{block.label}</h3>
+              <h3 className="text-2xl font-bold text-slate-800">{translateBlockLabel(block.label, locale)}</h3>
               <p className="text-sm text-slate-500 mt-1">{summary?.description}</p>
             </div>
             <Button variant="ghost" size="sm" onClick={onCloseBlock} className="text-slate-500">
@@ -74,14 +77,14 @@ export function CityInsightsPanel({
             {(() => {
               // For risk/impact blocks, use note knowledge
               if (block.type === 'risk' || block.type === 'impact') {
-              const knowledge = getNoteKnowledge(block.label);
+              const knowledge = getNoteKnowledge(block.label, locale);
               
               // Se non c'è knowledge, mostra solo il testo generico
               if (!knowledge || !knowledge.simpleExplanation) {
                 return (
                   <section>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                      Perché conta
+                      {t.insights.whyItMatters}
                     </p>
                     <p className="text-sm text-slate-700">{summary?.friendly}</p>
                   </section>
@@ -94,7 +97,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Info className="h-3 w-3" />
-                      Perché conta
+                      {t.insights.whyItMatters}
                       </p>
                       <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
                         {knowledge.simpleExplanation}
@@ -105,7 +108,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <AlertTriangle className="h-3 w-3" />
-                        Domanda critica
+                        {t.insights.criticalQuestion}
                       </p>
                       <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-3">
                         <p className="text-sm font-semibold text-blue-900 leading-relaxed">
@@ -119,7 +122,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <FileText className="h-3 w-3" />
-                        Riferimento normativo
+                        {t.insights.regulatoryReference}
                       </p>
                       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-start gap-2 mb-2">
@@ -140,7 +143,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Lightbulb className="h-3 w-3" />
-                        Best practice
+                        {t.insights.bestPractice}
                       </p>
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                         <p className="text-xs text-emerald-900 leading-relaxed">
@@ -153,7 +156,7 @@ export function CityInsightsPanel({
                   {knowledge.risk && (
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                        Cosa potrebbe andare storto
+                        {t.insights.whatCouldGoWrong}
                       </p>
                       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                         <p className="text-xs text-amber-900 leading-relaxed">
@@ -166,7 +169,7 @@ export function CityInsightsPanel({
                   {knowledge.example && (
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                        Esempio concreto
+                        {t.insights.concreteExample}
                       </p>
                       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <p className="text-xs text-slate-700 leading-relaxed italic">
@@ -180,7 +183,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Lightbulb className="h-3 w-3" />
-                        Cosa puoi fare
+                        {t.insights.whatYouCanDo}
                       </p>
                       <div className="space-y-2">
                         {knowledge.whatYouCanDo.map((action, idx) => (
@@ -196,7 +199,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <AlertTriangle className="h-3 w-3" />
-                        Segnali di allarme
+                        {t.insights.redFlags}
                       </p>
                       <div className="space-y-2">
                         {knowledge.redFlags.map((flag, idx) => (
@@ -216,7 +219,7 @@ export function CityInsightsPanel({
                         onClick={() => window.open(knowledge.externalLink, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4" />
-                        Approfondisci (Link esterno)
+                        {t.insights.learnMore}
                       </Button>
                     </div>
                   )}
@@ -225,14 +228,14 @@ export function CityInsightsPanel({
               }
 
               // For main blocks (input, process, storage, output), use block knowledge
-              const blockKnowledge = getBlockKnowledge(block, isUserMode ? 'use' : 'design');
+              const blockKnowledge = getBlockKnowledge(block, isUserMode ? 'use' : 'design', locale);
               
               // Se non c'è blockKnowledge, mostra solo il testo generico
               if (!blockKnowledge) {
                 return (
                   <section>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                      Perché conta
+                      {t.insights.whyItMatters}
                     </p>
                     <p className="text-sm text-slate-700">{summary?.friendly}</p>
                   </section>
@@ -246,7 +249,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Info className="h-3 w-3" />
-                        Perché conta
+                        {t.insights.whyItMatters}
                       </p>
                       <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
                         {blockKnowledge.simpleExplanation}
@@ -258,7 +261,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <AlertTriangle className="h-3 w-3" />
-                        Domanda critica
+                        {t.insights.criticalQuestion}
                       </p>
                       <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-3">
                         <p className="text-sm font-semibold text-blue-900 leading-relaxed">
@@ -272,7 +275,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <FileText className="h-3 w-3" />
-                        Riferimento normativo
+                        {t.insights.regulatoryReference}
                       </p>
                       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-start gap-2 mb-2">
@@ -293,7 +296,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Lightbulb className="h-3 w-3" />
-                        Best practice
+                        {t.insights.bestPractice}
                       </p>
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                         <p className="text-xs text-emerald-900 leading-relaxed">
@@ -306,7 +309,7 @@ export function CityInsightsPanel({
                   {blockKnowledge.risk && (
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                        Cosa potrebbe andare storto
+                        {t.insights.whatCouldGoWrong}
                       </p>
                       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                         <p className="text-xs text-amber-900 leading-relaxed">
@@ -319,7 +322,7 @@ export function CityInsightsPanel({
                   {blockKnowledge.example && (
                     <section className="space-y-2">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                        Esempio concreto
+                        {t.insights.concreteExample}
                 </p>
                       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <p className="text-xs text-slate-700 leading-relaxed italic">
@@ -333,7 +336,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Lightbulb className="h-3 w-3" />
-                        Cosa puoi fare
+                        {t.insights.whatYouCanDo}
                       </p>
                       <div className="space-y-2">
                         {blockKnowledge.whatYouCanDo.map((action, idx) => (
@@ -349,7 +352,7 @@ export function CityInsightsPanel({
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <AlertTriangle className="h-3 w-3" />
-                        Segnali di allarme
+                        {t.insights.redFlags}
                       </p>
                       <div className="space-y-2">
                         {blockKnowledge.redFlags.map((flag, idx) => (
@@ -369,7 +372,7 @@ export function CityInsightsPanel({
                         onClick={() => window.open(blockKnowledge.externalLink, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4" />
-                        Approfondisci (Link esterno)
+                        {t.insights.learnMore}
                       </Button>
               </div>
                   )}
@@ -380,7 +383,7 @@ export function CityInsightsPanel({
             {summary?.hints && summary.hints.length > 0 && (
             <section className="space-y-3">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                Punti da ricordare
+                {t.insights.keyPoints}
               </p>
                 {summary.hints.map((hint) => (
                 <div
@@ -406,10 +409,10 @@ export function CityInsightsPanel({
         <div className="flex-1 flex flex-col min-h-0">
           <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 flex-shrink-0">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400 mb-1">Analisi rischi</p>
-              <h3 className="text-2xl font-bold text-slate-800">Indice complessivo</h3>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400 mb-1">{t.insights.riskAnalysis}</p>
+              <h3 className="text-2xl font-bold text-slate-800">{t.insights.overallIndex}</h3>
               <p className="text-sm text-slate-500">
-                Punteggio {riskReport.score}/100 – livello {riskReport.level.toUpperCase()}
+                {t.insights.score} {riskReport.score}/100 – {t.analysis.level.toLowerCase()} {riskReport.level.toUpperCase()}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={onBackToGuide} className="text-slate-500">
@@ -419,18 +422,18 @@ export function CityInsightsPanel({
           <div className="p-5 space-y-4 overflow-y-auto flex-1">
             <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                Score
+                {t.insights.score}
               </p>
               <p className="text-4xl font-bold text-slate-900">{riskReport.score}</p>
-              <p className="text-xs text-slate-500">0 = rischio minimo, 100 = rischio massimo</p>
+              <p className="text-xs text-slate-500">{t.insights.scoreDescription}</p>
             </div>
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                Rilievi principali
+                {t.insights.mainFindings}
               </p>
               {riskReport.findings.length === 0 && (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                  Nessuna criticità rilevata sulle regole disponibili.
+                  {t.insights.noIssuesFound}
                 </div>
               )}
               {riskReport.findings.map((finding) => (
@@ -446,7 +449,7 @@ export function CityInsightsPanel({
                   <p className="text-xs italic text-slate-500">"{finding.context}"</p>
                   {finding.rule.mitigation && (
                     <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded px-2 py-1">
-                      Mitigazione: {finding.rule.mitigation}
+                      {t.insights.mitigation} {finding.rule.mitigation}
                     </p>
                   )}
                 </div>
@@ -456,7 +459,7 @@ export function CityInsightsPanel({
               onClick={onBackToGuide}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow"
             >
-              Torna alla guida
+              {t.insights.backToGuide}
             </Button>
           </div>
         </div>

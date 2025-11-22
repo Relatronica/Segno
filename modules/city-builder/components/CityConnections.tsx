@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { PositionedBlock } from '../utils/layout';
 import { FLOW_STAGES, FlowStageKey, getStageTheme } from '../utils/flowchartTheme';
 import { calculateConnectionLayouts, ConnectionLayout } from '../utils/connectionLayout';
+import { useAppStore } from '@/store/useAppStore';
 
 type CityConnectionsProps = {
   connections: import('@/store/useAppStore').Connection[];
@@ -20,10 +21,11 @@ function SchematicLine({
   layouts: PositionedBlock[];
   selectedBlockId: string | null;
 }) {
+  const { locale } = useAppStore();
   const fromLayout = layouts.find((l) => l.block.id === connectionLayout.connection.from);
   if (!fromLayout) return null;
 
-  const stageTheme = getStageTheme(fromLayout.block);
+  const stageTheme = getStageTheme(fromLayout.block, locale);
   const { fromPoint, toPoint, pathData } = connectionLayout;
   
   // Reduce opacity if there's a selection and this connection is not related to the selected block

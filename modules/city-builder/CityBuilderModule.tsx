@@ -117,7 +117,8 @@ export function CityBuilderModule() {
       });
     } else {
       // Select: add blocks and connections
-    const result = generateCityElements(key, scenarioBlocks);
+    const { locale } = useAppStore.getState();
+    const result = generateCityElements(key, scenarioBlocks, locale);
     result.blocks.forEach(addBlock);
     result.connections.forEach((conn) => addConnection(conn.from, conn.to));
       setSelectedBlueprints((prev) => new Set(prev).add(key));

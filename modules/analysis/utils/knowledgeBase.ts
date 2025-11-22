@@ -1,5 +1,8 @@
 import { ScenarioBlock, Connection } from '@/store/useAppStore';
 import { matchesLabel, hasDataFlow, receivesFromType, findBlocksByLabel, normalizeLabel } from './riskHelpers';
+import { getRuleTranslation } from '@/lib/i18n/analysisTranslations';
+import { useAppStore } from '@/store/useAppStore';
+import type { Locale } from '@/lib/i18n/translations';
 
 export type Regulation = 'AI_ACT' | 'GDPR' | 'COPYRIGHT';
 
@@ -14,6 +17,29 @@ export type Rule = {
   mitigation?: string;
   mitigationSimple?: string; // Spiegazione semplice della mitigazione
 };
+
+/**
+ * Get translated rule based on current locale
+ */
+export function getTranslatedRule(rule: Rule, locale?: Locale): Rule {
+  const currentLocale = locale || useAppStore.getState().locale;
+  if (currentLocale === 'it') {
+    return rule; // Return original Italian
+  }
+  
+  const translation = getRuleTranslation(rule.id, currentLocale);
+  if (!translation) {
+    return rule; // Fallback to Italian if no translation
+  }
+  
+  return {
+    ...rule,
+    description: translation.description || rule.description,
+    simpleExplanation: translation.simpleExplanation || rule.simpleExplanation,
+    mitigation: translation.mitigation || rule.mitigation,
+    mitigationSimple: translation.mitigationSimple || rule.mitigationSimple,
+  };
+}
 
 export const KNOWLEDGE_BASE: Rule[] = [
   // --- AI ACT RULES ---

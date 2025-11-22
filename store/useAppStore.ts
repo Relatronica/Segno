@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Locale } from '@/lib/i18n/translations';
 
 export type UserMode = 'design' | 'use'; // 'design' = progettare app AI, 'use' = capire rischi uso
 
@@ -58,6 +59,10 @@ type AppState = {
   user: UserProfile | null;
   setUser: (user: UserProfile) => void;
 
+  // Language State
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+
   // Scenario State
   scenarioBlocks: ScenarioBlock[];
   connections: Connection[];
@@ -86,6 +91,16 @@ type AppState = {
 export const useAppStore = create<AppState>((set) => ({
   user: null,
   setUser: (user) => set({ user }),
+
+  // Always initialize with 'it' to avoid hydration mismatch
+  // The locale will be synced from localStorage on client mount
+  locale: 'it' as Locale,
+  setLocale: (locale) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('segno-locale', locale);
+    }
+    set({ locale });
+  },
 
   scenarioBlocks: [],
   connections: [],

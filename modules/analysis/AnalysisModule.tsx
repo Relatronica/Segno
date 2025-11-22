@@ -8,10 +8,12 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { RotateCcw, AlertTriangle, Scale, ShieldCheck, FileText, CheckCircle2 } from 'lucide-react';
 import { RegulationLink } from './components/RegulationLink';
+import { useTranslations } from '@/lib/i18n/useTranslations';
 
 export function AnalysisModule() {
-  const { scenarioBlocks, connections, setStep, user } = useAppStore();
-  const risk = calculateRisk(scenarioBlocks, connections);
+  const { scenarioBlocks, connections, setStep, user, locale } = useAppStore();
+  const t = useTranslations();
+  const risk = calculateRisk(scenarioBlocks, connections, locale);
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -39,17 +41,17 @@ export function AnalysisModule() {
                   />
                </div>
                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-                 Analisi di Conformità
+                 {t.analysis.title}
                </h1>
             </div>
-            <p className="text-slate-500 ml-14">Report legale generato per lo scenario di <strong>{user?.name}</strong></p>
+            <p className="text-slate-500 ml-14">{t.analysis.reportFor} <strong>{user?.name}</strong></p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStep('builder')}>
-              <RotateCcw className="mr-2 h-4 w-4" /> Modifica Scenario
+              <RotateCcw className="mr-2 h-4 w-4" /> {t.analysis.editScenario}
             </Button>
             <Button className="bg-blue-600 hover:bg-blue-700">
-              <FileText className="mr-2 h-4 w-4" /> Esporta PDF
+              <FileText className="mr-2 h-4 w-4" /> {t.analysis.exportPdf}
             </Button>
           </div>
         </div>
@@ -61,7 +63,7 @@ export function AnalysisModule() {
           <Card className="md:col-span-1 overflow-hidden relative">
             <div className={`absolute top-0 left-0 w-1 h-full ${risk.level === 'critical' ? 'bg-red-500' : risk.level === 'high' ? 'bg-orange-500' : risk.level === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Indice di Rischio</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">{t.analysis.riskIndex}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
@@ -69,14 +71,14 @@ export function AnalysisModule() {
                   {risk.score}/100
                 </span>
               </div>
-              <p className="text-sm text-slate-400 mt-1 capitalize font-medium">Livello: {risk.level}</p>
+              <p className="text-sm text-slate-400 mt-1 capitalize font-medium">{t.analysis.level} {risk.level}</p>
             </CardContent>
           </Card>
 
           {/* Summary Card */}
           <Card className="md:col-span-2">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Elementi Analizzati</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">{t.analysis.analyzedElements}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -89,20 +91,20 @@ export function AnalysisModule() {
                   ))}
                   {connections.length > 0 && (
                      <span className="px-3 py-1 bg-slate-50 rounded-lg text-xs text-slate-400 border border-slate-100 dashed border-dashed">
-                      {connections.length} Connessioni
+                      {connections.length} {t.analysis.connections}
                     </span>
                   )}
                 </div>
                 {risk.summary && (
                   <div className="pt-2 border-t border-slate-200 text-xs text-slate-500 space-y-1">
-                    <p>📊 Analizzati <strong>{risk.summary.totalBlocks}</strong> blocchi e <strong>{risk.summary.totalConnections}</strong> connessioni</p>
+                    <p>📊 {t.analysis.analyzedBlocks} <strong>{risk.summary.totalBlocks}</strong> {t.analysis.connections.toLowerCase()} e <strong>{risk.summary.totalConnections}</strong> {t.analysis.connections.toLowerCase()}</p>
                     <p>{risk.summary.violationsCount > 0 ? (
-                      <>⚠️ Rilevate <strong className="text-red-600">{risk.summary.violationsCount}</strong> violazioni normative</>
+                      <>⚠️ {t.analysis.violationsDetected} <strong className="text-red-600">{risk.summary.violationsCount}</strong> {t.analysis.violationsDetected.toLowerCase()}</>
                     ) : (
-                      <>✅ Nessuna violazione rilevata</>
+                      <>✅ {t.analysis.noViolations}</>
                     )}</p>
                     {risk.summary.mitigationsCount > 0 && (
-                      <p>🛡️ Implementate <strong className="text-blue-600">{risk.summary.mitigationsCount}</strong> mitigazioni (cifratura, supervisione umana)</p>
+                      <p>🛡️ {t.analysis.mitigationsImplemented} <strong className="text-blue-600">{risk.summary.mitigationsCount}</strong> {t.analysis.mitigationsImplemented.toLowerCase()}</p>
                     )}
                   </div>
                 )}
@@ -115,7 +117,7 @@ export function AnalysisModule() {
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Rilievi Normativi
+            {t.analysis.regulatoryFindings}
           </h2>
 
           {risk.error ? (
@@ -123,9 +125,9 @@ export function AnalysisModule() {
                <CardContent className="p-6 flex items-center gap-4">
                  <AlertTriangle className="h-8 w-8 text-red-600" />
                  <div>
-                   <h3 className="font-bold text-red-800">Errore nell'analisi</h3>
+                   <h3 className="font-bold text-red-800">{t.analysis.analysisError}</h3>
                    <p className="text-red-700 text-sm">{risk.error}</p>
-                   <p className="text-red-600 text-xs mt-2">Verifica che tutti i blocchi siano configurati correttamente e riprova.</p>
+                   <p className="text-red-600 text-xs mt-2">{t.analysis.analysisErrorDesc}</p>
                  </div>
                </CardContent>
              </Card>
@@ -134,8 +136,8 @@ export function AnalysisModule() {
                <CardContent className="p-6 flex items-center gap-4">
                  <CheckCircle2 className="h-8 w-8 text-green-600" />
                  <div>
-                   <h3 className="font-bold text-green-800">Nessuna criticità rilevata</h3>
-                   <p className="text-green-700 text-sm">Lo scenario sembra conforme alle regole normative analizzate. Verifica comunque di aver implementato tutte le best practices richieste.</p>
+                   <h3 className="font-bold text-green-800">{t.analysis.noIssues}</h3>
+                   <p className="text-green-700 text-sm">{t.analysis.noIssuesDesc}</p>
                  </div>
                </CardContent>
              </Card>
@@ -167,17 +169,17 @@ export function AnalysisModule() {
                       </div>
                       {finding.rule.severity === 'prohibited' && (
                         <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">
-                          ⚠️ PRATICA VIETATA
+                          {t.analysis.practiceProhibited}
                         </span>
                       )}
                        {finding.rule.severity === 'high_risk' && (
                         <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
-                          🔴 ALTO RISCHIO
+                          {t.analysis.highRisk}
                         </span>
                       )}
                       {finding.rule.severity === 'obligation' && (
                         <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                          📋 OBBLIGO LEGALE
+                          {t.analysis.legalObligation}
                         </span>
                       )}
                     </div>
@@ -187,7 +189,7 @@ export function AnalysisModule() {
                       {finding.rule.simpleExplanation && (
                         <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
                           <div className="flex items-start gap-2 mb-2">
-                            <span className="text-amber-600 font-bold">💡 In parole semplici:</span>
+                            <span className="text-amber-600 font-bold">💡 {t.analysis.inSimpleTerms}</span>
                           </div>
                           <p className="text-sm text-amber-900 leading-relaxed">
                             {finding.rule.simpleExplanation}
@@ -197,7 +199,7 @@ export function AnalysisModule() {
 
                       {/* Descrizione Normativa */}
                       <div>
-                        <h3 className="font-bold text-slate-800 mb-2 text-base">Cosa dice la norma:</h3>
+                        <h3 className="font-bold text-slate-800 mb-2 text-base">{t.analysis.whatTheLawSays}</h3>
                         <p className="text-slate-700 text-sm leading-relaxed">
                           {finding.rule.description}
                         </p>
@@ -214,7 +216,7 @@ export function AnalysisModule() {
                       {finding.affectedBlocks && finding.affectedBlocks.length > 0 && (
                         <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg">
                           <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                            Blocchi coinvolti:
+                            {t.analysis.affectedBlocks}
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {finding.affectedBlocks.map((block) => (
@@ -232,7 +234,7 @@ export function AnalysisModule() {
                       {/* Mitigazione */}
                       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
                         <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" /> Cosa fare:
+                          <ShieldCheck className="h-3 w-3" /> {t.analysis.whatToDo}
                         </h4>
                         <p className="text-sm text-blue-900 leading-relaxed mb-2">
                           {finding.rule.mitigationSimple || finding.rule.mitigation || "Nessuna azione specifica indicata."}
@@ -240,7 +242,7 @@ export function AnalysisModule() {
                         {finding.rule.mitigationSimple && finding.rule.mitigation && finding.rule.mitigation !== finding.rule.mitigationSimple && (
                           <details className="mt-2">
                             <summary className="text-xs text-blue-700 cursor-pointer hover:text-blue-900 font-medium">
-                              Dettagli tecnici
+                              {t.analysis.technicalDetails}
                             </summary>
                             <p className="text-xs text-blue-800 mt-2 leading-relaxed">
                               {finding.rule.mitigation}

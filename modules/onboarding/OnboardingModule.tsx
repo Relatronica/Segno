@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowRight, Sparkles, Code2, User } from 'lucide-react';
+import { ArrowRight, Sparkles, Code2, User, Globe } from 'lucide-react';
 import Image from 'next/image';
 import type { UserMode } from '@/store/useAppStore';
+import { useTranslations } from '@/lib/i18n/useTranslations';
+import type { Locale } from '@/lib/i18n/translations';
 
 const AVATARS = [
   { id: 'peep-14', image: '/avatar/peep-14.png', label: 'Explorer' },
@@ -23,7 +25,8 @@ const AVATARS = [
 ];
 
 export function OnboardingModule() {
-  const { setUser, setStep } = useAppStore();
+  const { setUser, setStep, locale, setLocale } = useAppStore();
+  const t = useTranslations();
   const [name, setName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATARS[0].id);
   const [userMode, setUserMode] = useState<UserMode | null>(null);
@@ -34,12 +37,43 @@ export function OnboardingModule() {
     setStep('builder');
   };
 
+  const handleLanguageChange = (newLocale: Locale) => {
+    setLocale(newLocale);
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none opacity-70"></div>
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Language Selector - Fixed in top right of page */}
+      <div className="fixed top-4 right-4 z-50">
+        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200 p-1 shadow-lg">
+          <Globe className="h-3.5 w-3.5 text-slate-600" />
+          <button
+            onClick={() => handleLanguageChange('it')}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              locale === 'it'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            IT
+          </button>
+          <button
+            onClick={() => handleLanguageChange('en')}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              locale === 'en'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            EN
+          </button>
+        </div>
+      </div>
 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -59,19 +93,19 @@ export function OnboardingModule() {
             />
           </div>
           <CardTitle className="text-2xl font-bold text-slate-800">
-            Segno
+            {t.onboarding.title}
           </CardTitle>
             <CardDescription className="text-slate-500 text-sm mt-1">
-            Costruisci il tuo scenario AI e scopri l'impatto.
+            {t.onboarding.subtitle}
           </CardDescription>
         </CardHeader>
           
         <CardContent className="space-y-4 relative z-10 pt-0">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-sm text-slate-700 font-medium">Come ti chiami?</Label>
+            <Label htmlFor="name" className="text-sm text-slate-700 font-medium">{t.onboarding.nameLabel}</Label>
             <Input
               id="name"
-              placeholder="Il tuo nome o azienda"
+              placeholder={t.onboarding.namePlaceholder}
               value={name}
               onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
@@ -84,7 +118,7 @@ export function OnboardingModule() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm text-slate-700 font-medium">Cosa vuoi fare?</Label>
+            <Label className="text-sm text-slate-700 font-medium">{t.onboarding.modeLabel}</Label>
             <div className="grid grid-cols-2 gap-2">
               <motion.button
                 whileHover={{ scale: 1.01 }}
@@ -106,10 +140,10 @@ export function OnboardingModule() {
                   </div>
                   <div className="space-y-0.5">
                     <h3 className="font-semibold text-xs text-slate-800 leading-tight">
-                      Capire i rischi dell'uso dell'IA
+                      {t.onboarding.modeUseTitle}
                     </h3>
                     <p className="text-[10px] text-slate-600 leading-tight">
-                      Usi ChatGPT, Gemini o altri strumenti AI?
+                      {t.onboarding.modeUseDescription}
                     </p>
                   </div>
                 </div>
@@ -135,10 +169,10 @@ export function OnboardingModule() {
                   </div>
                   <div className="space-y-0.5">
                     <h3 className="font-semibold text-xs text-slate-800 leading-tight">
-                      Progettare un'applicazione AI
+                      {t.onboarding.modeDesignTitle}
                     </h3>
                     <p className="text-[10px] text-slate-600 leading-tight">
-                      Stai costruendo un sistema AI?
+                      {t.onboarding.modeDesignDescription}
                     </p>
                   </div>
                 </div>
@@ -147,7 +181,7 @@ export function OnboardingModule() {
           </div>
 
           <div className="space-y-1.5">
-              <Label className="text-sm text-slate-700 font-medium">Scegli il tuo avatar</Label>
+              <Label className="text-sm text-slate-700 font-medium">{t.onboarding.avatarLabel}</Label>
             <div className="grid grid-cols-4 gap-1.5">
               {AVATARS.map((avatar) => (
                 <motion.button
@@ -179,10 +213,10 @@ export function OnboardingModule() {
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 space-y-1">
               <div className="flex items-center gap-1.5 text-blue-700">
                 <Sparkles className="h-3.5 w-3.5" />
-                <p className="text-xs font-semibold">Come funziona</p>
+                <p className="text-xs font-semibold">{t.onboarding.howItWorksTitle}</p>
               </div>
               <p className="text-[10px] text-blue-600 leading-relaxed">
-                Rispondi alle domande nella sidebar per costruire il tuo scenario. Ogni elemento include note educative con riferimenti normativi e best practices.
+                {t.onboarding.howItWorksDescription}
               </p>
             </div>
 
@@ -191,7 +225,7 @@ export function OnboardingModule() {
             disabled={!name.trim() || !userMode}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-              Inizia <ArrowRight className="ml-2 h-3.5 w-3.5" />
+              {t.onboarding.startButton} <ArrowRight className="ml-2 h-3.5 w-3.5" />
           </Button>
         </CardContent>
       </Card>

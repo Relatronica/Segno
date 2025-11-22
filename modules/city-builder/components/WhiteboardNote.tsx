@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { ScenarioBlock } from '@/store/useAppStore';
+import { ScenarioBlock, useAppStore } from '@/store/useAppStore';
 import { getStageTheme } from '../utils/flowchartTheme';
 import { Info } from 'lucide-react';
 import { getNoteQuestion } from '../utils/noteKnowledge';
+import { translateBlockLabel } from '@/lib/i18n/blockLabelTranslations';
+import { translateDataTypes } from '@/lib/i18n/dataTypeTranslations';
 
 type WhiteboardNoteProps = {
   block: ScenarioBlock;
@@ -11,18 +13,19 @@ type WhiteboardNoteProps = {
   selectedBlockId: string | null;
 };
 
-const getNoteIcon = (block: ScenarioBlock) => {
+const getNoteIcon = (block: ScenarioBlock, locale?: 'it' | 'en') => {
   // Use the icon from the stage theme to match the sidebar
-  const stageTheme = getStageTheme(block);
+  const stageTheme = getStageTheme(block, locale);
   return stageTheme.icon;
 };
 
 export function WhiteboardNote({ block, position, onClick, selectedBlockId }: WhiteboardNoteProps) {
-  const stageTheme = getStageTheme(block);
-  const NoteIcon = getNoteIcon(block);
+  const { locale } = useAppStore();
+  const stageTheme = getStageTheme(block, locale);
+  const NoteIcon = getNoteIcon(block, locale);
   const isRisk = block.type === 'risk';
   const isImpact = block.type === 'impact';
-  const criticalQuestion = getNoteQuestion(block.label, block.type as 'risk' | 'impact');
+  const criticalQuestion = getNoteQuestion(block.label, block.type as 'risk' | 'impact', locale);
   
   // Reduce opacity for non-selected notes when a block is selected
   const hasSelection = selectedBlockId !== null;
@@ -81,7 +84,7 @@ export function WhiteboardNote({ block, position, onClick, selectedBlockId }: Wh
               className="text-[9px] font-semibold leading-tight"
               style={{ color: stageTheme.accent }}
             >
-              {block.label}
+              {translateBlockLabel(block.label, locale)}
             </div>
             {/* Critical question - shown in note to prompt reflection */}
             <div className="text-[7px] text-slate-600 mt-0.5 leading-tight line-clamp-2 italic">
@@ -89,9 +92,7 @@ export function WhiteboardNote({ block, position, onClick, selectedBlockId }: Wh
             </div>
             {block.config?.dataTypes && (
               <div className="text-[7px] text-slate-500 mt-0.5 line-clamp-1">
-                {Array.isArray(block.config.dataTypes) 
-                  ? block.config.dataTypes.join(', ')
-                  : block.config.dataTypes}
+                {translateDataTypes(block.config.dataTypes, locale).join(', ')}
               </div>
             )}
           </div>

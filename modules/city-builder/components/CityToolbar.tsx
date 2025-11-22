@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { CITY_ACTION_GROUPS, CITY_ACTION_GROUPS_USER, CityActionGroup } from '../utils/cityBlueprints';
@@ -6,6 +6,8 @@ import { useAppStore } from '@/store/useAppStore';
 import Image from 'next/image';
 import { FileInput, Heart, Brain, Camera, Sparkles, Server, Zap, Shield, AlertTriangle, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/lib/i18n/useTranslations';
+import { useQuestionTranslations } from '@/lib/i18n/translateQuestions';
 
 type CityToolbarProps = {
   onAction: (key: string) => void;
@@ -28,9 +30,17 @@ const QUESTION_ICONS = [
 export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<CityActionGroup | null>(null);
   const { user } = useAppStore();
+  const t = useTranslations();
+  const { translateQuestionGroup, translateQuestionLabel } = useQuestionTranslations();
   
   // Usa domande diverse in base alla modalità: 'use' = utenti finali, 'design' = progettisti
-  const actionGroups = user?.mode === 'use' ? CITY_ACTION_GROUPS_USER : CITY_ACTION_GROUPS;
+  const rawActionGroups = user?.mode === 'use' ? CITY_ACTION_GROUPS_USER : CITY_ACTION_GROUPS;
+  
+  // Translate all question groups
+  const actionGroups = useMemo(() => 
+    rawActionGroups.map(group => translateQuestionGroup(group)),
+    [rawActionGroups, translateQuestionGroup]
+  );
 
   return (
     <motion.div
@@ -52,10 +62,10 @@ export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) 
           </div>
         </div>
         <p className="text-xs text-slate-500 font-semibold uppercase tracking-[0.2em] leading-tight">
-          Costruisci il tuo scenario
+          {t.cityBuilder.buildScenario}
         </p>
         <p className="text-xs text-slate-500 mt-1.5 leading-tight">
-          Seleziona una domanda e scegli la risposta più adatta.
+          {t.cityBuilder.selectQuestion}
         </p>
       </div>
       
@@ -89,7 +99,7 @@ export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) 
                     <h3 className={`text-xs font-bold leading-tight mb-1 ${
                       hasSelected ? 'text-blue-700' : 'text-slate-800 group-hover:text-blue-700'
                     }`}>
-                      {group.label.replace('DOMANDA: ', '')}
+                      {group.label}
                     </h3>
                     <div className="flex items-center justify-center gap-1">
                       {hasSelected ? (
@@ -140,10 +150,10 @@ export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) 
             <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-bold text-slate-800">
-                  {selectedQuestion.label.replace('DOMANDA: ', '')}
+                  {selectedQuestion.label}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Scegli una o più opzioni
+                  {t.cityBuilder.chooseAnswer}
                 </p>
               </div>
               <Button
@@ -185,7 +195,7 @@ export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) 
                       </p>
                       {isSelected && (
                         <div className="mt-1.5 text-[10px] text-blue-600 font-medium">
-                          ✓ Selezionato
+                          ✓ {t.common.selected}
                         </div>
                       )}
                     </button>
@@ -197,7 +207,7 @@ export function CityToolbar({ onAction, selectedBlueprints }: CityToolbarProps) 
             {/* Footer */}
             <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
               <p className="text-xs text-slate-500">
-                {selectedQuestion.actions.filter(a => selectedBlueprints.has(a.key)).length} di {selectedQuestion.actions.length} selezionati
+                {selectedQuestion.actions.filter(a => selectedBlueprints.has(a.key)).length} {t.common.of} {selectedQuestion.actions.length} {t.common.selectedLower}
               </p>
             </div>
           </motion.div>
