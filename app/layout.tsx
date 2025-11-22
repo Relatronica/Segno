@@ -20,11 +20,13 @@ export const metadata: Metadata = {
     title: "Segno - Valutazione Rischi AI",
     description: "Costruisci il tuo scenario AI e scopri l'impatto. Strumento per valutare rischi, privacy e conformità normativa.",
     type: "website",
+    images: ['/segno_logo.png'],
   },
   twitter: {
     card: "summary_large_image",
     title: "Segno - Valutazione Rischi AI",
     description: "Costruisci il tuo scenario AI e scopri l'impatto",
+    images: ['/segno_logo.png'],
   },
 };
 
