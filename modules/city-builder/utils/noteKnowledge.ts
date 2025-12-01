@@ -297,6 +297,78 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
     example: 'GPT-3 training ha consumato ~1.3 GWh. Un modello più piccolo come BERT può essere 1000x più efficiente.',
     externalLink: 'https://huggingface.co/blog/carbon-emissions-on-the-hub'
   },
+  'Dipendenze Geopolitiche': {
+    simpleExplanation: 'Molte infrastrutture digitali (cloud, data center, chip) dipendono da pochi paesi o attori globali. Se cambiano i rapporti geopolitici o scoppiano crisi, servizi critici possono fermarsi improvvisamente.',
+    question: 'Il sistema dipende da tecnologie o infrastrutture concentrate in pochi paesi (es. produzione di chip, cloud extra-UE)? Cosa succede se quelle risorse diventano meno disponibili?',
+    regulation: {
+      name: 'Strategia Digitale UE',
+      article: 'Resilienza e sovranità digitale',
+      requirement: 'Ridurre dipendenze critiche da fornitori extra-UE e aumentare la resilienza delle infrastrutture digitali',
+      url: 'https://digital-strategy.ec.europa.eu/'
+    },
+    bestPractice: 'Mappare i punti di dipendenza geopolitica (cloud provider, supply chain hardware, piattaforme terze) e prevedere alternative locali o europee.',
+    risk: 'Crisi geopolitiche (conflitti, sanzioni, blocchi commerciali) possono interrompere servizi essenziali, con impatti su cittadini, imprese e pubbliche amministrazioni.',
+    example: 'Una città che basa i servizi essenziali solo su un cloud extra-UE senza piano B può trovarsi improvvisamente senza piattaforma in caso di sanzioni o blocchi.',
+    whatYouCanDo: [
+      'Identifica i fornitori critici del sistema (cloud, chip, piattaforme) e dove sono localizzati.',
+      'Valuta opzioni alternative europee o on-prem per i servizi più critici.',
+      'Inserisci la resilienza geopolitica come criterio nelle gare e nei contratti con i fornitori.'
+    ],
+    redFlags: [
+      'Dipendenza da un solo grande provider extra-UE senza alternative.',
+      'Assenza di analisi di rischio geopolitico nelle scelte infrastrutturali.',
+      'Contratti che non prevedono piani di continuità in caso di crisi internazionali.'
+    ],
+    externalLink: 'https://digital-strategy.ec.europa.eu/en/policies/eu-digital-sovereignty'
+  },
+  'Supply Chain Critica': {
+    simpleExplanation: 'Il funzionamento del sistema può dipendere da catene di fornitura lunghe e fragili (es. componenti hardware prodotti in poche regioni del mondo). Una crisi in un punto della catena può bloccare tutto.',
+    question: 'Hai valutato se ci sono “colli di bottiglia” nella supply chain tecnologica (es. chip, sensori, data center)?',
+    regulation: {
+      name: 'EU Chips Act / Resilienza Supply Chain',
+      article: 'Riduzione dipendenze critiche',
+      requirement: 'Migliorare la resilienza delle catene di fornitura per componenti strategici (come i semiconduttori)',
+      url: 'https://digital-strategy.ec.europa.eu/en/policies/european-chips-act'
+    },
+    bestPractice: 'Mappare la catena di fornitura end-to-end (hardware, servizi, manutenzione) e individuare i single point of failure.',
+    risk: 'Una crisi in una regione (es. produttori di semiconduttori) può rallentare o bloccare upgrade, manutenzione o scalabilità del sistema.',
+    example: 'Interruzioni nella produzione di chip hanno già rallentato per anni la fornitura di hardware critico (server, sensori, dispositivi IoT).',
+    whatYouCanDo: [
+      'Identifica componenti hardware/software che hanno pochi fornitori globali.',
+      'Prevedi stock strategici o accordi con più fornitori per i componenti critici.',
+      'Collega le scelte tecnologiche ai piani di continuità operativa della città/organizzazione.'
+    ],
+    redFlags: [
+      'Dipendenza da un solo produttore di hardware critico senza alternative.',
+      'Nessuna analisi dei tempi di sostituzione o riparazione in caso di blocchi della fornitura.',
+      'Assenza di dialogo tra IT e chi si occupa di risk management / continuità operativa.'
+    ],
+    externalLink: 'https://digital-strategy.ec.europa.eu/en/policies/european-chips-act'
+  },
+  'Stabilità Istituzionale & Fiducia': {
+    simpleExplanation: 'Sistemi AI e digitali che gestiscono servizi pubblici o dati sensibili influenzano la fiducia dei cittadini nelle istituzioni. Se sono percepiti come opachi, ingiusti o facilmente manipolabili, minano la legittimità democratica.',
+    question: 'Il modo in cui usi l’AI e i dati rafforza o indebolisce la fiducia nelle istituzioni e nelle decisioni pubbliche?',
+    regulation: {
+      name: 'AI Act / Valori fondamentali UE',
+      article: 'Trasparenza, non discriminazione, tutela dei diritti',
+      requirement: 'Garantire che i sistemi ad alto impatto pubblico siano trasparenti, spiegabili e non discriminatori',
+      url: 'https://artificialintelligenceact.eu/'
+    },
+    bestPractice: 'Coinvolgere cittadini e stakeholder vulnerabili nella progettazione; comunicare apertamente limiti, rischi e benefici; prevedere canali di contestazione chiari.',
+    risk: 'Decisioni opache o percepite come imposte da “scatole nere” possono alimentare sfiducia, proteste e polarizzazione politica.',
+    example: 'Sistemi di allocazione di risorse pubbliche o scoring territoriale usati senza spiegazioni chiare hanno generato proteste e perdita di fiducia in diverse città.',
+    whatYouCanDo: [
+      'Valuta quali decisioni supportate dall’AI hanno impatti politici o sociali sensibili.',
+      'Progetta meccanismi di spiegazione accessibili anche a non esperti.',
+      'Prevedi momenti di confronto pubblico (consultazioni, assemblee, test con comunità locali).'
+    ],
+    redFlags: [
+      'Decisioni ad alto impatto prese da sistemi opachi senza possibilità di contestazione.',
+      'Mancanza di spiegazioni comprensibili per cittadini e stakeholder.',
+      'Assenza di canali strutturati per reclami, contestazioni o revisione umana.'
+    ],
+    externalLink: 'https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai'
+  },
 
   // --- IMPACT: Sociale ---
   'Impatto sulla Società': {

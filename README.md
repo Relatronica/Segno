@@ -5,7 +5,7 @@ Strumento interattivo per valutare i rischi e l'impatto dell'utilizzo e progetta
 ## 🎯 Caratteristiche
 
 - **Onboarding Interattivo**: Guida passo-passo per definire il tuo scenario AI
-- **City Builder**: Visualizza il tuo sistema AI come una città interattiva
+- **Whiteboard**: Visualizza il tuo sistema AI come una mappa interattiva
 - **Analisi Rischi**: Valutazione automatica dei rischi e conformità normativa
 - **Wiki Integrata**: Documentazione su GDPR, AI Act e best practices
 - **News Panel**: Aggiornamenti in tempo reale su AI, privacy e regolamentazione
@@ -116,7 +116,18 @@ Il progetto può essere deployato su qualsiasi provider che supporta Next.js:
 
 ## 📝 License
 
-Questo progetto è privato.
+Questo progetto è rilasciato sotto licenza [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](LICENSE).
+
+Questo significa che puoi:
+- ✅ Condividere, copiare e distribuire il materiale
+- ✅ Adattare e modificare il progetto
+- ✅ Utilizzare il progetto per scopi non commerciali
+
+Con le seguenti condizioni:
+- 📋 **Attribuzione**: Devi dare credito appropriato, fornire un link alla licenza e indicare se sono state effettuate modifiche
+- 🚫 **Non commerciale**: Non puoi utilizzare il materiale per scopi commerciali
+
+Per maggiori informazioni, vedi il file [LICENSE](LICENSE) o visita https://creativecommons.org/licenses/by-nc/4.0/
 
 ## 🔗 Link Utili
 

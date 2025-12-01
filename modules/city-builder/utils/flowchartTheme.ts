@@ -98,7 +98,7 @@ export const FLOW_STAGES: Record<FlowStageKey, FlowStageTheme> = {
     key: 'impact',
     label: 'Impatto',
     title: 'Impatto & Sistema',
-    subtitle: 'Effetti sul contesto',
+    subtitle: 'Energia, ambiente, governance e geopolitica',
     background: 'linear-gradient(180deg, #ECFDF5 0%, #E0F2FE 100%)',
     tint: 'rgba(14, 165, 233, 0.12)',
     accent: '#0EA5E9',

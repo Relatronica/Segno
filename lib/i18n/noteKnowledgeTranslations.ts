@@ -284,6 +284,45 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     risk: 'Non-transparent use of AI in public services can undermine trust and democracy.',
     example: 'AI system used for public policy decisions without transparency: undermines public trust.',
   },
+  'Dipendenze Geopolitiche': {
+    simpleExplanation: 'Many digital infrastructures (cloud, data centers, chips) depend on a few countries or global actors. If geopolitical relations change or crises erupt, critical services may suddenly stop.',
+    question: 'Does the system depend on technologies or infrastructures concentrated in a few countries (e.g. chip production, extra-EU cloud)? What happens if those resources become less available?',
+    regulation: {
+      name: 'EU Digital Strategy',
+      article: 'Resilience and digital sovereignty',
+      requirement: 'Reduce critical dependencies on extra-EU providers and increase resilience of digital infrastructures',
+      url: 'https://digital-strategy.ec.europa.eu/'
+    },
+    bestPractice: 'Map geopolitical dependency points (cloud providers, hardware supply chain, third-party platforms) and plan local or European alternatives.',
+    risk: 'Geopolitical crises (conflicts, sanctions, trade blocks) can interrupt essential services, impacting citizens, businesses and public administrations.',
+    example: 'A city that bases essential services only on an extra-EU cloud without a plan B may suddenly lose its platform in case of sanctions or blocks.',
+  },
+  'Supply Chain Critica': {
+    simpleExplanation: 'System operation can depend on long and fragile supply chains (e.g. hardware components produced in a few regions). A crisis at one point in the chain can block everything.',
+    question: 'Have you assessed whether there are “bottlenecks” in the technological supply chain (e.g. chips, sensors, data centers)?',
+    regulation: {
+      name: 'EU Chips Act / Supply chain resilience',
+      article: 'Reduction of critical dependencies',
+      requirement: 'Improve resilience of supply chains for strategic components (such as semiconductors)',
+      url: 'https://digital-strategy.ec.europa.eu/en/policies/european-chips-act'
+    },
+    bestPractice: 'Map the end-to-end supply chain (hardware, services, maintenance) and identify single points of failure.',
+    risk: 'A crisis in one region (e.g. semiconductor producers) can slow down or block upgrades, maintenance or scaling of the system.',
+    example: 'Interruptions in chip production have already slowed delivery of critical hardware (servers, sensors, IoT devices) for years.',
+  },
+  'Stabilità Istituzionale & Fiducia': {
+    simpleExplanation: 'AI and digital systems that manage public services or sensitive data influence citizens’ trust in institutions. If perceived as opaque, unfair or easily manipulated, they undermine democratic legitimacy.',
+    question: 'Does the way you use AI and data strengthen or weaken trust in institutions and public decisions?',
+    regulation: {
+      name: 'AI Act / EU fundamental values',
+      article: 'Transparency, non-discrimination, rights protection',
+      requirement: 'Ensure that systems with high public impact are transparent, explainable and non-discriminatory',
+      url: 'https://artificialintelligenceact.eu/'
+    },
+    bestPractice: 'Involve citizens and vulnerable stakeholders in design; openly communicate limits, risks and benefits; provide clear channels to contest decisions.',
+    risk: 'Opaque or perceived-unfair systems can fuel mistrust, protests and political polarization.',
+    example: 'Resource allocation or territorial scoring systems used without clear explanations have triggered protests and loss of trust in several cities.',
+  },
   'Impatto sulla Fiducia Pubblica': {
     simpleExplanation: 'Public trust in AI systems is important. If people don\'t trust the system, they won\'t use it or will resist it. Build trust through transparency, accountability, and good practices.',
     question: 'Do people trust this system? What can be done to increase trust?',

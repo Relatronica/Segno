@@ -38,7 +38,7 @@ export function CityInsightsPanel({
   const isUserMode = user?.mode === 'use'; // Modalità utente finale
   const summary = buildBlockSummary(block || undefined, isUserMode ? 'user' : 'designer', locale);
 
-  // Don't render panel in guide mode (guide is now in bottom toolbar)
+  // In guide mode non mostriamo il pannello (la guida è nella toolbar inferiore)
   if (mode === 'guide') {
     return null;
   }
@@ -57,6 +57,7 @@ export function CityInsightsPanel({
         duration: 0.3,
       }}
     >
+      {/* In guide mode non mostriamo più un pannello: la guida è nella toolbar inferiore */}
       {mode === 'block' && block && (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 flex-shrink-0">

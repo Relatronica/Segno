@@ -104,8 +104,9 @@ export function calculateNotePositions(
   // Group notes by anchor block to distribute them vertically
   const notesByAnchor = new Map<string, Array<{ block: ScenarioBlock; anchor: PositionedBlock }>>();
 
-  // Find all risk and impact blocks
-  const contextualBlocks = blocks.filter((b) => b.type === 'risk' || b.type === 'impact');
+  // Trova solo i blocchi di tipo "risk" come note contestuali.
+  // I blocchi "impact" vengono mostrati come card a pieno titolo nella colonna Impatto.
+  const contextualBlocks = blocks.filter((b) => b.type === 'risk');
   const unconnectedBlocks: ScenarioBlock[] = [];
 
   contextualBlocks.forEach((block) => {
@@ -261,7 +262,8 @@ export function calculateNotePositions(
  * Always in whiteboard mode: risk and impact blocks are shown as notes
  */
 export function shouldShowAsNote(block: ScenarioBlock): boolean {
-  // Show risk and impact blocks as notes (always in whiteboard mode)
-  return block.type === 'risk' || block.type === 'impact';
+  // Mostra solo i blocchi di tipo "risk" come note;
+  // i blocchi di tipo "impact" diventano una colonna dedicata nella whiteboard.
+  return block.type === 'risk';
 }
 

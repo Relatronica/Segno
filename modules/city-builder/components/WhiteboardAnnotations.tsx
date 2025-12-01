@@ -13,8 +13,8 @@ type WhiteboardAnnotationsProps = {
 
 const stageOrder = [...CITY_THEME.layout.categoryOrder] as FlowStageKey[];
 
-// Filter out risk and impact columns (they are shown as notes, not columns)
-const visibleStages = stageOrder.filter((key) => key !== 'risk' && key !== 'impact') as FlowStageKey[];
+// Filter out only risk column (mostrato come note). Impact è una colonna vera.
+const visibleStages = stageOrder.filter((key) => key !== 'risk') as FlowStageKey[];
 
 export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   width,
@@ -22,7 +22,6 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   visibleBlocks,
 }: WhiteboardAnnotationsProps) {
   const paddingX = CITY_THEME.layout.paddingX;
-  const paddingY = CITY_THEME.layout.paddingY;
   const gapX = CITY_THEME.layout.clusterGapX;
   const baseCenter = paddingX + CITY_THEME.blockDimensions.width / 2;
 
@@ -30,8 +29,15 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   const columnsWithBlocks = new Set<FlowStageKey>();
   visibleBlocks.forEach(({ block }) => {
     const blockType = block.type;
-    // Only include if it's a valid FlowStageKey and not risk/impact
-    if ((blockType === 'input' || blockType === 'process' || blockType === 'storage' || blockType === 'output') && visibleStages.includes(blockType as FlowStageKey)) {
+    // Include tutte le categorie principali che hanno una colonna (input, process, storage, output, impact)
+    if (
+      (blockType === 'input' ||
+        blockType === 'process' ||
+        blockType === 'storage' ||
+        blockType === 'output' ||
+        blockType === 'impact') &&
+      visibleStages.includes(blockType as FlowStageKey)
+    ) {
       columnsWithBlocks.add(blockType as FlowStageKey);
     }
   });
@@ -39,7 +45,7 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-0">
       {/* Text annotations for each stage column - only show if column has blocks */}
-      {visibleStages.map((stageKey, index) => {
+      {visibleStages.map((stageKey) => {
         // Only show annotation if this column has blocks
         if (!columnsWithBlocks.has(stageKey)) {
           return null;
@@ -47,7 +53,9 @@ export const WhiteboardAnnotations = memo(function WhiteboardAnnotations({
         
         const locale = useAppStore.getState().locale;
         const stage = getStageThemeByKey(stageKey, locale);
-        const columnCenter = baseCenter + index * gapX;
+        // Allinea il titolo alla stessa colonna usata dal layout (basato su categoryOrder)
+        const columnIndex = stageOrder.indexOf(stageKey);
+        const columnCenter = baseCenter + columnIndex * gapX;
 
         return (
           <div

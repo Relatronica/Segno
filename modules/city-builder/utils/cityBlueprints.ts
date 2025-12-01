@@ -597,11 +597,19 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
           opacity: 0.8,
         },
       },
+      {
+        label: 'Supply Chain Critica',
+        type: 'risk',
+        footprint: { widthUnits: 3.2, heightUnits: 0.5 },
+        offset: { x: 5.4, y: 1.4 },
+        visual: riskChipVisual,
+      },
     ],
     localConnections: [
       { from: 0, to: 1 },
       { from: 1, to: 2 },
       { from: 2, to: 3 },
+      { from: 0, to: 4 },
     ],
   },
   'impact-social': {
@@ -657,11 +665,19 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
           opacity: 0.8,
         },
       },
+      {
+        label: 'Stabilità Istituzionale & Fiducia',
+        type: 'risk',
+        footprint: { widthUnits: 3.4, heightUnits: 0.5 },
+        offset: { x: 5.2, y: 1.4 },
+        visual: riskChipVisual,
+      },
     ],
     localConnections: [
       { from: 0, to: 1 },
       { from: 1, to: 2 },
       { from: 2, to: 3 },
+      { from: 3, to: 4 },
     ],
   },
   'impact-political': {
@@ -728,12 +744,28 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
           opacity: 0.75,
         },
       },
+      {
+        label: 'Dipendenze Geopolitiche',
+        type: 'risk',
+        footprint: { widthUnits: 3.4, heightUnits: 0.5 },
+        offset: { x: 5.4, y: 1.4 },
+        visual: riskChipVisual,
+      },
+      {
+        label: 'Supply Chain Critica',
+        type: 'risk',
+        footprint: { widthUnits: 3.4, heightUnits: 0.5 },
+        offset: { x: 5.4, y: 2.4 },
+        visual: riskChipVisual,
+      },
     ],
     localConnections: [
       { from: 0, to: 1 },
       { from: 1, to: 2 },
       { from: 2, to: 3 },
       { from: 3, to: 4 },
+      { from: 4, to: 5 },
+      { from: 4, to: 6 },
     ],
   },
   'risk-compliance': {
@@ -2078,17 +2110,20 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
   },
 
   // --- Rischi per utenti ---
+  // === Colonna "Impatto & Sistema" per modalità UTENTE (capire i rischi dell'uso dell'IA) ===
+  // Le blueprint seguenti usano primaryType "impact" per apparire come card nella colonna Impatto,
+  // con sticky note di tipo "risk" collegate come nel resto della whiteboard.
   'risk-privacy-user': {
     key: 'risk-privacy-user',
     title: 'Privacy Dati Personali',
     description: 'Preoccupato per la privacy',
-    primaryType: 'risk',
+    primaryType: 'impact',
     primaryNodeIndex: 0,
     clusterLabel: 'Rischio Privacy',
     nodes: [
       {
         label: 'Privacy Dati',
-        type: 'risk',
+        type: 'impact',
         footprint: { widthUnits: 4.5, heightUnits: 0.8 },
         offset: { x: 0, y: 0 },
         visual: {
@@ -2112,13 +2147,13 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
     key: 'risk-work',
     title: 'Esposizione Dati Lavoro',
     description: 'Preoccupato per dati di lavoro',
-    primaryType: 'risk',
+    primaryType: 'impact',
     primaryNodeIndex: 0,
     clusterLabel: 'Rischio Lavoro',
     nodes: [
       {
         label: 'Esposizione Dati Lavoro',
-        type: 'risk',
+        type: 'impact',
         footprint: { widthUnits: 5, heightUnits: 0.8 },
         offset: { x: 0, y: 0 },
         visual: {
@@ -2142,13 +2177,13 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
     key: 'risk-bias-user',
     title: 'Discriminazione',
     description: 'Preoccupato di essere discriminato',
-    primaryType: 'risk',
+    primaryType: 'impact',
     primaryNodeIndex: 0,
     clusterLabel: 'Rischio Bias',
     nodes: [
       {
         label: 'Rischio Discriminazione',
-        type: 'risk',
+        type: 'impact',
         footprint: { widthUnits: 5, heightUnits: 0.8 },
         offset: { x: 0, y: 0 },
         visual: {
@@ -2172,13 +2207,13 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
     key: 'risk-decisions',
     title: 'Decisioni Automatiche',
     description: 'Preoccupato per decisioni automatiche',
-    primaryType: 'risk',
+    primaryType: 'impact',
     primaryNodeIndex: 0,
     clusterLabel: 'Rischio Decisioni',
     nodes: [
       {
         label: 'Decisioni Automatiche',
-        type: 'risk',
+        type: 'impact',
         footprint: { widthUnits: 5.5, heightUnits: 0.8 },
         offset: { x: 0, y: 0 },
         visual: {
@@ -2202,13 +2237,13 @@ export const CITY_BLUEPRINTS: Record<string, CityBlueprint> = {
     key: 'risk-transparency',
     title: 'Trasparenza',
     description: 'Non capisco cosa fa il sistema',
-    primaryType: 'risk',
+    primaryType: 'impact',
     primaryNodeIndex: 0,
     clusterLabel: 'Rischio Trasparenza',
     nodes: [
       {
         label: 'Mancanza Trasparenza',
-        type: 'risk',
+        type: 'impact',
         footprint: { widthUnits: 5.5, heightUnits: 0.8 },
         offset: { x: 0, y: 0 },
         visual: {

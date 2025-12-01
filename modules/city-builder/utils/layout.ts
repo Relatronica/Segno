@@ -164,12 +164,12 @@ export const computeCityLayout = (blocks: ScenarioBlock[], connections: Connecti
   const columnBaseX = new Map<number, number>(); // Track base X for each column for alignment
   const usedColumns = new Set<number>();
 
-  // Separate main blocks (input, process, storage, output) from contextual blocks (risk, impact)
+  // Separate main blocks (input, process, storage, output, impact) from contextual blocks (risk)
   const mainClusters: Array<{ order: number; blocks: ScenarioBlock[]; category: string }> = [];
   const contextualBlocks: ScenarioBlock[] = [];
 
   clustersMap.forEach((cluster) => {
-    const isContextual = cluster.category === 'risk' || cluster.category === 'impact';
+    const isContextual = cluster.category === 'risk';
     if (isContextual) {
       contextualBlocks.push(...cluster.blocks);
     } else {

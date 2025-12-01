@@ -15,7 +15,8 @@ export const CITY_THEME = {
     paddingY: 180,
     clusterGapX: 520,
     clusterGapY: 360,
-    clustersPerRow: 5,
+    clustersPerRow: 6,
+    // Aggiungiamo una colonna dedicata all'impatto geo-politico / ambientale
     categoryOrder: ['input', 'process', 'storage', 'output', 'risk', 'impact'] as const,
   },
 };
@@ -134,19 +135,19 @@ export const BUILDING_TYPES: Record<string, {
     label: 'Consumo Energetico',
     color: '#F59E0B',
     borderColor: '#B45309',
-    description: 'Monitoraggio energia e emissioni'
+    description: 'Energia, emissioni e dipendenze infrastrutturali'
   },
   'impact-social': {
     label: 'Impatto Sociale',
     color: '#F472B6',
     borderColor: '#BE185D',
-    description: 'Effetti su persone e comunità'
+    description: 'Effetti su persone, comunità e coesione sociale'
   },
   'impact-political': {
-    label: 'Impatti Politici',
+    label: 'Impatto Geo-politico',
     color: '#94A3B8',
     borderColor: '#475569',
-    description: 'Bias, governance e aspettative pubbliche'
+    description: 'Equilibri geo-politici, governance istituzionale e fiducia pubblica'
   },
   'risk-compliance': {
     label: 'Policy & Audit',

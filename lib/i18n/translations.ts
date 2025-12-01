@@ -107,6 +107,9 @@ export interface Translations {
     redFlags: string;
     learnMore: string;
     keyPoints: string;
+    geoEnvPanelTitle: string;
+    geoImplicationsTitle: string;
+    envImplicationsTitle: string;
     riskAnalysis: string;
     overallIndex: string;
     score: string;
@@ -267,6 +270,9 @@ const translations: Record<Locale, Translations> = {
       redFlags: 'Segnali di allarme',
       learnMore: 'Approfondisci (Link esterno)',
       keyPoints: 'Punti da ricordare',
+      geoEnvPanelTitle: 'Implicazioni geo-politiche, ambientali e sistemiche',
+      geoImplicationsTitle: 'Implicazioni geo-politiche e di governance',
+      envImplicationsTitle: 'Energia, ambiente e impatto sistemico',
       riskAnalysis: 'Analisi rischi',
       overallIndex: 'Indice complessivo',
       score: 'Score',
@@ -318,7 +324,7 @@ const translations: Record<Locale, Translations> = {
         label: 'Impatto',
         title: 'Impatto & Sistema',
         subtitle: 'Effetti sul contesto',
-        description: 'Impatto sistemico del sistema: consumo energetico, effetti sociali, governance politica e fiducia pubblica',
+        description: 'Impatto sistemico: consumo energetico, effetti sociali, governance politica e fiducia pubblica',
       },
     },
   },
@@ -425,6 +431,9 @@ const translations: Record<Locale, Translations> = {
       redFlags: 'Red flags',
       learnMore: 'Learn more (External link)',
       keyPoints: 'Key points to remember',
+      geoEnvPanelTitle: 'Geo-political, environmental and systemic implications',
+      geoImplicationsTitle: 'Geo-political and governance implications',
+      envImplicationsTitle: 'Energy, environment and systemic impact',
       riskAnalysis: 'Risk Analysis',
       overallIndex: 'Overall Index',
       score: 'Score',
@@ -476,7 +485,7 @@ const translations: Record<Locale, Translations> = {
         label: 'Impact',
         title: 'Impact & System',
         subtitle: 'Effects on context',
-        description: 'Systemic impact of the system: energy consumption, social effects, political governance and public trust',
+        description: 'Systemic impact: energy consumption, social effects, political governance and public trust',
       },
     },
   },
