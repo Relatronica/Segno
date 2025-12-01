@@ -72,16 +72,16 @@ const BUILDING_TYPE_DESCRIPTIONS: Record<string, Record<Locale, string>> = {
     en: 'Portals, communications, external integrations'
   },
   'impact-energy': {
-    it: 'Monitoraggio energia e emissioni',
-    en: 'Energy and emissions monitoring'
+    it: 'Energia, emissioni e dipendenze infrastrutturali',
+    en: 'Energy, emissions and infrastructure dependencies'
   },
   'impact-social': {
-    it: 'Effetti su persone e comunità',
-    en: 'Effects on people and communities'
+    it: 'Effetti su persone, comunità e coesione sociale',
+    en: 'Effects on people, communities and social cohesion'
   },
   'impact-political': {
-    it: 'Bias, governance e aspettative pubbliche',
-    en: 'Bias, governance and public expectations'
+    it: 'Equilibri geo-politici, governance istituzionale e fiducia pubblica',
+    en: 'Geopolitical equilibriums, institutional governance and public trust'
   },
   'risk-compliance': {
     it: 'DPIA, linee guida e revisioni periodiche',

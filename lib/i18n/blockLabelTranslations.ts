@@ -153,6 +153,7 @@ const BLOCK_LABEL_TRANSLATIONS: Record<string, Record<Locale, string>> = {
   'Fiducia dei Cittadini': { it: 'Fiducia dei Cittadini', en: 'Citizen Trust' },
   'Generazione Immagini AI': { it: 'Generazione Immagini AI', en: 'AI Image Generation' },
   'Trasparenza Decisionale': { it: 'Trasparenza Decisionale', en: 'Decision Transparency' },
+  'Dipendenze Geopolitiche': { it: 'Dipendenze Geopolitiche', en: 'Geopolitical Dependencies' },
 };
 
 /**

@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, RotateCcw, BookOpen, ChevronUp, ChevronDown, ArrowRight, X, Eye, EyeOff, Newspaper, Save, Upload } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, BookOpen, ChevronUp, ChevronDown, ArrowRight, X, Eye, EyeOff, Newspaper, Save, Upload, Github, ExternalLink } from 'lucide-react';
 import { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import { useAppStore } from '@/store/useAppStore';
 import { saveBoardToFile, loadBoardFromFile, isValidSegnoFile } from '../utils/boardStorage';
@@ -92,10 +92,10 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
               willChange: 'transform, opacity',
               transformOrigin: 'top center'
             }}
-            className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-6 w-full max-w-2xl mb-2"
+            className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-4 w-full max-w-2xl mb-2"
           >
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">{t.cityBuilder.guideTitle}</h3>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-base font-semibold text-slate-800">{t.cityBuilder.guideTitle}</h3>
               <Button
                 variant="ghost"
                 size="icon"
@@ -106,11 +106,11 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
               </Button>
             </div>
 
-            <div className="space-y-5 max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
               {/* Come iniziare */}
               <div>
-                <h4 className="text-base font-semibold text-slate-800 mb-2">{t.cityBuilder.howToStart}</h4>
-                <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                <h4 className="text-sm font-semibold text-slate-800 mb-1.5">{t.cityBuilder.howToStart}</h4>
+                <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
                   <li>{t.cityBuilder.howToStartStep1}</li>
                   <li>{t.cityBuilder.howToStartStep2}</li>
                   <li>{t.cityBuilder.howToStartStep3}</li>
@@ -120,33 +120,33 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
 
               {/* Come usare la mappa */}
               <div>
-                <h4 className="text-base font-semibold text-slate-800 mb-2">{t.cityBuilder.howToReadMap}</h4>
-                <p className="text-sm text-slate-600 mb-2">
+                <h4 className="text-sm font-semibold text-slate-800 mb-1.5">{t.cityBuilder.howToReadMap}</h4>
+                <p className="text-xs text-slate-600 mb-1.5">
                   {t.cityBuilder.howToReadMapDesc}
                 </p>
-                <ul className="text-sm text-slate-600 space-y-1 list-disc list-inside mb-3">
+                <ul className="text-xs text-slate-600 space-y-0.5 list-disc list-inside mb-1.5">
                   <li><strong>{t.cityBuilder.mapLeft}</strong></li>
                   <li><strong>{t.cityBuilder.mapCenter}</strong></li>
                   <li><strong>{t.cityBuilder.mapRight}</strong></li>
                 </ul>
-                <p className="text-sm text-slate-600 mb-3">
+                <p className="text-xs text-slate-600 mb-1.5">
                   <strong>{t.cityBuilder.clickBlock}</strong>
                 </p>
-                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 leading-snug">
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-2 text-xs text-blue-700 leading-tight">
                   {t.cityBuilder.notesTip}
                 </div>
               </div>
 
               {/* Disclaimer e Crediti */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 mb-3">
-                  <p className="text-xs text-amber-800 leading-snug">
+              <div className="pt-2 border-t border-slate-200">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 mb-2">
+                  <p className="text-xs text-amber-800 leading-tight">
                     <strong>⚠️ {t.cityBuilder.disclaimer}</strong> {t.cityBuilder.disclaimerText}
                   </p>
                 </div>
-                <div className="text-xs text-slate-500 text-center">
-                  <p>{t.cityBuilder.developedBy}</p>
-                  <p className="mt-1">
+                <div className="text-xs text-slate-500 space-y-1">
+                  <p className="text-center">
+                    {t.cityBuilder.developedBy}{' '}
                     <a 
                       href="https://relatronica.com" 
                       target="_blank" 
@@ -156,6 +156,33 @@ export function CityBottomToolbar({ transformRef, onRequestAnalyze, canAnalyze, 
                       Studio Relatronica
                     </a>
                   </p>
+                  
+                  {/* License e GitHub in linea */}
+                  <div className="flex items-center justify-center gap-3 pt-1.5 border-t border-slate-200 flex-wrap">
+                    <span className="text-slate-600">
+                      <strong>{t.cityBuilder.license}</strong>{' '}
+                      <a
+                        href="https://creativecommons.org/licenses/by-nc/4.0/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700 underline inline-flex items-center gap-1"
+                      >
+                        {t.cityBuilder.licenseLink}
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <a
+                      href="https://github.com/Relatronica/Segno"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold text-slate-700 hover:text-slate-900 underline"
+                    >
+                      <Github className="h-3.5 w-3.5" />
+                      {t.cityBuilder.viewOnGitHub}
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

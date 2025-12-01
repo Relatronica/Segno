@@ -53,6 +53,11 @@ export interface Translations {
     disclaimer: string;
     disclaimerText: string;
     developedBy: string;
+    license: string;
+    licenseText: string;
+    licenseLink: string;
+    licenseSuffix: string;
+    viewOnGitHub: string;
     showNotes: string;
     hideNotes: string;
     save: string;
@@ -216,6 +221,11 @@ const translations: Record<Locale, Translations> = {
       disclaimer: 'Disclaimer:',
       disclaimerText: 'Questo strumento ha finalità di consapevolezza, formative e di supporto informativo. Non deve essere inteso come sostituto di una consulenza legale, tecnica o professionale specializzata. Per valutazioni approfondite e assistenza specifica, è consigliabile rivolgersi a consulenti qualificati.',
       developedBy: 'Strumento sviluppato da',
+      license: 'Licenza:',
+      licenseText: 'Questo progetto è rilasciato sotto licenza',
+      licenseLink: 'CC BY-NC 4.0',
+      licenseSuffix: '(Attribuzione - Non commerciale)',
+      viewOnGitHub: 'Vedi su GitHub',
       showNotes: 'Mostra note',
       hideNotes: 'Nascondi note',
       save: 'Salva',
@@ -323,8 +333,8 @@ const translations: Record<Locale, Translations> = {
       impact: {
         label: 'Impatto',
         title: 'Impatto & Sistema',
-        subtitle: 'Effetti sul contesto',
-        description: 'Impatto sistemico: consumo energetico, effetti sociali, governance politica e fiducia pubblica',
+        subtitle: 'Energia, ambiente, governance e geopolitica',
+        description: 'Impatto sistemico: consumo energetico, effetti sociali, dipendenze geopolitiche, governance politica e fiducia pubblica',
       },
     },
   },
@@ -377,6 +387,11 @@ const translations: Record<Locale, Translations> = {
       disclaimer: 'Disclaimer:',
       disclaimerText: 'This tool is for awareness, educational, and informational support purposes. It should not be considered a substitute for specialized legal, technical, or professional consultation. For in-depth evaluations and specific assistance, it is advisable to consult qualified professionals.',
       developedBy: 'Tool developed by',
+      license: 'License:',
+      licenseText: 'This project is released under the',
+      licenseLink: 'CC BY-NC 4.0',
+      licenseSuffix: '(Attribution - NonCommercial)',
+      viewOnGitHub: 'View on GitHub',
       showNotes: 'Show notes',
       hideNotes: 'Hide notes',
       save: 'Save',
@@ -484,8 +499,8 @@ const translations: Record<Locale, Translations> = {
       impact: {
         label: 'Impact',
         title: 'Impact & System',
-        subtitle: 'Effects on context',
-        description: 'Systemic impact: energy consumption, social effects, political governance and public trust',
+        subtitle: 'Energy, environment, governance and geopolitics',
+        description: 'Systemic impact: energy consumption, social effects, geopolitical dependencies, political governance and public trust',
       },
     },
   },
