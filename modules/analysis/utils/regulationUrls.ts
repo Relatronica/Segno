@@ -40,7 +40,7 @@ export const REGULATION_URLS: Record<string, Record<string, string>> = {
     'Art. 50': 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066#d1e4692-34-1',
     'Art. 50(1)': 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066#d1e4692-34-1',
     // URL alternativo più leggibile
-    'ai-act-info': 'https://artificialintelligenceact.eu/',
+    'ai-act-info': 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066',
     // Fallback
     'default': 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
   },

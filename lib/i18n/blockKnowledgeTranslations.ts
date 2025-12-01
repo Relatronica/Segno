@@ -119,7 +119,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'AI Act',
       article: 'Art. 5(1)',
       requirement: 'Remote biometric recognition in real-time in public spaces is PROHIBITED except exceptions (terrorism, missing persons)',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Avoid real-time biometric recognition in public spaces. If necessary, limit to exceptional cases. Document legal basis.',
     risk: 'Real-time biometric recognition in public spaces is prohibited. Fines up to €35M or 7% turnover.',
@@ -144,7 +144,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Recommendation systems must avoid bias and discrimination',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse datasets. Monitor for bias. Allow users to see and modify preferences. Avoid filter bubbles.',
     risk: 'Recommendations with bias can perpetuate discrimination or exclude groups.',
@@ -157,7 +157,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'AI Act',
       article: 'Art. 14',
       requirement: 'High-risk systems require human oversight and validation',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validate alerts before action. Human review for critical decisions. Monitor false positive rate.',
     risk: 'Too many false alarms reduce trust and may cause real threats to be ignored.',
@@ -170,7 +170,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must be tested for accuracy and bias',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse datasets. Monitor accuracy. Document limitations. Human review for critical decisions.',
     risk: 'Computer vision errors can cause discrimination or safety issues.',
@@ -183,7 +183,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must be tested for accuracy and bias',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse voices, accents, languages. Monitor accuracy. Document limitations.',
     risk: 'Audio processing errors can cause misunderstandings or discrimination.',
@@ -487,7 +487,7 @@ export const BLOCK_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> =
       name: 'Copyright & Licenses',
       article: 'Various',
       requirement: 'Generated code may contain copyright-protected parts',
-      url: 'https://opensource.org/licenses'
+      url: 'https://opensource.org/licenses/'
     },
     bestPractice: 'Always review and test AI-generated code. Verify it doesn\'t contain protected code. Test for vulnerabilities.',
     risk: 'AI-generated code may contain bugs, security vulnerabilities or violate copyright.',
@@ -529,7 +529,7 @@ export const TYPE_KNOWLEDGE_DESIGNER_EN: Record<string, Partial<KnowledgeTransla
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'High-risk systems must be transparent: users must understand how they work',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Document algorithm, training data, system limits. Provide understandable explanations of decisions. Monitor performance and bias.',
     risk: 'Opaque processes can hide bias, errors or discrimination. Difficult to contest decisions if you don\'t understand how they work.',
@@ -582,7 +582,7 @@ export const TYPE_KNOWLEDGE_USER_EN: Record<string, Partial<KnowledgeTranslation
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'You have the right to understand how AI systems that use your data work',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Ask the service provider for explanations on how the system works. Read the terms of use. Check if there are limits or risks.',
     risk: 'If you don\'t understand how the system works, you may accept unfair or discriminatory decisions without knowing it.',

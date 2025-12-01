@@ -42,7 +42,7 @@ const TYPE_KNOWLEDGE_DESIGNER: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Sistemi ad alto rischio devono essere trasparenti: utenti devono capire come funzionano',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Documentare algoritmo, dati di training, limiti del sistema. Fornire spiegazioni comprensibili delle decisioni. Monitorare performance e bias.',
     risk: 'Processi opachi possono nascondere bias, errori o discriminazioni. Difficile contestare decisioni se non si capisce come funzionano.',
@@ -100,7 +100,7 @@ const TYPE_KNOWLEDGE_USER: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Hai diritto a capire come funzionano i sistemi AI che usano i tuoi dati',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Chiedi spiegazioni al fornitore del servizio su come funziona il sistema. Leggi le condizioni d\'uso. Verifica se ci sono limiti o rischi.',
     risk: 'Se non capisci come funziona il sistema, potresti accettare decisioni ingiuste o discriminatorie senza saperlo.',
@@ -249,7 +249,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
     },
     bestPractice: 'Verificare licenza prima di usare. Rispettare attribuzione se richiesta. Documentare fonte e licenza.',
     risk: 'Usare dati pubblici senza rispettare licenza può causare problemi legali.',
-    externalLink: 'https://opensource.org/licenses'
+    externalLink: 'https://opensource.org/licenses/'
   },
   'Sensori / IoT': {
     simpleExplanation: 'I sensori (temperatura, movimento, video, ecc.) raccolgono dati. Gli utenti devono sapere cosa raccolgono, perché e quando. E devono poter disattivarli se vogliono. Non raccogliere dati di nascosto. Come quando installi una telecamera: devi dirlo e chiedere permesso.',
@@ -300,7 +300,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 5(1)',
       requirement: 'Riconoscimento biometrico remoto in tempo reale in spazi pubblici è VIETATO salvo eccezioni (terrorismo, ricerca dispersi)',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Evitare riconoscimento biometrico in tempo reale in spazi pubblici. Se necessario, limitare a casi eccezionali. Documentare base giuridica.',
     risk: 'Riconoscimento biometrico in tempo reale in spazi pubblici è vietato. Multe fino a 35M€ o 7% fatturato.',
@@ -318,7 +318,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
     },
     bestPractice: 'Verificare licenze documenti prima di indicizzare. Rispettare attribuzione se richiesta. Considerare solo documenti con licenza appropriata.',
     risk: 'Usare documenti protetti da copyright senza licenza può causare problemi legali.',
-    externalLink: 'https://opensource.org/licenses'
+    externalLink: 'https://opensource.org/licenses/'
   },
   'Sistema di Raccomandazione': {
     simpleExplanation: 'I sistemi che suggeriscono cose agli utenti (prodotti, contenuti, ecc.) possono avere pregiudizi. Potrebbero mostrare sempre le stesse cose, creando "bolle" (filter bubbles), o discriminare alcuni gruppi. Testa il sistema con persone diverse e vedi se funziona uguale per tutti. Lascia che gli utenti vedano e modifichino le loro preferenze.',
@@ -327,7 +327,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi di raccomandazione devono evitare bias e discriminazioni',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test con dataset diversificati. Monitorare per bias. Consentire utenti di vedere e modificare preferenze. Evitare filter bubbles.',
     risk: 'Raccomandazioni con bias possono perpetuare discriminazioni o escludere gruppi.',
@@ -341,7 +341,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono essere accurati e robusti',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validare accuracy degli alert. Revisione umana prima di azioni critiche. Monitorare tasso di falsi positivi. Aggiustare soglie se necessario.',
     risk: 'Troppi falsi positivi causano "alert fatigue". Falsi negativi possono lasciare passare problemi reali.',
@@ -354,7 +354,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi devono essere robusti e accurati in diverse condizioni',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test con immagini diverse (illuminazione, angoli, qualità). Validare qualità input. Gestire errori gracefully.',
     risk: 'Sistemi non testati possono fallire in condizioni reali, causando errori o discriminazioni.',
@@ -438,7 +438,7 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'AI Act',
       article: 'Art. 50',
       requirement: 'Obbligo di trasparenza: informare utenti che interagiscono con AI',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Disclaimer chiaro e visibile. Spiegare limiti del sistema. Fornire informazioni su come funziona.',
     risk: 'Chatbot che si presenta come umano viola AI Act. Utenti possono fare scelte basate su false aspettative.',
@@ -695,12 +695,12 @@ const LABEL_KNOWLEDGE: Record<string, BlockKnowledge> = {
       name: 'Copyright & Licenze',
       article: 'Varie',
       requirement: 'Codice generato può contenere parti protette da copyright',
-      url: 'https://opensource.org/licenses'
+      url: 'https://opensource.org/licenses/'
     },
     bestPractice: 'Sempre revisionare e testare codice generato da AI. Verificare che non contenga codice protetto. Testare per vulnerabilità.',
     risk: 'Codice generato da AI può contenere bug, vulnerabilità di sicurezza o violare copyright.',
     example: 'Codice generato da Copilot potrebbe contenere parti di codice protetto da copyright o vulnerabilità.',
-    externalLink: 'https://opensource.org/licenses'
+    externalLink: 'https://opensource.org/licenses/'
   },
   'Cloud Server (EU)': {
     simpleExplanation: 'I dati salvati su server europei sono più protetti dal GDPR. Le leggi europee proteggono meglio i tuoi diritti rispetto a quelle di altri paesi. Ma devi comunque verificare che i dati siano cifrati e che solo persone autorizzate possano accedervi.',

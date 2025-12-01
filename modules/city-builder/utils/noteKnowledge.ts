@@ -53,7 +53,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 14',
       requirement: 'Sistemi ad alto rischio devono avere governance e supervisione umana',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Includere esperti di etica, diritto, tecnologia e rappresentanti delle comunità interessate. Riunioni periodiche documentate.',
     risk: 'Comitati solo tecnici possono trascurare impatti sociali e discriminazioni.',
@@ -275,7 +275,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10-15',
       requirement: 'Sistemi ad alto rischio: registrazione, marcatura CE, sistema qualità, human oversight',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Checklist di conformità per ogni regolamento. Coinvolgere consulenti legali specializzati. Documentare verifiche.',
     risk: 'Non conformità può bloccare il sistema, causare multe (fino a 35M€ o 7% fatturato per AI Act).',
@@ -290,7 +290,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Sistemi ad alto rischio devono documentare impatto ambientale',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Misurare consumo reale (non solo teorico). Considerare modelli più piccoli, quantizzazione, edge computing. Usare energia rinnovabile.',
     risk: 'Modelli LLM enormi consumano quanto migliaia di case. Impatto ambientale significativo.',
@@ -352,7 +352,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act / Valori fondamentali UE',
       article: 'Trasparenza, non discriminazione, tutela dei diritti',
       requirement: 'Garantire che i sistemi ad alto impatto pubblico siano trasparenti, spiegabili e non discriminatori',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Coinvolgere cittadini e stakeholder vulnerabili nella progettazione; comunicare apertamente limiti, rischi e benefici; prevedere canali di contestazione chiari.',
     risk: 'Decisioni opache o percepite come imposte da “scatole nere” possono alimentare sfiducia, proteste e polarizzazione politica.',
@@ -378,7 +378,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono essere accessibili e non discriminare',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test con utenti diversificati. Design inclusivo. Monitorare impatti su gruppi vulnerabili. Canali di feedback.',
     risk: 'Sistemi non accessibili escludono persone con disabilità. Algoritmi possono perpetuare discriminazioni esistenti.',
@@ -392,7 +392,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Trasparenza: informare utenti che interagiscono con AI',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Pubblicare metodologia, dati di training, limiti del sistema. Consentire contestazione. Monitorare impatti su policy.',
     risk: 'Sistemi opachi che influenzano policy pubbliche minano fiducia democratica e possono perpetuare bias.',
@@ -406,7 +406,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13-14',
       requirement: 'Trasparenza e spiegabilità: utenti devono capire come funziona e poter contestare',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Comunicare onestamente limiti e errori. Fornire spiegazioni comprensibili. Meccanismi di appello chiari e accessibili.',
     risk: 'Errori nascosti o spiegazioni incomprensibili distruggono fiducia pubblica. Una volta persa, è difficile recuperarla.',
@@ -451,7 +451,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono avere controlli di sicurezza e robustezza',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validare input utente, filtrare prompt injection, limitare output a contesti sicuri. Monitorare tentativi di abuso.',
     risk: 'Prompt injection può far generare contenuti dannosi, esporre dati di training, o bypassare controlli di sicurezza.',
@@ -465,7 +465,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono documentare dataset di training e loro caratteristiche',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Documentare: origine dati, pre-processing, bias noti, limiti. Mantenere dataset aggiornato e rappresentativo.',
     risk: 'Dataset obsoleti o con bias possono produrre decisioni discriminatorie o inaccurate.',
@@ -478,7 +478,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 15',
       requirement: 'Sistemi ad alto rischio devono avere monitoraggio continuo e aggiornamenti',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Monitorare accuracy, drift, performance in produzione. Alert automatici per anomalie. Retraining periodico.',
     risk: 'Modelli non monitorati possono degradarsi nel tempo, producendo decisioni errate senza che nessuno se ne accorga.',
@@ -728,7 +728,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 50',
       requirement: 'Obbligo di trasparenza: informare utenti che interagiscono con AI',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Disclaimer chiaro e visibile. Spiegare limiti del sistema. Fornire informazioni su come funziona.',
     risk: 'Utenti che non sanno di interagire con AI possono fare scelte basate su false aspettative.',
@@ -742,7 +742,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono essere progettati per evitare discriminazioni',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test con dataset diversificati. Monitorare performance per gruppi demografici. Audit regolari per bias. Retraining se necessario.',
     risk: 'Bias non rilevati possono causare discriminazioni illegali, danni reputazionali e multe.',
@@ -756,7 +756,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono avere controlli di qualità e robustezza',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validare qualità input prima di processare. Rifiutare input di qualità insufficiente. Alert per input sospetti.',
     risk: 'Processare input di bassa qualità può produrre risultati errati o discriminatori.',
@@ -769,7 +769,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono essere accurati e robusti',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validazione umana degli alert prima di azione. Monitorare tasso di falsi positivi. Aggiustare soglie se necessario.',
     risk: 'Troppi falsi positivi causano "alert fatigue" e possono far ignorare veri problemi.',
@@ -904,7 +904,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
     },
     bestPractice: 'Verificare licenze prima di usare. Documentare attribuzioni. Rispettare condizioni (es. open source, commercial use).',
     risk: 'Violare licenze può causare cause legali, multe, obbligo di rimuovere sistema.',
-    externalLink: 'https://opensource.org/licenses'
+    externalLink: 'https://opensource.org/licenses/'
   },
 
   // --- IMPACT: Energia e Ambiente (dettagli) ---
@@ -915,7 +915,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Documentare impatto ambientale, incluso consumo energetico',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Misurare consumo reale. Considerare modelli pre-addestrati, transfer learning, quantizzazione. Usare energia rinnovabile.',
     risk: 'Training di modelli enormi può consumare quanto migliaia di case per mesi. Impatto ambientale significativo.',
@@ -929,7 +929,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Documentare impatto ambientale',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Calcolare emissioni (training + inferenza). Usare data center con energia rinnovabile. Ottimizzare modelli per efficienza.',
     risk: 'Sistemi AI possono avere impronta carbonica significativa, contribuendo al cambiamento climatico.',
@@ -942,7 +942,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Documentare impatto ambientale',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Misurare consumo in produzione. Usare modelli quantizzati, edge computing quando possibile. Monitorare e ottimizzare continuamente.',
     risk: 'Inferenza non ottimizzata può consumare molta energia, specialmente con molti utenti simultanei.',
@@ -955,7 +955,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Documentare impatto ambientale completo',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Considerare consumo di data center, cooling, produzione hardware. Preferire provider con energia rinnovabile e efficienza.',
     risk: 'Infrastruttura cloud può avere impatto ambientale significativo se non gestita con efficienza.',
@@ -970,7 +970,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi ad alto rischio devono essere accessibili',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Design inclusivo, supporto per disabilità, interfacce multilingue, accesso anche senza smartphone/computer avanzato.',
     risk: 'Sistemi non accessibili escludono persone con disabilità, anziani, chi ha tecnologia limitata.',
@@ -984,7 +984,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Documentare impatti sociali ed economici',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Valutare impatto su posti di lavoro. Pianificare riqualificazione, transizione graduale, supporto per lavoratori interessati.',
     risk: 'Sostituzione lavoro senza transizione può causare disoccupazione, tensioni sociali, opposizione al sistema.',
@@ -997,7 +997,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi devono essere accessibili e non discriminare',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Identificare gruppi a rischio esclusione. Fornire alternative (es. canale telefonico, assistenza umana). Monitorare accesso.',
     risk: 'Esclusione digitale può perpetuare disuguaglianze esistenti, escludendo chi ha meno competenze digitali o risorse.',
@@ -1010,7 +1010,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi devono evitare discriminazioni e essere accessibili',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Coinvolgere rappresentanti comunità vulnerabili in design e testing. Monitorare impatti specifici. Aggiustare se necessario.',
     risk: 'Sistemi non testati con comunità vulnerabili possono causare discriminazioni non intenzionali o esclusione.',
@@ -1023,7 +1023,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Sistemi devono evitare discriminazioni e bias',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test con dataset diversificati. Audit regolari per bias. Monitorare performance per gruppi. Retraining se necessario.',
     risk: 'Bias non rilevati possono causare discriminazioni illegali, danni a individui e gruppi, perdita fiducia.',
@@ -1039,7 +1039,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Sistemi ad alto rischio devono essere trasparenti e spiegabili',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Fornire spiegazioni comprensibili delle decisioni. Mostrare fattori principali. Consentire contestazione.',
     risk: 'Decisioni opache minano fiducia, rendono difficile contestare errori, possono nascondere bias.',
@@ -1052,7 +1052,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 14',
       requirement: 'Sistemi ad alto rischio devono avere governance e accountability',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Definire chiaramente responsabilità. Pubblicare chi gestisce il sistema. Canali per reclami e responsabilità.',
     risk: 'Senza accountability chiara, errori o danni possono non essere attribuiti, vittime senza risarcimento.',
@@ -1065,7 +1065,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13-14',
       requirement: 'Trasparenza, spiegabilità, governance per costruire fiducia',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Comunicare onestamente limiti ed errori. Consentire feedback. Rispondere a preoccupazioni. Mostrare miglioramenti continui.',
     risk: 'Fiducia persa è difficile da recuperare. Errori nascosti o comunicazione opaca distruggono fiducia pubblica.',
@@ -1091,7 +1091,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Informazioni devono essere comprensibili agli utenti',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Linguaggio semplice, evitare gergo tecnico. Testare comprensibilità con utenti reali. Fornire esempi concreti.',
     risk: 'Messaggi incomprensibili possono confondere utenti, causare scelte sbagliate, minare fiducia.',
@@ -1158,7 +1158,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act & GDPR',
       article: 'Art. 10 AI Act & Art. 22 GDPR',
       requirement: 'Sistemi AI non devono discriminare. Hai diritto a non essere soggetto a decisioni discriminatorie',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Se pensi di essere stato discriminato, chiedi spiegazioni al fornitore del servizio. Contatta il DPO (Data Protection Officer) dell\'organizzazione. Puoi anche contattare un\'autorità di protezione dati.',
     risk: 'Sistemi AI con bias possono escludere o discriminare gruppi di persone, perpetuare ingiustizie sociali, o violare diritti fondamentali.',
@@ -1210,7 +1210,7 @@ const NOTE_KNOWLEDGE: Record<string, NoteKnowledge> = {
       name: 'AI Act & GDPR',
       article: 'Art. 13 AI Act & Art. 13-14 GDPR',
       requirement: 'Hai diritto a capire come funzionano i sistemi AI e perché prendono certe decisioni',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Chiedi spiegazioni al fornitore del servizio su come funziona il sistema. Leggi le condizioni d\'uso. Verifica se ci sono documenti che spiegano il funzionamento. Non usare sistemi che non ti spiegano come funzionano.',
     risk: 'Se non capisci come funziona il sistema, potresti accettare decisioni ingiuste, non riconoscere discriminazioni, o non sapere come proteggere i tuoi diritti.',

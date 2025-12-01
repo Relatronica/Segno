@@ -37,6 +37,18 @@ export function CityInsightsPanel({
   const t = useTranslations();
   const isUserMode = user?.mode === 'use'; // Modalità utente finale
   const summary = buildBlockSummary(block || undefined, isUserMode ? 'user' : 'designer', locale);
+  
+  // Get specific knowledge for better description
+  let specificDescription: string | undefined;
+  if (block) {
+    if (block.type === 'risk' || block.type === 'impact') {
+      const noteKnowledge = getNoteKnowledge(block.label, locale);
+      specificDescription = noteKnowledge?.simpleExplanation;
+    } else {
+      const blockKnowledge = getBlockKnowledge(block, isUserMode ? 'use' : 'design', locale);
+      specificDescription = blockKnowledge?.simpleExplanation;
+    }
+  }
 
   // In guide mode non mostriamo il pannello (la guida è nella toolbar inferiore)
   if (mode === 'guide') {
@@ -66,7 +78,9 @@ export function CityInsightsPanel({
                 {summary?.title || ''}
               </p>
               <h3 className="text-2xl font-bold text-slate-800">{translateBlockLabel(block.label, locale)}</h3>
-              <p className="text-sm text-slate-500 mt-1">{summary?.description}</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {specificDescription || summary?.description}
+              </p>
             </div>
             <Button variant="ghost" size="sm" onClick={onCloseBlock} className="text-slate-500">
               ✕
@@ -93,17 +107,22 @@ export function CityInsightsPanel({
               }
               
               // Se c'è knowledge con simpleExplanation, usa quello nella sezione "Perché conta"
+              // Ma solo se non è già stato mostrato come descrizione in alto
+              const descriptionAlreadyShown = specificDescription === knowledge.simpleExplanation;
+              
               return (
                 <>
-                    <section className="space-y-2">
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <Info className="h-3 w-3" />
-                      {t.insights.whyItMatters}
-                      </p>
-                      <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        {knowledge.simpleExplanation}
-                      </p>
-                    </section>
+                    {!descriptionAlreadyShown && knowledge.simpleExplanation && (
+                      <section className="space-y-2">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <Info className="h-3 w-3" />
+                        {t.insights.whyItMatters}
+                        </p>
+                        <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          {knowledge.simpleExplanation}
+                        </p>
+                      </section>
+                    )}
 
                   {knowledge.question && (
                     <section className="space-y-2">
@@ -244,9 +263,12 @@ export function CityInsightsPanel({
               }
 
               // Se c'è blockKnowledge con simpleExplanation, usa quello nella sezione "Perché conta"
+              // Ma solo se non è già stato mostrato come descrizione in alto
+              const descriptionAlreadyShown = specificDescription === blockKnowledge.simpleExplanation;
+              
               return (
                 <>
-                  {blockKnowledge.simpleExplanation && (
+                  {!descriptionAlreadyShown && blockKnowledge.simpleExplanation && (
                     <section className="space-y-2">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <Info className="h-3 w-3" />

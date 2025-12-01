@@ -89,7 +89,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 14',
       requirement: 'High-risk systems must have governance and human supervision',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Include ethics, legal, technology experts and representatives of affected communities. Documented periodic meetings.',
     risk: 'Technical-only committees may overlook social impacts and discrimination.',
@@ -252,7 +252,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act & Environmental',
       article: 'Various',
       requirement: 'Consider environmental impact of AI systems',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Monitor energy consumption. Use efficient models. Optimize training and inference. Consider carbon footprint.',
     risk: 'High energy consumption increases costs and environmental impact.',
@@ -265,7 +265,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 4',
       requirement: 'Consider social and economic impacts of AI systems',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Assess social impacts. Engage with affected communities. Monitor for unintended consequences.',
     risk: 'Negative social impacts can lead to public backlash, regulatory scrutiny, and reputational damage.',
@@ -278,7 +278,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 5',
       requirement: 'Transparency and accountability for AI in public services',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Transparent use of AI in public services. Public consultation. Accountability mechanisms.',
     risk: 'Non-transparent use of AI in public services can undermine trust and democracy.',
@@ -317,7 +317,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act / EU fundamental values',
       article: 'Transparency, non-discrimination, rights protection',
       requirement: 'Ensure that systems with high public impact are transparent, explainable and non-discriminatory',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Involve citizens and vulnerable stakeholders in design; openly communicate limits, risks and benefits; provide clear channels to contest decisions.',
     risk: 'Opaque or perceived-unfair systems can fuel mistrust, protests and political polarization.',
@@ -330,7 +330,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Transparency and explainability to build trust',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Transparent communication. Explainable decisions. Accountability. Engage with users and stakeholders.',
     risk: 'Loss of public trust can lead to system rejection, regulatory action, and reputational damage.',
@@ -355,7 +355,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must have security and robustness controls',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validate user input, filter prompt injection, limit output to safe contexts. Monitor abuse attempts.',
     risk: 'Prompt injection can generate harmful content, expose training data, or bypass security controls.',
@@ -368,7 +368,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must document training datasets and their characteristics',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Document: data origin, pre-processing, known biases, limits. Keep dataset updated and representative.',
     risk: 'Outdated or biased datasets can produce discriminatory or inaccurate decisions.',
@@ -380,7 +380,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 15',
       requirement: 'High-risk systems must have continuous monitoring and updates',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Monitor accuracy, drift, production performance. Automatic alerts for anomalies. Periodic retraining.',
     risk: 'Unmonitored models can degrade over time, producing wrong decisions without anyone noticing.',
@@ -602,7 +602,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 50',
       requirement: 'Transparency obligation: inform users they interact with AI',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Clear and visible disclaimer. Explain system limits. Provide information on how it works.',
     risk: 'Users who don\'t know they\'re interacting with AI may make choices based on false expectations.',
@@ -615,7 +615,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must be designed to avoid discrimination',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse datasets. Monitor performance for demographic groups. Regular bias audits. Retraining if needed.',
     risk: 'Undetected bias can cause illegal discrimination, reputational damage and fines.',
@@ -628,7 +628,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must have quality and robustness controls',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Validate input quality before processing. Reject insufficient quality input. Alerts for suspicious input.',
     risk: 'Processing low-quality input can produce wrong or discriminatory results.',
@@ -640,7 +640,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must be accurate and robust',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Human validation of alerts before action. Monitor false positive rate. Adjust thresholds if needed.',
     risk: 'Too many false positives cause "alert fatigue" and may make real problems be ignored.',
@@ -774,7 +774,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 14',
       requirement: 'High-risk systems must have governance and accountability',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Clearly define responsibilities. Publish who manages the system. Channels for complaints and accountability.',
     risk: 'Without clear accountability, errors or damages may not be attributed, victims without compensation.',
@@ -786,7 +786,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Systems must avoid discrimination and bias',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse datasets. Regular bias audits. Monitor performance by groups. Retraining if necessary.',
     risk: 'Undetected bias can cause illegal discrimination, harm to individuals and groups, loss of trust.',
@@ -799,7 +799,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Document environmental impact, including energy consumption',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Measure actual consumption. Consider pre-trained models, transfer learning, quantization. Use renewable energy.',
     risk: 'Training huge models can consume as much as thousands of homes for months. Significant environmental impact.',
@@ -824,7 +824,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'High-risk systems must be accessible',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Inclusive design, support for disabilities, multilingual interfaces, access even without advanced smartphone/computer.',
     risk: 'Inaccessible systems exclude people with disabilities, elderly, those with limited technology.',
@@ -837,7 +837,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Document environmental impact',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Calculate emissions (training + inference). Use data centers with renewable energy. Optimize models for efficiency.',
     risk: 'AI systems can have significant carbon footprint, contributing to climate change.',
@@ -849,7 +849,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Document environmental impact',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Measure consumption in production. Use quantized models, edge computing when possible. Monitor and optimize continuously.',
     risk: 'Unoptimized inference can consume a lot of energy, especially with many simultaneous users.',
@@ -861,7 +861,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Systems must be accessible and not discriminate',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Identify groups at risk of exclusion. Provide alternatives (e.g. phone channel, human assistance). Monitor access.',
     risk: 'Digital exclusion can perpetuate existing inequalities, excluding those with fewer digital skills or resources.',
@@ -885,7 +885,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 13-14',
       requirement: 'Transparency, explainability, governance to build trust',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Communicate honestly about limitations and errors. Allow feedback. Respond to concerns. Show continuous improvements.',
     risk: 'Lost trust is hard to recover. Hidden errors or opaque communication destroy public trust.',
@@ -897,7 +897,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Systems must avoid discrimination and be accessible',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Involve representatives of vulnerable communities in design and testing. Monitor specific impacts. Adjust if necessary.',
     risk: 'Systems not tested with vulnerable communities can cause unintentional discrimination or exclusion.',
@@ -909,7 +909,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Document complete environmental impact',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Consider data center consumption, cooling, hardware production. Prefer providers with renewable energy and efficiency.',
     risk: 'Cloud infrastructure can have significant environmental impact if not managed efficiently.',
@@ -933,7 +933,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'High-risk systems must be transparent and explainable',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Provide clear explanations of how the system works. Show main factors in decisions. Allow contestation.',
     risk: 'Lack of transparency undermines trust, makes it difficult to contest errors, can hide bias.',
@@ -945,7 +945,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'Information must be understandable to users',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Simple language, avoid technical jargon. Test comprehensibility with real users. Provide concrete examples.',
     risk: 'Incomprehensible messages can confuse users, cause wrong choices, undermine trust.',
@@ -982,7 +982,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 10',
       requirement: 'Systems must avoid discrimination',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Test with diverse groups. Monitor for discrimination. Regular audits. Correct if discrimination is found.',
     risk: 'Unchecked discrimination can cause legal violations, harm to individuals, loss of trust.',
@@ -994,7 +994,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 60',
       requirement: 'Document social and economic impacts',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Assess impact on jobs. Plan retraining, gradual transition, support for affected workers.',
     risk: 'Job replacement without transition can cause unemployment, social tensions, opposition to the system.',
@@ -1018,7 +1018,7 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       name: 'AI Act',
       article: 'Art. 13',
       requirement: 'High-risk systems must be transparent and explainable',
-      url: 'https://artificialintelligenceact.eu/'
+      url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R2066'
     },
     bestPractice: 'Provide understandable explanations of decisions. Show main factors. Allow contestation.',
     risk: 'Opaque decisions undermine trust, make it difficult to contest errors, can hide bias.',
