@@ -296,10 +296,20 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     bestPractice: 'Map geopolitical dependency points (cloud providers, hardware supply chain, third-party platforms) and plan local or European alternatives.',
     risk: 'Geopolitical crises (conflicts, sanctions, trade blocks) can interrupt essential services, impacting citizens, businesses and public administrations.',
     example: 'A city that bases essential services only on an extra-EU cloud without a plan B may suddenly lose its platform in case of sanctions or blocks.',
+    whatYouCanDo: [
+      'Identify critical system providers (cloud, chips, platforms) and where they are located.',
+      'Evaluate European or on-premises alternatives for the most critical services.',
+      'Include geopolitical resilience as a criterion in tenders and contracts with providers.'
+    ],
+    redFlags: [
+      'Dependence on a single large extra-EU provider without alternatives.',
+      'Absence of geopolitical risk analysis in infrastructure choices.',
+      'Contracts that don\'t provide continuity plans in case of international crises.'
+    ],
   },
   'Supply Chain Critica': {
     simpleExplanation: 'System operation can depend on long and fragile supply chains (e.g. hardware components produced in a few regions). A crisis at one point in the chain can block everything.',
-    question: 'Have you assessed whether there are “bottlenecks” in the technological supply chain (e.g. chips, sensors, data centers)?',
+    question: 'Have you assessed whether there are "bottlenecks" in the technological supply chain (e.g. chips, sensors, data centers)?',
     regulation: {
       name: 'EU Chips Act / Supply chain resilience',
       article: 'Reduction of critical dependencies',
@@ -309,9 +319,19 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     bestPractice: 'Map the end-to-end supply chain (hardware, services, maintenance) and identify single points of failure.',
     risk: 'A crisis in one region (e.g. semiconductor producers) can slow down or block upgrades, maintenance or scaling of the system.',
     example: 'Interruptions in chip production have already slowed delivery of critical hardware (servers, sensors, IoT devices) for years.',
+    whatYouCanDo: [
+      'Identify hardware/software components that have few global suppliers.',
+      'Plan strategic stocks or agreements with multiple suppliers for critical components.',
+      'Link technology choices to the city/organization\'s operational continuity plans.'
+    ],
+    redFlags: [
+      'Dependence on a single critical hardware manufacturer without alternatives.',
+      'No analysis of replacement or repair times in case of supply blocks.',
+      'Absence of dialogue between IT and those responsible for risk management/operational continuity.'
+    ],
   },
   'Stabilità Istituzionale & Fiducia': {
-    simpleExplanation: 'AI and digital systems that manage public services or sensitive data influence citizens’ trust in institutions. If perceived as opaque, unfair or easily manipulated, they undermine democratic legitimacy.',
+    simpleExplanation: 'AI and digital systems that manage public services or sensitive data influence citizens\' trust in institutions. If perceived as opaque, unfair or easily manipulated, they undermine democratic legitimacy.',
     question: 'Does the way you use AI and data strengthen or weaken trust in institutions and public decisions?',
     regulation: {
       name: 'AI Act / EU fundamental values',
@@ -322,6 +342,16 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     bestPractice: 'Involve citizens and vulnerable stakeholders in design; openly communicate limits, risks and benefits; provide clear channels to contest decisions.',
     risk: 'Opaque or perceived-unfair systems can fuel mistrust, protests and political polarization.',
     example: 'Resource allocation or territorial scoring systems used without clear explanations have triggered protests and loss of trust in several cities.',
+    whatYouCanDo: [
+      'Assess which AI-supported decisions have sensitive political or social impacts.',
+      'Design explanation mechanisms accessible even to non-experts.',
+      'Plan public consultation moments (consultations, assemblies, tests with local communities).'
+    ],
+    redFlags: [
+      'High-impact decisions made by opaque systems without possibility of contestation.',
+      'Lack of understandable explanations for citizens and stakeholders.',
+      'Absence of structured channels for complaints, contestations or human review.'
+    ],
   },
   'Impatto sulla Fiducia Pubblica': {
     simpleExplanation: 'Public trust in AI systems is important. If people don\'t trust the system, they won\'t use it or will resist it. Build trust through transparency, accountability, and good practices.',
@@ -816,6 +846,19 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     },
     bestPractice: 'Inform users when decisions are automated. Provide clear process for requesting human review. Document all automated decisions.',
     risk: 'Automated decisions without human review can cause errors, discrimination, and violate GDPR.',
+    example: 'If a loan system automatically rejects you and you can\'t talk to anyone or request a review, the system violates GDPR. You have the right to human review.',
+    whatYouCanDo: [
+      'Read the terms of use to see if you can contest decisions',
+      'Ask the provider how to appeal automated decisions',
+      'Exercise your GDPR right (Art. 22) not to be subject to automated-only decisions',
+      'Request human review if the decision seems unfair'
+    ],
+    redFlags: [
+      'The system decides everything automatically without possibility of appeal',
+      'There\'s no way to talk to a person if something goes wrong',
+      'You weren\'t informed that decisions are automated',
+      'You can\'t request an explanation of the decision'
+    ],
   },
   'Disparità di Accesso': {
     simpleExplanation: 'The system must work for EVERYONE, not just those with advanced smartphones or who know how to use computers. Think of people with visual disabilities, elderly, those with only a basic phone, those who don\'t speak your language. If the system requires advanced technology, you exclude many people. Design to be accessible to all.',
@@ -877,6 +920,19 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     },
     bestPractice: 'Encrypt work data. Limit access to those who need it. Clear retention policy. Regular audits.',
     risk: 'Exposed work data can cause discrimination, harm to employees, GDPR violations.',
+    example: 'If you share a document with customer information with ChatGPT, you\'re potentially violating data confidentiality and GDPR. The company could face legal problems.',
+    whatYouCanDo: [
+      'Always verify with your company if it\'s allowed to use AI systems for work data',
+      'Only use tools approved by the company',
+      'Don\'t share confidential data without authorization',
+      'Read company policies on privacy and data security'
+    ],
+    redFlags: [
+      'You share work data with AI systems without authorization',
+      'You don\'t know if your company allows AI use for confidential data',
+      'You use public AI tools for company documents without verifying',
+      'You haven\'t read company privacy policies'
+    ],
   },
   'Fiducia dei Cittadini': {
     simpleExplanation: 'Trust is built with honesty and transparency. If you hide errors or explain poorly, you lose it. And once lost, it\'s hard to recover. Be honest about system limitations, admit errors, respond to concerns. Like a relationship: trust is built over time with honest behavior.',
@@ -937,6 +993,19 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     },
     bestPractice: 'Provide clear explanations of how the system works. Show main factors in decisions. Allow contestation.',
     risk: 'Lack of transparency undermines trust, makes it difficult to contest errors, can hide bias.',
+    example: 'If a recommendation system always suggests the same things without explaining why, or a credit scoring system rejects you without saying which criteria it uses, there\'s no transparency.',
+    whatYouCanDo: [
+      'Ask the provider for explanations on how the system works',
+      'Read the terms of use and available documentation',
+      'Request information on decisions the system makes about you',
+      'Don\'t use systems that don\'t explain how they work'
+    ],
+    redFlags: [
+      'The system is a "black box": you don\'t know how it works',
+      'You don\'t get explanations when you ask how it works',
+      'Explanations are too technical or incomprehensible',
+      'The provider refuses to explain how the system works'
+    ],
   },
   'Messaggi ai cittadini': {
     simpleExplanation: 'Messages you send to citizens must be clear and understandable for everyone, not just experts. Avoid technical jargon, use simple language, explain as if talking to an ordinary person. Test with real people: do they understand? If they don\'t, rephrase. Like when explaining something to a child: you use simple words.',
@@ -975,6 +1044,31 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
       'The privacy notice is unclear or too technical'
     ],
   },
+  'Dati di Lavoro': {
+    simpleExplanation: 'Work data (business documents, customer information, etc.) is often confidential. When you share it with an AI system, you\'re potentially violating confidentiality. You must verify with your company if it\'s allowed. Work data often ends up on US servers, where it may be accessible to others.',
+    question: 'Does your company allow you to share work data with AI systems? Have you checked company policies?',
+    regulation: {
+      name: 'GDPR',
+      article: 'Art. 32 & Art. 28',
+      requirement: 'Business data must be protected. Sharing with providers requires specific agreements',
+      url: 'https://gdpr-info.eu/art-28-gdpr/'
+    },
+    bestPractice: 'Verify with your boss or company IT if you can use AI systems for work data. Only use company-approved tools.',
+    risk: 'Sharing work data with unauthorized AI systems can violate confidentiality and cause legal problems.',
+    example: 'If you share a document with customer information with ChatGPT, you\'re potentially violating data confidentiality.',
+    whatYouCanDo: [
+      'Always verify with your company if it\'s allowed to use AI systems for work data',
+      'Only use tools approved by the company',
+      'Don\'t share confidential data without authorization',
+      'Read company policies on privacy and data security'
+    ],
+    redFlags: [
+      'You share work data with AI systems without authorization',
+      'You don\'t know if your company allows AI use for confidential data',
+      'You use public AI tools for company documents without verifying',
+      'You haven\'t read company privacy policies'
+    ],
+  },
   'Rischio Discriminazione': {
     simpleExplanation: 'The system might treat different groups of people differently, even unintentionally. This is discrimination. You must test the system to ensure it works fairly for everyone. Like a test: it must be fair for all, not just some.',
     question: 'Have you tested if the system discriminates against certain groups?',
@@ -986,6 +1080,19 @@ export const NOTE_KNOWLEDGE_EN: Record<string, Partial<KnowledgeTranslation>> = 
     },
     bestPractice: 'Test with diverse groups. Monitor for discrimination. Regular audits. Correct if discrimination is found.',
     risk: 'Unchecked discrimination can cause legal violations, harm to individuals, loss of trust.',
+    example: 'A CV screening system that automatically rejects candidates with foreign names discriminates unfairly. A loan system that more often rejects people from certain ethnic groups is discriminatory.',
+    whatYouCanDo: [
+      'If you think you\'ve been discriminated against, ask the provider for explanations',
+      'Contact the DPO (Data Protection Officer) of the organization',
+      'You can contact the data protection authority (in Italy: Garante Privacy)',
+      'Document situations where you think you\'ve been discriminated against'
+    ],
+    redFlags: [
+      'The system seems to treat certain groups of people differently',
+      'You don\'t get explanations when you ask why you were rejected/excluded',
+      'You\'ve noticed discrimination patterns (e.g. always rejected for loans)',
+      'The system doesn\'t monitor or verify for bias'
+    ],
   },
   'Sostituzione Lavoro Umano': {
     simpleExplanation: 'If the system replaces people in work, assess how many jobs are at risk. And create a plan: worker retraining, gradual transition, support. Don\'t just fire everyone. People have the right to be helped to find a new job or learn new skills.',
