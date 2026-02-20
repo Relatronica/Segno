@@ -4,6 +4,8 @@ import "./globals.css";
 import { FaviconHandler } from "@/components/FaviconHandler";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { JsonLd } from "@/components/JsonLd";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,27 +18,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Segno — Sovranità digitale",
     template: "%s | Segno",
   },
-  description: "Piattaforma per la consapevolezza e la sovranità digitale. Percorsi formativi, risorse e strumenti per difendere i tuoi diritti nel mondo digitale.",
-  keywords: ["sovranità digitale", "privacy", "diritti digitali", "GDPR", "AI Act", "etica digitale", "consapevolezza digitale", "attivismo digitale"],
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "sovranità digitale",
+    "privacy",
+    "diritti digitali",
+    "GDPR",
+    "AI Act",
+    "etica digitale",
+    "consapevolezza digitale",
+    "attivismo digitale",
+    "open source",
+    "protezione dati",
+  ],
+  authors: [{ name: "Relatronica", url: "https://relatronica.com" }],
+  creator: "Relatronica",
   icons: {
-    icon: '/segno_logo.png',
-    apple: '/segno_logo.png',
+    icon: "/segno_logo.png",
+    apple: "/segno_logo.png",
   },
   openGraph: {
     title: "Segno — Sovranità digitale",
     description: "Consapevolezza, conoscenza e strumenti per la sovranità digitale.",
     type: "website",
-    images: ['/segno_logo.png'],
+    locale: "it_IT",
+    alternateLocale: "en_US",
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: "/segno_logo.png",
+        width: 512,
+        height: 512,
+        alt: "Segno — Sovranità digitale",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Segno — Sovranità digitale",
     description: "Consapevolezza, conoscenza e strumenti per la sovranità digitale.",
-    images: ['/segno_logo.png'],
+    images: ["/segno_logo.png"],
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 };
 
@@ -47,6 +76,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" className="scroll-smooth">
+      <head>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: SITE_NAME,
+            url: SITE_URL,
+            description: SITE_DESCRIPTION,
+            inLanguage: ["it", "en"],
+            publisher: {
+              "@type": "Organization",
+              name: "Relatronica",
+              url: "https://relatronica.com",
+              logo: {
+                "@type": "ImageObject",
+                url: `${SITE_URL}/segno_logo.png`,
+              },
+            },
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <FaviconHandler />
         <div className="flex min-h-screen flex-col">
