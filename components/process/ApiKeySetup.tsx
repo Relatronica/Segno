@@ -59,6 +59,7 @@ export function ApiKeySetup() {
   const [detectingModels, setDetectingModels] = useState(false);
   const [modelsDetected, setModelsDetected] = useState(false);
   const [manualModelEntry, setManualModelEntry] = useState(false);
+  const [corsBlocked, setCorsBlocked] = useState(false);
   const fetchedUrlRef = useRef('');
 
   const isOllama = aiProvider === 'ollama';
@@ -68,6 +69,7 @@ export function ApiKeySetup() {
     setModelsDetected(false);
     setOllamaModels([]);
     setValidationError('');
+    setCorsBlocked(false);
     try {
       const res = await fetch(`${url}/api/tags`, {
         signal: AbortSignal.timeout(5000),
@@ -114,8 +116,12 @@ export function ApiKeySetup() {
         setModelsDetected(true);
       }
       fetchedUrlRef.current = url;
-    } catch {
+    } catch (err) {
       setModelsDetected(true);
+      const isRemote = typeof window !== 'undefined' && !window.location.hostname.match(/^(localhost|127\.0\.0\.1)$/);
+      if (isRemote && err instanceof TypeError) {
+        setCorsBlocked(true);
+      }
     } finally {
       setDetectingModels(false);
     }
@@ -366,6 +372,32 @@ export function ApiKeySetup() {
                     {t.processDesigner.ollamaModelHint}
                   </p>
                 </div>
+
+                {/* CORS configuration hint */}
+                {corsBlocked && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+                    <div className="flex gap-3">
+                      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                      <div className="space-y-2">
+                        <p className="font-medium text-amber-700 dark:text-amber-500">
+                          {t.processDesigner.ollamaCorsError}
+                        </p>
+                        <code className="block rounded-lg bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
+                          {t.processDesigner.ollamaCorsCommand.replace('{origin}', typeof window !== 'undefined' ? window.location.origin : '*')}
+                        </code>
+                        <p className="text-xs text-muted-foreground">
+                          {t.processDesigner.ollamaCorsHintMac}
+                        </p>
+                        <code className="block rounded-lg bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
+                          {t.processDesigner.ollamaCorsHintMacCmd.replace('{origin}', typeof window !== 'undefined' ? window.location.origin : '*')}
+                        </code>
+                        <p className="text-xs text-muted-foreground">
+                          {t.processDesigner.ollamaCorsHintRestart}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Connection status */}
                 <div className="flex items-center gap-3">
