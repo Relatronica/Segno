@@ -5,7 +5,7 @@ import { useProcessStore, type AIProvider } from '@/store/useProcessStore';
 import { useT } from '@/lib/i18n/useT';
 import { validateApiKey } from '@/lib/process/ai-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Key, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, AlertCircle, Monitor, Wifi, Info, Sparkles, Brain, Cloud, ChevronDown, Pencil, RefreshCw } from 'lucide-react';
+import { Key, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, AlertCircle, Monitor, Wifi, Info, Sparkles, Brain, Cloud, ChevronDown, Pencil, RefreshCw, Copy, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 interface OllamaModelInfo {
   name: string;
@@ -60,9 +60,50 @@ export function ApiKeySetup() {
   const [modelsDetected, setModelsDetected] = useState(false);
   const [manualModelEntry, setManualModelEntry] = useState(false);
   const [corsBlocked, setCorsBlocked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fetchedUrlRef = useRef('');
 
   const isOllama = aiProvider === 'ollama';
+
+  const corsCommand = typeof window !== 'undefined'
+    ? `OLLAMA_ORIGINS="${window.location.origin}" ollama serve`
+    : 'OLLAMA_ORIGINS="*" ollama serve';
+
+  const handleCopyCommand = useCallback(() => {
+    navigator.clipboard.writeText(corsCommand).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [corsCommand]);
+
+  const parseOllamaModels = useCallback((data: { models?: { name: string; size: number; details?: { family?: string; parameter_size?: string; quantization_level?: string } }[] }): OllamaModelInfo[] =>
+    (data.models || []).map((m) => ({
+      name: m.name.replace(/:latest$/, ''),
+      parameterSize: m.details?.parameter_size || '',
+      family: m.details?.family || '',
+      quantization: m.details?.quantization_level || '',
+      size: m.size,
+    })),
+  []);
+
+  const applyDetectedModels = useCallback((models: OllamaModelInfo[], url: string) => {
+    if (models.length) {
+      setOllamaModels(models);
+      setModelsDetected(true);
+      const currentModelExists = models.some((m) => m.name === ollamaModel);
+      const selectedModel = currentModelExists ? ollamaModel : models[0].name;
+      if (!currentModelExists) setOllamaModel(selectedModel);
+      setApiKeyValidated(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('segno-ai-provider', 'ollama');
+        localStorage.setItem('segno-ollama-url', url);
+        localStorage.setItem('segno-ollama-model', selectedModel);
+      }
+    } else {
+      setModelsDetected(true);
+    }
+    fetchedUrlRef.current = url;
+  }, [ollamaModel, setOllamaModel, setApiKeyValidated]);
 
   const fetchOllamaModels = useCallback(async (url: string) => {
     setDetectingModels(true);
@@ -70,62 +111,47 @@ export function ApiKeySetup() {
     setOllamaModels([]);
     setValidationError('');
     setCorsBlocked(false);
+
+    // 1) Try direct browser → Ollama (works if CORS configured or same-origin)
     try {
-      const res = await fetch(`${url}/api/tags`, {
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!res.ok) throw new Error('Ollama not reachable');
-
-      const data = await res.json();
-      const models: OllamaModelInfo[] = (data.models || []).map(
-        (m: {
-          name: string;
-          size: number;
-          details?: {
-            family?: string;
-            parameter_size?: string;
-            quantization_level?: string;
-          };
-        }) => ({
-          name: m.name.replace(/:latest$/, ''),
-          parameterSize: m.details?.parameter_size || '',
-          family: m.details?.family || '',
-          quantization: m.details?.quantization_level || '',
-          size: m.size,
-        })
-      );
-
-      if (models.length) {
-        setOllamaModels(models);
-        setModelsDetected(true);
-        const currentModelExists = models.some(
-          (m) => m.name === ollamaModel
-        );
-        const selectedModel = currentModelExists ? ollamaModel : models[0].name;
-        if (!currentModelExists) {
-          setOllamaModel(selectedModel);
-        }
-        setApiKeyValidated(true);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('segno-ai-provider', 'ollama');
-          localStorage.setItem('segno-ollama-url', url);
-          localStorage.setItem('segno-ollama-model', selectedModel);
-        }
-      } else {
-        setModelsDetected(true);
+      const res = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const data = await res.json();
+        applyDetectedModels(parseOllamaModels(data), url);
+        setDetectingModels(false);
+        return;
       }
-      fetchedUrlRef.current = url;
-    } catch (err) {
-      setModelsDetected(true);
-      const isRemote = typeof window !== 'undefined' && !window.location.hostname.match(/^(localhost|127\.0\.0\.1)$/);
-      if (isRemote && err instanceof TypeError) {
-        setCorsBlocked(true);
-      }
-    } finally {
-      setDetectingModels(false);
+    } catch {
+      // direct failed, try server proxy
     }
-  }, [ollamaModel, setOllamaModel, setApiKeyValidated]);
+
+    // 2) Fallback: server-side proxy (works in local dev / self-hosted)
+    try {
+      const res = await fetch('/api/ai/ollama-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ollamaUrl: url }),
+      });
+      const data = await res.json();
+      if (data.models?.length) {
+        applyDetectedModels(
+          data.models.map((m: OllamaModelInfo) => m),
+          url
+        );
+        setDetectingModels(false);
+        return;
+      }
+    } catch {
+      // server proxy also failed
+    }
+
+    // 3) Both failed
+    setModelsDetected(true);
+    const isRemote = typeof window !== 'undefined'
+      && !window.location.hostname.match(/^(localhost|127\.0\.0\.1)$/);
+    if (isRemote) setCorsBlocked(true);
+    setDetectingModels(false);
+  }, [parseOllamaModels, applyDetectedModels]);
 
   useEffect(() => {
     if (isOllama && ollamaUrl && !modelsDetected && fetchedUrlRef.current !== ollamaUrl) {
@@ -373,29 +399,63 @@ export function ApiKeySetup() {
                   </p>
                 </div>
 
-                {/* CORS configuration hint */}
+                {/* CORS configuration guide */}
                 {corsBlocked && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
-                    <div className="flex gap-3">
-                      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                      <div className="space-y-2">
-                        <p className="font-medium text-amber-700 dark:text-amber-500">
-                          {t.processDesigner.ollamaCorsError}
-                        </p>
-                        <code className="block rounded-lg bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
-                          {t.processDesigner.ollamaCorsCommand.replace('{origin}', typeof window !== 'undefined' ? window.location.origin : '*')}
-                        </code>
-                        <p className="text-xs text-muted-foreground">
-                          {t.processDesigner.ollamaCorsHintMac}
-                        </p>
-                        <code className="block rounded-lg bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
-                          {t.processDesigner.ollamaCorsHintMacCmd.replace('{origin}', typeof window !== 'undefined' ? window.location.origin : '*')}
-                        </code>
-                        <p className="text-xs text-muted-foreground">
-                          {t.processDesigner.ollamaCorsHintRestart}
-                        </p>
-                      </div>
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm">
+                    <div className="flex items-center gap-2 font-semibold text-amber-700 dark:text-amber-400">
+                      <AlertCircle className="h-5 w-5" />
+                      {t.processDesigner.ollamaCorsError}
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t.processDesigner.ollamaCorsDesc}
+                    </p>
+
+                    <ol className="mt-3 space-y-2.5 text-xs">
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-[10px] font-bold text-amber-700 dark:text-amber-400">1</span>
+                        <span>{t.processDesigner.ollamaCorsStep1}</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-[10px] font-bold text-amber-700 dark:text-amber-400">2</span>
+                        <span className="flex-1">
+                          {t.processDesigner.ollamaCorsStep2}
+                          <span className="mt-1.5 flex items-center gap-1.5">
+                            <code className="block flex-1 rounded-lg bg-black/5 px-3 py-2 font-mono dark:bg-white/5">
+                              {corsCommand}
+                            </code>
+                            <button
+                              onClick={handleCopyCommand}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-2 text-[10px] font-medium transition-colors hover:bg-accent"
+                              title="Copy"
+                            >
+                              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                          </span>
+                        </span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-[10px] font-bold text-amber-700 dark:text-amber-400">3</span>
+                        <span>{t.processDesigner.ollamaCorsStep3}</span>
+                      </li>
+                    </ol>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setCorsBlocked(false);
+                          fetchedUrlRef.current = '';
+                          fetchOllamaModels(ollamaUrl);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        {t.processDesigner.ollamaCorsRetry}
+                      </button>
+                    </div>
+
+                    <p className="mt-3 text-[11px] text-muted-foreground">
+                      {t.processDesigner.ollamaCorsAlt}
+                    </p>
                   </div>
                 )}
 

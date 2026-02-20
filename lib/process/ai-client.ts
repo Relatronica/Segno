@@ -11,6 +11,19 @@ export interface AICallOptions {
   ollamaModel?: string;
 }
 
+function parseAIText(text: string) {
+  let parsed = null;
+  try {
+    const jsonMatch = text.match(/[\[{][\s\S]*[\]}]/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    // raw text fallback
+  }
+  return parsed;
+}
+
 async function callOllamaDirect(ollamaUrl: string, ollamaModel: string, prompt: string) {
   const res = await fetch(`${ollamaUrl}/v1/chat/completions`, {
     method: 'POST',
@@ -23,34 +36,62 @@ async function callOllamaDirect(ollamaUrl: string, ollamaModel: string, prompt: 
     }),
   });
 
-  if (!res.ok) {
-    throw new Error('Ollama request failed');
-  }
+  if (!res.ok) throw new Error('Ollama request failed');
 
   const data = await res.json();
   const text: string = data.choices?.[0]?.message?.content || '';
+  return { text, parsed: parseAIText(text) };
+}
 
-  let parsed = null;
-  try {
-    const jsonMatch = text.match(/[\[{][\s\S]*[\]}]/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    }
-  } catch {
-    // raw text fallback
+async function callOllamaServerProxy(
+  ollamaUrl: string,
+  ollamaModel: string,
+  prompt: string,
+  action: string
+) {
+  const res = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      provider: 'ollama',
+      apiKey: '',
+      prompt,
+      action,
+      ollamaUrl,
+      ollamaModel,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(err.error || 'AI request failed');
   }
 
-  return { text, parsed };
+  return res.json();
+}
+
+async function callOllamaWithFallback(
+  ollamaUrl: string,
+  ollamaModel: string,
+  prompt: string,
+  action: string
+) {
+  try {
+    return await callOllamaDirect(ollamaUrl, ollamaModel, prompt);
+  } catch {
+    return await callOllamaServerProxy(ollamaUrl, ollamaModel, prompt, action);
+  }
 }
 
 async function callAI(options: AICallOptions, prompt: string, action: string) {
   const { provider, apiKey, ollamaUrl, ollamaModel } = options;
 
   if (provider === 'ollama') {
-    return callOllamaDirect(
+    return callOllamaWithFallback(
       ollamaUrl || 'http://localhost:11434',
       ollamaModel || 'llama3.1',
-      action === 'validate' ? 'Respond with just the word "ok".' : prompt
+      action === 'validate' ? 'Respond with just the word "ok".' : prompt,
+      action
     );
   }
 
@@ -70,12 +111,17 @@ async function callAI(options: AICallOptions, prompt: string, action: string) {
 
 export async function validateApiKey(options: AICallOptions): Promise<boolean> {
   if (options.provider === 'ollama') {
-    const res = await callOllamaDirect(
-      options.ollamaUrl || 'http://localhost:11434',
-      options.ollamaModel || 'llama3.1',
-      'Respond with just the word "ok".'
-    );
-    return typeof res.text === 'string' && res.text.length > 0;
+    try {
+      const res = await callOllamaWithFallback(
+        options.ollamaUrl || 'http://localhost:11434',
+        options.ollamaModel || 'llama3.1',
+        'Respond with just the word "ok".',
+        'validate'
+      );
+      return typeof res.text === 'string' && res.text.length > 0;
+    } catch {
+      return false;
+    }
   }
 
   const res = await callAI(options, 'Respond with just the word "ok".', 'validate');
