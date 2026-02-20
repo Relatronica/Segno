@@ -6,7 +6,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { courses } from '@/lib/data/courses';
 import { resources } from '@/lib/data/resources';
 import { motion } from 'framer-motion';
-import { ArrowRight, Shield, Scale, Megaphone, BookOpen, Wrench, FileText, Fingerprint, Blocks } from 'lucide-react';
+import { ArrowRight, Shield, Scale, Megaphone, BookOpen, Wrench, FileText, Fingerprint, Blocks, Workflow } from 'lucide-react';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -351,6 +351,48 @@ export default function HomeContent() {
               className="flex h-40 w-40 items-center justify-center rounded-3xl bg-emerald-500/10 sm:h-48 sm:w-48"
             >
               <Blocks className="h-20 w-20 text-emerald-500/60 sm:h-24 sm:w-24" />
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Process Designer CTA */}
+      <section className="relative overflow-hidden border-y border-border/50 py-20 sm:py-28">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-cyan-500/5 via-transparent to-cyan-500/5" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            className="flex flex-col items-center gap-8 sm:flex-row sm:justify-between"
+          >
+            <div className="max-w-lg">
+              <motion.div custom={0} variants={fadeUp} className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 px-4 py-1.5 text-sm font-medium text-cyan-600">
+                <Workflow className="h-4 w-4" />
+                {t.processDesigner.title}
+              </motion.div>
+              <motion.h2 custom={1} variants={fadeUp} className="mt-4 text-3xl font-bold sm:text-4xl">
+                {t.processDesigner.homeCta.title}
+              </motion.h2>
+              <motion.p custom={2} variants={fadeUp} className="mt-3 text-muted-foreground">
+                {t.processDesigner.homeCta.subtitle}
+              </motion.p>
+              <motion.div custom={3} variants={fadeUp} className="mt-6">
+                <Link
+                  href="/process-designer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+                >
+                  {t.processDesigner.homeCta.button}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+            </div>
+            <motion.div
+              custom={2}
+              variants={fadeUp}
+              className="flex h-40 w-40 items-center justify-center rounded-3xl bg-cyan-500/10 sm:h-48 sm:w-48"
+            >
+              <Workflow className="h-20 w-20 text-cyan-500/60 sm:h-24 sm:w-24" />
             </motion.div>
           </motion.div>
         </div>

@@ -13,6 +13,7 @@ const navLinks = [
   { href: '/risorse', key: 'risorse' as const },
   { href: '/mappa-digitale', key: 'mappaDigitale' as const },
   { href: '/stack-etico', key: 'stackEtico' as const },
+  { href: '/process-designer', key: 'processDesigner' as const },
   { href: '/glossario', key: 'glossario' as const },
   { href: '/news', key: 'news' as const },
   { href: '/chi-siamo', key: 'chiSiamo' as const },
