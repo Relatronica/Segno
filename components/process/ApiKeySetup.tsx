@@ -7,7 +7,13 @@ import { validateApiKey } from '@/lib/process/ai-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Key, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, AlertCircle, Monitor, Wifi, Info, Sparkles, Brain, Cloud, ChevronDown, Pencil, RefreshCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { OllamaModelInfo } from '@/app/api/ai/ollama-models/route';
+interface OllamaModelInfo {
+  name: string;
+  parameterSize: string;
+  family: string;
+  quantization: string;
+  size: number;
+}
 
 const cloudProviders: { id: AIProvider; name: string; placeholder: string; icon: LucideIcon }[] = [
   { id: 'openai', name: 'OpenAI', placeholder: 'sk-...', icon: Sparkles },
@@ -63,19 +69,38 @@ export function ApiKeySetup() {
     setOllamaModels([]);
     setValidationError('');
     try {
-      const res = await fetch('/api/ai/ollama-models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ollamaUrl: url }),
+      const res = await fetch(`${url}/api/tags`, {
+        signal: AbortSignal.timeout(5000),
       });
+
+      if (!res.ok) throw new Error('Ollama not reachable');
+
       const data = await res.json();
-      if (data.models?.length) {
-        setOllamaModels(data.models);
+      const models: OllamaModelInfo[] = (data.models || []).map(
+        (m: {
+          name: string;
+          size: number;
+          details?: {
+            family?: string;
+            parameter_size?: string;
+            quantization_level?: string;
+          };
+        }) => ({
+          name: m.name.replace(/:latest$/, ''),
+          parameterSize: m.details?.parameter_size || '',
+          family: m.details?.family || '',
+          quantization: m.details?.quantization_level || '',
+          size: m.size,
+        })
+      );
+
+      if (models.length) {
+        setOllamaModels(models);
         setModelsDetected(true);
-        const currentModelExists = data.models.some(
-          (m: OllamaModelInfo) => m.name === ollamaModel
+        const currentModelExists = models.some(
+          (m) => m.name === ollamaModel
         );
-        const selectedModel = currentModelExists ? ollamaModel : data.models[0].name;
+        const selectedModel = currentModelExists ? ollamaModel : models[0].name;
         if (!currentModelExists) {
           setOllamaModel(selectedModel);
         }

@@ -11,12 +11,53 @@ export interface AICallOptions {
   ollamaModel?: string;
 }
 
+async function callOllamaDirect(ollamaUrl: string, ollamaModel: string, prompt: string) {
+  const res = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ollamaModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 4096,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Ollama request failed');
+  }
+
+  const data = await res.json();
+  const text: string = data.choices?.[0]?.message?.content || '';
+
+  let parsed = null;
+  try {
+    const jsonMatch = text.match(/[\[{][\s\S]*[\]}]/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    // raw text fallback
+  }
+
+  return { text, parsed };
+}
+
 async function callAI(options: AICallOptions, prompt: string, action: string) {
   const { provider, apiKey, ollamaUrl, ollamaModel } = options;
+
+  if (provider === 'ollama') {
+    return callOllamaDirect(
+      ollamaUrl || 'http://localhost:11434',
+      ollamaModel || 'llama3.1',
+      action === 'validate' ? 'Respond with just the word "ok".' : prompt
+    );
+  }
+
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ provider, apiKey, prompt, action, ollamaUrl, ollamaModel }),
+    body: JSON.stringify({ provider, apiKey, prompt, action }),
   });
 
   if (!res.ok) {
@@ -28,6 +69,15 @@ async function callAI(options: AICallOptions, prompt: string, action: string) {
 }
 
 export async function validateApiKey(options: AICallOptions): Promise<boolean> {
+  if (options.provider === 'ollama') {
+    const res = await callOllamaDirect(
+      options.ollamaUrl || 'http://localhost:11434',
+      options.ollamaModel || 'llama3.1',
+      'Respond with just the word "ok".'
+    );
+    return typeof res.text === 'string' && res.text.length > 0;
+  }
+
   const res = await callAI(options, 'Respond with just the word "ok".', 'validate');
   return res.valid === true;
 }

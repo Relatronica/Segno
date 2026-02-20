@@ -153,72 +153,99 @@ export function ProcessCanvas() {
             className="!rounded-xl !border-border !bg-card !shadow-lg"
           />
 
-          <Panel position="top-left" className="flex gap-2">
+          <Panel position="top-left" className="flex flex-wrap gap-1.5 sm:gap-2">
             <button
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent sm:px-4"
+              title={t.processDesigner.save}
             >
               <Save className="h-4 w-4" />
-              {t.processDesigner.save}
+              <span className="hidden sm:inline">{t.processDesigner.save}</span>
             </button>
             <button
               onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent sm:px-4"
+              title={t.processDesigner.export}
             >
               <Download className="h-4 w-4" />
-              {t.processDesigner.export}
+              <span className="hidden sm:inline">{t.processDesigner.export}</span>
             </button>
             <button
               onClick={handleReanalyze}
               disabled={reanalyzing}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent disabled:opacity-50 sm:px-4"
+              title={t.processDesigner.reanalyze}
             >
               {reanalyzing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              {t.processDesigner.reanalyze}
+              <span className="hidden sm:inline">{t.processDesigner.reanalyze}</span>
             </button>
             <button
               onClick={handleRestart}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent sm:px-4"
+              title={t.processDesigner.restart}
             >
               <RotateCcw className="h-4 w-4" />
-              {t.processDesigner.restart}
+              <span className="hidden sm:inline">{t.processDesigner.restart}</span>
             </button>
           </Panel>
 
           <Panel position="top-right">
             <button
               onClick={() => setShowEthics(!showEthics)}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent sm:px-4"
+              title={t.processDesigner.ethicsPanel}
             >
               {showEthics ? (
                 <PanelRightClose className="h-4 w-4" />
               ) : (
                 <PanelRightOpen className="h-4 w-4" />
               )}
-              {t.processDesigner.ethicsPanel}
+              <span className="hidden sm:inline">{t.processDesigner.ethicsPanel}</span>
             </button>
           </Panel>
         </ReactFlow>
       </div>
 
-      {/* Ethics Side Panel */}
+      {/* Ethics Side Panel – mobile: full-width overlay; desktop: 400px sidebar */}
       <AnimatePresence>
         {showEthics && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 400, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="h-full shrink-0 overflow-hidden border-l border-border"
-          >
-            <div className="h-full w-[400px] overflow-y-auto bg-card">
+          <>
+            {/* Mobile overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+              onClick={() => setShowEthics(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-[360px] overflow-y-auto border-l border-border bg-card sm:hidden"
+            >
               <EthicsPanel />
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {/* Desktop sidebar */}
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="hidden h-full shrink-0 overflow-hidden border-l border-border sm:block"
+            >
+              <div className="h-full w-[400px] overflow-y-auto bg-card">
+                <EthicsPanel />
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
