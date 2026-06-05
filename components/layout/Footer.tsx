@@ -35,6 +35,7 @@ export function Footer() {
             <ul className="mt-3 space-y-2">
               <li><Link href="/news" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t.nav.news}</Link></li>
               <li><Link href="/chi-siamo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t.nav.chiSiamo}</Link></li>
+              <li><Link href="/metodologia" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t.nav.metodologia}</Link></li>
               <li><a href="https://buymeacoffee.com/relatronica" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{t.chiSiamo.supportTitle}</a></li>
             </ul>
           </div>
