@@ -14,7 +14,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/mappa-digitale`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/stack-etico`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/process-designer`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${SITE_URL}/news`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${SITE_URL}/trasparenza`, lastModified: now, changeFrequency: 'weekly', priority: 0.95 },
+    { url: `${SITE_URL}/strumenti`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE_URL}/news`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/chi-siamo`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
   ];
 
