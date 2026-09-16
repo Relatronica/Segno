@@ -26,7 +26,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Segno — Trasparenza sulle leggi digitali UE",
+    default: "Segno — Chi influenza le regole digitali in Europa",
     template: "%s | Segno",
   },
   description: SITE_DESCRIPTION,
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     apple: "/segno_logo.png",
   },
   openGraph: {
-    title: "Segno — Trasparenza sulle leggi digitali UE",
+    title: "Segno — Chi influenza le regole digitali in Europa",
     description: SITE_DESCRIPTION,
     type: "website",
     locale: "it_IT",
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
         url: "/segno_logo.png",
         width: 512,
         height: 512,
-        alt: "Segno — Trasparenza sulle leggi digitali UE",
+        alt: "Segno — Chi influenza le regole digitali in Europa",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Segno — Trasparenza sulle leggi digitali UE",
+    title: "Segno — Chi influenza le regole digitali in Europa",
     description: SITE_DESCRIPTION,
     images: ["/segno_logo.png"],
   },

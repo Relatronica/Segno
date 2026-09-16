@@ -18,11 +18,11 @@ const translations = {
       donate: 'Dona',
     },
     hero: {
-      title: 'Le big tech scrivono le regole. Noi le rendiamo leggibili.',
+      title: 'Chi decide le regole del digitale? Lo scopriamo insieme.',
       subtitle:
-        'Lobbying, dichiarazioni e leggi digitali UE sullo stesso asse temporale — con fonti, citazioni e temi che puoi cambiare. Parti dall’AI Act e dal sentiment dei leader sull’IA.',
-      cta: 'Apri la timeline',
-      ctaSecondary: 'Perché serve adesso',
+        'Le grandi aziende tecnologiche spendono per influenzare le norme che toccano privacy, piattaforme e intelligenza artificiale. Segno mette incontri, dichiarazioni e decisioni pubbliche su una timeline chiara — con fonti che puoi aprire e citare.',
+      cta: 'Esplora la timeline',
+      ctaSecondary: 'Perché riguarda tutti',
     },
     sections: {
       percorsi: {
@@ -51,55 +51,55 @@ const translations = {
       },
     },
     home: {
-      problemTitle: 'Il potere lavora in silenzio',
+      problemTitle: 'Le regole digitali non si scrivono da sole',
       problemSubtitle:
-        'Milioni di euro in lobbying, tour europei, appelli all’allarme e poi all’ottimismo: mentre AI Act, DSA e DMA si scrivono, il pubblico resta fuori. I dati esistono — ma sono pensati per Bruxelles, non per chi vive le conseguenze.',
-      problem1Title: 'Trasparenza illeggibile',
+        'Milioni di euro in incontri e campagne pubbliche. Messaggi che passano dalla paura all’entusiasmo. Intanto le norme europee sul digitale si decidono lontano dalla conversazione quotidiana — anche se riguardano la vita di tutti.',
+      problem1Title: 'Dati pubblici, ma illeggibili',
       problem1Text:
-        'Il Registro UE è pubblico, ma resta un archivio per addetti ai lavori. Senza racconto, la pressione economica non diventa consapevolezza.',
-      problem2Title: 'Parole e leggi separate',
+        'Esistono registri e documenti aperti. Per un cittadino restano archivi tecnici: senza un racconto, la pressione economica non diventa consapevolezza.',
+      problem2Title: 'Parole e decisioni separate',
       problem2Text:
-        'Dichiarazioni dei CEO, incontri a Bruxelles e passaggi legislativi vivono in silos. Senza un asse comune, la storia si spezza.',
-      problem3Title: 'Attivismo senza mappa',
+        'Dichiarazioni dei CEO, incontri a Bruxelles e voti del Parlamento vivono in silos. Senza un asse comune è difficile capire cosa sta succedendo.',
+      problem3Title: 'Serve una mappa condivisa',
       problem3Text:
-        'Giornalisti, cittadini e movimenti hanno bisogno di fatti citabili — non di vibes. La trasparenza serve se si può condividere e verificare.',
-      solutionTitle: 'Una timeline. Più lenti. Fonti sempre.',
+        'Cittadini, giornalisti e associazioni hanno bisogno di fatti verificabili — non di sensazioni. La trasparenza serve se si può leggere, condividere e controllare.',
+      solutionTitle: 'Una timeline che chiunque può seguire',
       solutionText:
-        'Segno mette lobbying, spese, dichiarazioni e leggi sullo stesso asse. Cambi tema nella sidebar: AI Act per la pressione normativa, Sentiment IA per come i leader cambiano tono — sempre con citazione e link.',
-      solutionCta: 'Esplora AI Act e Sentiment',
-      solutionAsideLabel: 'Il patto',
+        'Segno mette sullo stesso asse incontri, spese dichiarate, dichiarazioni pubbliche e passaggi legislativi. Puoi cambiare lente: le regole sull’IA, oppure il tono dei leader del settore — sempre con citazione e link alla fonte.',
+      solutionCta: 'Guarda come funziona',
+      solutionAsideLabel: 'La regola del progetto',
       solutionAside:
-        'Ogni pin ha una fonte. Le dichiarazioni riportano una citazione. La vicinanza nel tempo non è prova di causalità — è uno strumento per leggere il potere.',
-      themesTitle: 'Due modi di leggere lo stesso potere',
+        'Ogni punto ha una fonte. Le dichiarazioni riportano una citazione. La vicinanza nel tempo aiuta a leggere le pressioni — non è una prova di causalità.',
+      themesTitle: 'Due modi di guardare lo stesso potere',
       themesSubtitle:
-        'Stessa timeline, pin diversi. Scegli la lente e segui la storia.',
-      themeAiTitle: 'AI Act',
+        'Stessa timeline, storie diverse. Scegli una lente e segui i fatti.',
+      themeAiTitle: 'Regole sull’IA in Europa',
       themeAiText:
-        'Incontri, spese LobbyFacts, passaggi legislativi e sanzioni — dal 2021 a oggi, con link verificabili.',
-      themeSentimentTitle: 'Sentiment IA',
+        'Incontri dichiarati, spese di lobbying, passaggi legislativi e sanzioni — dal 2021 a oggi, con link verificabili.',
+      themeSentimentTitle: 'Cosa dicono i leader sull’IA',
       themeSentimentText:
-        'Come oscillano allarme e entusiasmo nelle parole di Altman, Amodei, Musk, Huang e gli altri — curva inclusa.',
+        'Come oscillano allarme e entusiasmo nelle parole pubbliche di Altman, Amodei, Musk, Huang e altri — con una curva di lettura.',
       themesCta: 'Entra nella timeline',
       roadmapTitle: 'Cosa stiamo costruendo',
       roadmapSubtitle:
-        'Non è un archivio morto: è un progetto vivo per chi vuole capire — e far circolare — la pressione sulle regole digitali.',
+        'Non è un archivio chiuso: è uno strumento vivo per capire — e far circolare — chi influenza le regole digitali.',
       statusDone: 'Online',
       statusActive: 'In corso',
       statusNext: 'Prossimo',
-      shareTitle: 'La trasparenza non basta se resta ferma',
+      shareTitle: 'La trasparenza conta se circola',
       shareSubtitle:
-        'Condividi la timeline. Più occhi la leggono, più difficile è fingere che il lobbying sia “solo affari”.',
+        'Condividi la timeline. Più persone la leggono, più difficile è fingere che queste pressioni non esistano.',
       shareText:
-        'Segno: lobbying big tech e leggi digitali UE, leggibili con fonti. Timeline AI Act + Sentiment IA:',
+        'Segno: chi influenza le regole digitali in Europa, in una timeline con fonti. Guarda e condividi:',
       copyLink: 'Copia link',
       copied: 'Copiato',
       shareNative: 'Condividi',
       mastodonPrompt: 'La tua istanza Mastodon (es. mastodon.social):',
       faqTitle: 'Domande frequenti',
-      faqSubtitle: 'Cosa siamo, cosa non fingiamo di dimostrare, come puoi entrare in campo.',
-      ctaTitle: 'Il potere lascia tracce. Seguiamole.',
+      faqSubtitle: 'Cosa facciamo, cosa non pretendiamo di dimostrare, come puoi partecipare.',
+      ctaTitle: 'Il potere lascia tracce. Possiamo seguirle.',
       ctaSubtitle:
-        'Apri la timeline, cambia tema, apri le fonti. Poi condividila con chi ancora crede che “non si possa sapere”.',
+        'Apri la timeline, cambia lente, apri le fonti. Poi condividila con chi pensa ancora che “non si possa sapere”.',
       ctaButton: 'Vai alla timeline',
     },
     percorsi: {
@@ -161,10 +161,10 @@ const translations = {
     chiSiamo: {
       title: 'Chi siamo',
       subtitle:
-        'Segno rende leggibile il lobbying delle big tech sulle leggi digitali UE — con fonti, citazioni e strumenti per chi vuole capire e agire.',
+        'Segno aiuta chiunque a leggere chi influenza le regole digitali in Europa — con fonti, citazioni e strumenti da condividere.',
       missionTitle: 'La nostra missione',
       missionText:
-        'Costruire trasparenza attivista: timeline precise su AI Act, sentiment e prossime leggi digitali, perché il potere lascia tracce e quelle tracce devono essere pubbliche, verificabili e condivisibili.',
+        'Rendere pubblica e leggibile la pressione sulle norme digitali: timeline precise, citazioni verificabili, perché il potere lascia tracce e quelle tracce devono essere comprensibili a tutti — non solo agli addetti ai lavori.',
       valuesTitle: 'I nostri valori',
       relatronicaTitle: 'Un progetto Relatronica',
       relatronicaText:
@@ -175,7 +175,7 @@ const translations = {
         'Progetto indipendente. Nessuna pub basata sul tracking. Esiste se persone come te lo tengono in vita.',
       supportWhyTitle: 'A cosa servono i fondi',
       supportWhy1: 'Ricerca, fonti e aggiornamento continuo delle timeline',
-      supportWhy2: 'Digest e narrative in italiano per cittadini, giornalisti e attivisti',
+      supportWhy2: 'Racconti in italiano per cittadini, giornalisti e associazioni',
       supportWhy3: 'Infrastruttura indipendente, senza pubblicità né tracciamento',
       supportWhy4: 'Traduzioni e accessibilità dei contenuti',
       donateCta: 'Dona su Buy Me a Coffee',
@@ -186,13 +186,25 @@ const translations = {
     contact: {
       name: 'Nome',
       email: 'Email',
+      reason: 'Motivo',
+      reasonPlaceholder: 'Seleziona un motivo',
+      reasons: {
+        report: 'Segnalazione di un errore',
+        source: 'Fonte mancante o correzione',
+        contribute: 'Voglio contribuire / condividere dati',
+        collab: 'Redazione o collettivo',
+        question: 'Domanda sul progetto',
+        other: 'Altro',
+      },
       message: 'Messaggio',
       submit: 'Invia',
       sending: 'Invio…',
       success: 'Messaggio inviato. Grazie — ti rispondiamo appena possibile.',
       sendAnother: 'Invia un altro messaggio',
       error: 'Invio non riuscito. Riprova o scrivi a relatronica@gmail.com.',
+      errorConfig: 'Il form non è ancora configurato sul server. Scrivi a relatronica@gmail.com.',
       errorEmail: 'Inserisci un indirizzo email valido.',
+      errorReason: 'Seleziona un motivo di contatto.',
       errorFields: 'Compila tutti i campi richiesti.',
     },
     mappaDigitale: {
@@ -396,7 +408,7 @@ const translations = {
     },
     footer: {
       description:
-        'Trasparenza sul lobbying tecnologico e le leggi digitali europee. Timeline leggibili, a partire dall’AI Act.',
+        'Chi influenza le regole digitali in Europa? Una timeline chiara, con fonti, per chiunque voglia capire.',
       navigation: 'Progetto',
       resources: 'Strumenti',
       contact: 'Contatti',
@@ -513,11 +525,11 @@ const translations = {
       donate: 'Donate',
     },
     hero: {
-      title: 'Big Tech writes the rules. We make them readable.',
+      title: 'Who sets the rules of digital life? Let’s find out together.',
       subtitle:
-        'Lobbying, public statements and EU digital laws on one timeline — with sources, quotes and themes you can switch. Start with the AI Act and leaders’ sentiment on AI.',
-      cta: 'Open the timeline',
-      ctaSecondary: 'Why it matters now',
+        'Big tech companies spend to influence the norms that touch privacy, platforms and artificial intelligence. Segno puts meetings, public statements and decisions on one clear timeline — with sources you can open and cite.',
+      cta: 'Explore the timeline',
+      ctaSecondary: 'Why it concerns everyone',
     },
     sections: {
       percorsi: {
@@ -546,54 +558,54 @@ const translations = {
       },
     },
     home: {
-      problemTitle: 'Power works quietly',
+      problemTitle: 'Digital rules are not written alone',
       problemSubtitle:
-        'Millions in lobbying, European tours, alarm then optimism: while the AI Act, DSA and DMA are written, the public stays outside. The data exists — built for Brussels, not for the people living with the consequences.',
-      problem1Title: 'Unreadable transparency',
+        'Millions spent on meetings and public campaigns. Messages that swing from fear to enthusiasm. Meanwhile Europe’s digital norms are decided far from everyday conversation — even though they shape everyone’s life.',
+      problem1Title: 'Public data, still unreadable',
       problem1Text:
-        'The EU Register is public, yet remains an archive for insiders. Without a story, economic pressure never becomes awareness.',
-      problem2Title: 'Words and laws apart',
+        'Open registers and documents exist. For a citizen they remain technical archives: without a story, economic pressure never becomes awareness.',
+      problem2Title: 'Words and decisions apart',
       problem2Text:
-        'CEO statements, Brussels meetings and legislative steps live in silos. Without one axis, the story breaks.',
-      problem3Title: 'Activism without a map',
+        'CEO statements, Brussels meetings and parliamentary votes live in silos. Without one shared axis, it is hard to see what is happening.',
+      problem3Title: 'We need a shared map',
       problem3Text:
-        'Journalists, citizens and movements need citable facts — not vibes. Transparency only works if it can be shared and checked.',
-      solutionTitle: 'One timeline. Multiple lenses. Sources always.',
+        'Citizens, journalists and organisations need verifiable facts — not vibes. Transparency only works if it can be read, shared and checked.',
+      solutionTitle: 'A timeline anyone can follow',
       solutionText:
-        'Segno places lobbying, spend, statements and laws on the same axis. Switch themes in the sidebar: AI Act for regulatory pressure, AI Sentiment for how leaders’ tone shifts — always with quote and link.',
-      solutionCta: 'Explore AI Act and Sentiment',
-      solutionAsideLabel: 'The pact',
+        'Segno places meetings, declared spend, public statements and legislative steps on the same axis. Switch lenses: the rules on AI, or the tone of industry leaders — always with a quote and a source link.',
+      solutionCta: 'See how it works',
+      solutionAsideLabel: 'The project rule',
       solutionAside:
-        'Every pin has a source. Statements carry a quote. Temporal proximity is not proof of causation — it is a tool to read power.',
-      themesTitle: 'Two ways to read the same power',
-      themesSubtitle: 'Same timeline, different pins. Pick a lens and follow the story.',
-      themeAiTitle: 'AI Act',
+        'Every pin has a source. Statements carry a quote. Temporal proximity helps you read pressure — it is not proof of causation.',
+      themesTitle: 'Two ways to look at the same power',
+      themesSubtitle: 'Same timeline, different stories. Pick a lens and follow the facts.',
+      themeAiTitle: 'AI rules in Europe',
       themeAiText:
-        'Meetings, LobbyFacts spend, legislative steps and sanctions — from 2021 to today, with verifiable links.',
-      themeSentimentTitle: 'AI Sentiment',
+        'Declared meetings, lobbying spend, legislative steps and sanctions — from 2021 to today, with verifiable links.',
+      themeSentimentTitle: 'What leaders say about AI',
       themeSentimentText:
-        'How alarm and enthusiasm swing in the words of Altman, Amodei, Musk, Huang and others — curve included.',
+        'How alarm and enthusiasm swing in the public words of Altman, Amodei, Musk, Huang and others — with a reading curve.',
       themesCta: 'Enter the timeline',
       roadmapTitle: 'What we are building',
       roadmapSubtitle:
-        'Not a dead archive: a living project for anyone who wants to understand — and circulate — pressure on digital rules.',
+        'Not a closed archive: a living tool to understand — and circulate — who influences digital rules.',
       statusDone: 'Live',
       statusActive: 'In progress',
       statusNext: 'Next',
-      shareTitle: 'Transparency fails if it stays still',
+      shareTitle: 'Transparency matters when it circulates',
       shareSubtitle:
-        'Share the timeline. The more eyes read it, the harder it is to pretend lobbying is “just business”.',
+        'Share the timeline. The more people read it, the harder it is to pretend these pressures do not exist.',
       shareText:
-        'Segno: Big Tech lobbying and EU digital laws, readable with sources. AI Act + AI Sentiment timeline:',
+        'Segno: who influences digital rules in Europe, on one sourced timeline. Explore and share:',
       copyLink: 'Copy link',
       copied: 'Copied',
       shareNative: 'Share',
       mastodonPrompt: 'Your Mastodon instance (e.g. mastodon.social):',
       faqTitle: 'FAQ',
-      faqSubtitle: 'What we are, what we do not pretend to prove, how you can step in.',
-      ctaTitle: 'Power leaves traces. Let’s follow them.',
+      faqSubtitle: 'What we do, what we do not pretend to prove, how you can take part.',
+      ctaTitle: 'Power leaves traces. We can follow them.',
       ctaSubtitle:
-        'Open the timeline, switch themes, open the sources. Then share it with anyone who still thinks “you can’t know”.',
+        'Open the timeline, switch lenses, open the sources. Then share it with anyone who still thinks “you can’t know”.',
       ctaButton: 'Go to the timeline',
     },
     percorsi: {
@@ -655,10 +667,10 @@ const translations = {
     chiSiamo: {
       title: 'About us',
       subtitle:
-        'Segno makes Big Tech lobbying on EU digital laws readable — with sources, quotes and tools for people who want to understand and act.',
+        'Segno helps anyone read who influences digital rules in Europe — with sources, quotes and tools meant to be shared.',
       missionTitle: 'Our mission',
       missionText:
-        'Build activist transparency: precise timelines on the AI Act, sentiment and upcoming digital laws, because power leaves traces — and those traces must be public, verifiable and shareable.',
+        'Make pressure on digital norms public and readable: precise timelines, verifiable quotes, because power leaves traces — and those traces must be understandable to everyone, not only to insiders.',
       valuesTitle: 'Our values',
       relatronicaTitle: 'A Relatronica project',
       relatronicaText:
@@ -669,7 +681,7 @@ const translations = {
         'An independent project. No tracking-based ads. It exists if people like you keep it alive.',
       supportWhyTitle: 'What the funds are for',
       supportWhy1: 'Research, sources and continuous timeline updates',
-      supportWhy2: 'Italian digests and narratives for citizens, journalists and activists',
+      supportWhy2: 'Stories in Italian for citizens, journalists and organisations',
       supportWhy3: 'Independent infrastructure, without ads or tracking',
       supportWhy4: 'Translations and content accessibility',
       donateCta: 'Donate on Buy Me a Coffee',
@@ -680,13 +692,25 @@ const translations = {
     contact: {
       name: 'Name',
       email: 'Email',
+      reason: 'Reason',
+      reasonPlaceholder: 'Select a reason',
+      reasons: {
+        report: 'Report an error',
+        source: 'Missing source or correction',
+        contribute: 'I want to contribute / share data',
+        collab: 'Newsroom or collective',
+        question: 'Question about the project',
+        other: 'Other',
+      },
       message: 'Message',
       submit: 'Send',
       sending: 'Sending…',
       success: 'Message sent. Thanks — we’ll get back to you as soon as we can.',
       sendAnother: 'Send another message',
       error: 'Could not send. Try again or email relatronica@gmail.com.',
+      errorConfig: 'The form is not configured on the server yet. Please email relatronica@gmail.com.',
       errorEmail: 'Please enter a valid email address.',
+      errorReason: 'Please select a contact reason.',
       errorFields: 'Please fill in all required fields.',
     },
     mappaDigitale: {
@@ -890,7 +914,7 @@ const translations = {
     },
     footer: {
       description:
-        'Transparency on tech lobbying and Europe’s digital laws. Readable timelines, starting with the AI Act.',
+        'Who influences digital rules in Europe? A clear timeline, with sources, for anyone who wants to understand.',
       navigation: 'Project',
       resources: 'Tools',
       contact: 'Contact',

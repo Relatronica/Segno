@@ -12,19 +12,19 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Uno strumento di trasparenza attivista: rende leggibile — con fonti e citazioni — il lobbying e le narrazioni pubbliche delle big tech intorno alle leggi digitali europee. Una timeline, più temi (AI Act, Sentiment IA; poi DSA, DMA, GDPR).',
-      en: 'An activist transparency tool: it makes Big Tech lobbying and public narratives around EU digital laws readable — with sources and quotes. One timeline, multiple themes (AI Act, AI Sentiment; then DSA, DMA, GDPR).',
+      it: 'Uno strumento per capire chi influenza le regole digitali in Europa. Mette su una timeline — con fonti e citazioni — incontri, spese dichiarate, dichiarazioni pubbliche e decisioni legislative. Puoi cambiare lente (regole sull’IA, tono dei leader, e in seguito altre norme).',
+      en: 'A tool to understand who influences digital rules in Europe. It places meetings, declared spend, public statements and legislative decisions on one timeline — with sources and quotes. You can switch lenses (AI rules, leaders’ tone, and later other norms).',
     },
   },
   {
     id: 'themes',
     question: {
-      it: 'Cosa sono i “temi” nella timeline?',
-      en: 'What are timeline “themes”?',
+      it: 'Cosa sono le “lenti” nella timeline?',
+      en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'Lenti sullo stesso canvas. AI Act mostra pressione normativa (incontri, spese, leggi, sanzioni). Sentiment IA mostra come cambia il tono dei leader (allarme, cautela, ottimismo…) con una curva editoriale. Cambi tema dalla sidebar: i pin si aggiornano.',
-      en: 'Lenses on the same canvas. AI Act shows regulatory pressure (meetings, spend, laws, sanctions). AI Sentiment shows how leaders’ tone shifts (alarm, caution, optimism…) with an editorial curve. Switch themes in the sidebar: the pins update.',
+      it: 'Modi diversi di guardare la stessa storia. Una lente mostra la pressione sulle regole europee sull’IA (incontri, spese, voti, sanzioni). Un’altra mostra come cambia il tono dei leader del settore (allarme, cautela, ottimismo…). Le cambi dalla barra laterale: i punti sulla timeline si aggiornano.',
+      en: 'Different ways to look at the same story. One lens shows pressure on Europe’s AI rules (meetings, spend, votes, sanctions). Another shows how industry leaders’ tone shifts (alarm, caution, optimism…). Switch them in the sidebar: the pins update.',
     },
   },
   {
@@ -41,12 +41,12 @@ export const homeFaqs: FaqItem[] = [
   {
     id: 'sources',
     question: {
-      it: 'Quanto sono solide le fonti?',
-      en: 'How solid are the sources?',
+      it: 'Da dove vengono le informazioni?',
+      en: 'Where does the information come from?',
     },
     answer: {
-      it: 'Ogni evento ha un link stabile. Preferiamo fonti istituzionali, LobbyFacts/Registro, documenti FOI e reporting citabile. Le dichiarazioni includono una citazione verificabile. I tag di sentiment sono una lettura editoriale, non un punteggio “scientifico”.',
-      en: 'Every event has a stable link. We prefer institutional sources, LobbyFacts/Register, FOI documents and citable reporting. Statements include a verifiable quote. Sentiment tags are an editorial reading, not a “scientific” score.',
+      it: 'Ogni punto ha un link stabile. Preferiamo fonti istituzionali, registri pubblici di trasparenza, documenti ottenuti con accesso agli atti e giornalismo citabile. Le dichiarazioni includono una citazione verificabile. I tag sul “tono” sono una lettura editoriale, non un punteggio scientifico.',
+      en: 'Every pin has a stable link. We prefer institutional sources, public transparency registers, freedom-of-information documents and citable journalism. Statements include a verifiable quote. Tone tags are an editorial reading, not a scientific score.',
     },
   },
   {
@@ -67,8 +67,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'How can I contribute?',
     },
     answer: {
-      it: 'Condividi la timeline. Segnala errori o fonti mancanti. Sostieni Relatronica. Se sei una redazione o un collettivo, scrivici: i dati devono circolare.',
-      en: 'Share the timeline. Flag errors or missing sources. Support Relatronica. If you are a newsroom or a collective, write to us: the data should circulate.',
+      it: 'Condividi la timeline. Segnala errori o fonti mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
+      en: 'Share the timeline. Flag errors or missing sources. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
     },
   },
 ];
