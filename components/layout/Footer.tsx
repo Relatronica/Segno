@@ -95,16 +95,8 @@ export function Footer() {
                   href="/chi-siamo#contatti"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {t.footer.contact}
+                  {t.footer.writeUs}
                 </Link>
-              </li>
-              <li>
-                <a
-                  href="mailto:relatronica@gmail.com"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  relatronica@gmail.com
-                </a>
               </li>
               <li>
                 <a

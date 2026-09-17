@@ -68,7 +68,9 @@ export function ContactForm({ className }: { className?: string }) {
       });
 
       if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        const payload = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
         setErrorKey(payload?.error ?? 'send_failed');
         setStatus('error');
         return;
@@ -250,12 +252,6 @@ export function ContactForm({ className }: { className?: string }) {
           )}
           {status === 'sending' ? t.contact.sending : t.contact.submit}
         </Button>
-        <a
-          href="mailto:relatronica@gmail.com"
-          className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          relatronica@gmail.com
-        </a>
       </div>
     </form>
   );
