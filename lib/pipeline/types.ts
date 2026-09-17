@@ -19,6 +19,12 @@ export type SentimentCandidate = {
   rawTitle: string;
   rawSnippet?: string;
   feedSource: string;
+  /** Authoritative source tier after allowlist filter */
+  sourceTier?: 'primary' | 'secondary';
+  sourceHost?: string;
+  /** Article or item references an official X status */
+  xQuoted?: boolean;
+  xStatusUrl?: string;
   reviewedAt?: string;
   reviewNote?: string;
 };

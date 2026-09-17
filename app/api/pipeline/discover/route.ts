@@ -32,5 +32,6 @@ export async function POST(request: Request) {
     total: store.candidates.length,
     scannedFeeds: discovered.scannedFeeds,
     matchedItems: discovered.matchedItems,
+    rejectedBySource: discovered.rejectedBySource,
   });
 }

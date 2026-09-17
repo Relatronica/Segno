@@ -1,6 +1,8 @@
 import Parser from 'rss-parser';
+import { lobbyPeople } from '@/lib/data/trasparenza';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
 import { hintSentiment, matchPerson } from '@/lib/pipeline/match';
+import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
 import { candidateIdFromUrl } from '@/lib/pipeline/store';
 import type { SentimentCandidate } from '@/lib/pipeline/types';
 
@@ -16,7 +18,8 @@ function stripHtml(input: string): string {
 }
 
 function buildTitle(raw: string): { it: string; en: string } {
-  const en = raw.length > 120 ? `${raw.slice(0, 117)}…` : raw;
+  const cleaned = raw.replace(/\s[-–—]\s[^-–—]+$/, '').trim() || raw;
+  const en = cleaned.length > 120 ? `${cleaned.slice(0, 117)}…` : cleaned;
   return { it: en, en };
 }
 
@@ -34,15 +37,29 @@ function buildSummary(snippet: string, personName?: string): { it: string; en: s
   };
 }
 
+function sourceLabelFor(
+  feedLabel: string,
+  host?: string,
+  publisher?: string,
+  xQuoted?: boolean,
+): { it: string; en: string } {
+  const base = publisher || host || feedLabel;
+  const en = xQuoted ? `${base} (quotes X)` : base;
+  const it = xQuoted ? `${base} (cita X)` : base;
+  return { it, en };
+}
+
 export async function discoverSentimentCandidates(): Promise<{
   candidates: SentimentCandidate[];
   scannedFeeds: number;
   matchedItems: number;
+  rejectedBySource: number;
 }> {
   const parser = new Parser({ timeout: 12000 });
   const found: SentimentCandidate[] = [];
   const seen = new Set<string>();
   let matchedItems = 0;
+  let rejectedBySource = 0;
 
   for (const feed of SENTIMENT_FEEDS) {
     try {
@@ -53,37 +70,60 @@ export async function discoverSentimentCandidates(): Promise<{
         seen.add(url);
 
         const title = stripHtml(item.title || '');
-        const snippet = stripHtml(item.contentSnippet || item.content || item.summary || '');
+        const snippet = stripHtml(
+          item.contentSnippet || item.content || item.summary || '',
+        );
         const blob = `${title} ${snippet}`;
         const match = matchPerson(blob);
         if (!match) continue;
 
         matchedItems += 1;
-        const personLabel = match.personId;
+
+        const classification = classifySource({ url, title, snippet });
+        if (!classification.accepted) {
+          rejectedBySource += 1;
+          continue;
+        }
+
+        let personId = match.personId;
+        let actorId = match.actorId;
+        if (classification.xHandle) {
+          const mapped = OFFICIAL_X_HANDLES[classification.xHandle];
+          if (mapped) {
+            personId = mapped;
+            actorId = lobbyPeople.find((p) => p.id === mapped)?.orgId ?? actorId;
+          }
+        }
+
         const sentiment = hintSentiment(blob);
         const quoteSeed = snippet.length > 40 ? snippet.slice(0, 280) : undefined;
+        const canonicalUrl = classification.xStatusUrl || url;
 
         found.push({
-          id: candidateIdFromUrl(url),
+          id: candidateIdFromUrl(canonicalUrl),
           discoveredAt: new Date().toISOString(),
           status: 'pending',
           date: toDate(item.isoDate || item.pubDate),
-          sourceUrl: url,
-          sourceLabel: {
-            it: feed.label,
-            en: feed.label,
-          },
+          sourceUrl: canonicalUrl,
+          sourceLabel: sourceLabelFor(
+            feed.label,
+            classification.host,
+            classification.publisher,
+            classification.xQuoted,
+          ),
           title: buildTitle(title || 'Untitled candidate'),
-          summary: buildSummary(snippet, personLabel),
-          quote: quoteSeed
-            ? { it: quoteSeed, en: quoteSeed }
-            : undefined,
-          personId: match.personId,
-          actorId: match.actorId,
+          summary: buildSummary(snippet, personId),
+          quote: quoteSeed ? { it: quoteSeed, en: quoteSeed } : undefined,
+          personId,
+          actorId,
           suggestedSentiment: sentiment,
           rawTitle: title,
           rawSnippet: snippet || undefined,
           feedSource: feed.id,
+          sourceTier: classification.tier,
+          sourceHost: classification.host,
+          xQuoted: classification.xQuoted || undefined,
+          xStatusUrl: classification.xStatusUrl,
         });
       }
     } catch (err) {
@@ -95,5 +135,6 @@ export async function discoverSentimentCandidates(): Promise<{
     candidates: found,
     scannedFeeds: SENTIMENT_FEEDS.length,
     matchedItems,
+    rejectedBySource,
   };
 }

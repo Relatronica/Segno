@@ -1391,6 +1391,19 @@ export function getLawTrack(slug: string): TimelineTheme | undefined {
 }
 
 
+/** Counts used by the homepage stats strip and the Open Graph image. */
+export function getHomeSnapshot() {
+  const events = timelineThemes.flatMap((theme) => theme.events);
+  const years = events.map((e) => Number(e.date.slice(0, 4)));
+  return {
+    eventCount: events.length,
+    actorCount: lobbyActors.length,
+    sourceCount: new Set(events.map((e) => e.sourceUrl)).size,
+    fromYear: Math.min(...years),
+    toYear: Math.max(...years),
+  };
+}
+
 export function formatAmount(amount: number, locale: "it" | "en"): string {
   return new Intl.NumberFormat(locale === "it" ? "it-IT" : "en-GB", {
     style: "currency",

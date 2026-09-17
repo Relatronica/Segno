@@ -28,7 +28,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={closeMobile}>
+        <Link href="/" className="flex shrink-0 items-center" onClick={closeMobile} aria-label="Segno">
           <Image src="/segno_logo.png" alt="Segno" width={28} height={28} className="dark:hidden" />
           <Image
             src="/segno_logo_white.png"
@@ -37,7 +37,6 @@ export function Navbar() {
             height={28}
             className="hidden dark:block"
           />
-          <span className="text-lg font-bold tracking-tight">Segno</span>
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
@@ -60,14 +59,19 @@ export function Navbar() {
 
             <Link
               href="/trasparenza"
-              className={`inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-semibold transition-colors ${
-                timelineActive
-                  ? 'bg-foreground text-background'
-                  : 'bg-foreground/95 text-background hover:opacity-90'
+              className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                timelineActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Calendar className="h-3.5 w-3.5" />
               {t.nav.trasparenza}
+              {timelineActive && (
+                <motion.div
+                  layoutId="navbar-indicator"
+                  className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-foreground"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                />
+              )}
             </Link>
 
             <Link
@@ -139,8 +143,10 @@ export function Navbar() {
               <Link
                 href="/trasparenza"
                 onClick={closeMobile}
-                className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
-                  timelineActive ? 'bg-foreground text-background' : 'bg-accent text-foreground'
+                className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  timelineActive
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
               >
                 <Calendar className="h-4 w-4" />

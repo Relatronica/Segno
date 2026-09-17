@@ -284,6 +284,8 @@ export default function RedazioneContent() {
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                     {c.date} · {c.personId || '—'} · {c.status}
+                    {c.sourceTier ? ` · ${c.sourceTier}` : ''}
+                    {c.xQuoted ? ' · X' : ''}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold tracking-tight">
                     {c.title.en}

@@ -2,7 +2,7 @@
   "name": "segno",
   "version": "2.0.0",
   "private": true,
-  "description": "Timeline di trasparenza sul lobbying e le regole digitali UE",
+  "description": "Timeline di trasparenza sul lobbying, le dichiarazioni e le regole digitali UE — con fonti citabili",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

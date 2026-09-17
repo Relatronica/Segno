@@ -1,37 +1,53 @@
+import { SEARCH_SITE_FILTER } from '@/lib/pipeline/sources';
+
 export type DiscoverFeed = {
   id: string;
   label: string;
   url: string;
 };
 
+function gn(query: string): string {
+  const q = encodeURIComponent(`${query} (site:${SEARCH_SITE_FILTER}) when:7d`);
+  return `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
+}
+
 /**
- * Public RSS queries aimed at leader statements / AI policy tone.
- * Google News RSS is brittle but good enough for a daily candidate sweep.
+ * Daily sweep restricted to authoritative domains (press + company).
+ * Post-filter in discover.ts still drops anything outside the allowlist.
  */
 export const SENTIMENT_FEEDS: DiscoverFeed[] = [
   {
-    id: 'gn-altman',
-    label: 'Google News — Altman / OpenAI',
-    url: 'https://news.google.com/rss/search?q=%22Sam+Altman%22+(AI+OR+%22artificial+intelligence%22)+when:3d&hl=en-US&gl=US&ceid=US:en',
+    id: 'auth-altman',
+    label: 'Authoritative — Altman / OpenAI',
+    url: gn('"Sam Altman" OR "OpenAI" (AI OR "artificial intelligence")'),
   },
   {
-    id: 'gn-amodei',
-    label: 'Google News — Amodei / Anthropic',
-    url: 'https://news.google.com/rss/search?q=%22Dario+Amodei%22+(AI+OR+Anthropic)+when:3d&hl=en-US&gl=US&ceid=US:en',
+    id: 'auth-amodei',
+    label: 'Authoritative — Amodei / Anthropic',
+    url: gn('"Dario Amodei" OR Anthropic (AI OR Claude)'),
   },
   {
-    id: 'gn-musk',
-    label: 'Google News — Musk / xAI',
-    url: 'https://news.google.com/rss/search?q=%22Elon+Musk%22+(AI+OR+xAI)+when:3d&hl=en-US&gl=US&ceid=US:en',
+    id: 'auth-musk',
+    label: 'Authoritative — Musk / xAI',
+    url: gn('"Elon Musk" OR xAI (AI OR Grok)'),
   },
   {
-    id: 'gn-huang',
-    label: 'Google News — Huang / NVIDIA',
-    url: 'https://news.google.com/rss/search?q=%22Jensen+Huang%22+(AI+OR+NVIDIA)+when:3d&hl=en-US&gl=US&ceid=US:en',
+    id: 'auth-huang',
+    label: 'Authoritative — Huang / NVIDIA',
+    url: gn('"Jensen Huang" OR NVIDIA (AI OR GPU)'),
   },
   {
-    id: 'gn-leaders',
-    label: 'Google News — Big Tech AI quotes',
-    url: 'https://news.google.com/rss/search?q=(Nadella+OR+Pichai+OR+Zuckerberg+OR+Hassabis)+(AI+OR+%22artificial+intelligence%22)+(said+OR+says+OR+told)+when:3d&hl=en-US&gl=US&ceid=US:en',
+    id: 'auth-leaders',
+    label: 'Authoritative — Nadella / Pichai / Zuckerberg / Hassabis',
+    url: gn(
+      '(Nadella OR Pichai OR Zuckerberg OR Hassabis) (AI OR "artificial intelligence") (said OR says OR told OR warned OR announced)',
+    ),
+  },
+  {
+    id: 'auth-x-quotes',
+    label: 'Authoritative — leader posts quoted from X',
+    url: gn(
+      '(Altman OR Musk OR Amodei OR Nadella OR Zuckerberg) (AI) (post OR posted OR tweet OR "on X" OR Twitter)',
+    ),
   },
 ];

@@ -23,7 +23,15 @@ import { useT } from '@/lib/i18n/useT';
 import { useAppStore } from '@/store/useAppStore';
 import { roadmapPhases, type PhaseStatus } from '@/lib/data/roadmap';
 import { homeFaqs } from '@/lib/data/home-faq';
+import { getHomeSnapshot } from '@/lib/data/trasparenza';
+import { cn } from '@/lib/utils';
 import { SITE_URL } from '@/lib/seo';
+
+const homeSnapshot = getHomeSnapshot();
+const heroYears = Array.from(
+  { length: homeSnapshot.toYear - homeSnapshot.fromYear + 1 },
+  (_, i) => String(homeSnapshot.fromYear + i),
+);
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -112,21 +120,31 @@ export default function HomeContent() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const stats = [
+    { value: String(homeSnapshot.eventCount), label: t.hero.statsEvents },
+    { value: String(homeSnapshot.actorCount), label: t.hero.statsActors },
+    {
+      value: `${homeSnapshot.fromYear}–${homeSnapshot.toYear}`,
+      label: t.hero.statsSpan,
+    },
+    { value: String(homeSnapshot.sourceCount), label: t.hero.statsSources },
+  ];
+
   return (
     <div className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[75vh] bg-[radial-gradient(ellipse_at_12%_0%,oklch(0.48_0.17_25/_0.08),transparent_50%),radial-gradient(ellipse_at_90%_10%,oklch(0.32_0.04_255/_0.06),transparent_45%),linear-gradient(to_bottom,oklch(0.972_0.006_250),transparent)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-24 h-px bg-gradient-to-r from-transparent via-mark/30 to-transparent"
-      />
-
       {/* Hero */}
-      <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pb-16 pt-20 sm:px-6 sm:pb-24 sm:pt-28 lg:px-8">
-          <motion.div initial="hidden" animate="visible" className="max-w-3xl">
+      <section className="relative isolate">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-8%,color-mix(in_oklch,var(--mark)_16%,transparent),transparent_58%),radial-gradient(ellipse_at_100%_20%,color-mix(in_oklch,var(--ink)_10%,transparent),transparent_42%),radial-gradient(ellipse_at_0%_80%,color-mix(in_oklch,var(--ink)_8%,transparent),transparent_40%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.45] dark:opacity-[0.22] [background-image:linear-gradient(to_right,color-mix(in_oklch,var(--ink)_11%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--ink)_9%,transparent)_1px,transparent_1px)] [background-size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_at_50%_28%,black,transparent_78%)]"
+        />
+
+        <div className="relative mx-auto max-w-6xl px-4 pb-0 pt-20 sm:px-6 sm:pt-28 lg:px-8">
+          <motion.div initial="hidden" animate="visible" className="mx-auto max-w-3xl text-center">
             <motion.p
               custom={0}
               variants={fadeUp}
@@ -144,11 +162,15 @@ export default function HomeContent() {
             <motion.p
               custom={2}
               variants={fadeUp}
-              className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
+              className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
             >
               {t.hero.subtitle}
             </motion.p>
-            <motion.div custom={3} variants={fadeUp} className="mt-10 flex flex-wrap items-center gap-3">
+            <motion.div
+              custom={3}
+              variants={fadeUp}
+              className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            >
               <Link
                 href="/trasparenza"
                 className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
@@ -165,6 +187,51 @@ export default function HomeContent() {
               </a>
             </motion.div>
           </motion.div>
+
+          <div aria-hidden className="relative mx-auto mt-16 hidden max-w-4xl sm:block">
+            <div className="absolute inset-x-0 top-1 h-px bg-gradient-to-r from-transparent via-ink/35 to-transparent dark:via-mark/35" />
+            <div className="relative flex items-start justify-between">
+              {heroYears.map((year) => {
+                const current = year === String(homeSnapshot.toYear);
+                return (
+                  <div key={year} className="flex flex-col items-center gap-2">
+                    <span
+                      className={cn(
+                        'block h-2 w-2 rounded-full',
+                        current
+                          ? 'bg-mark shadow-[0_0_0_4px] shadow-mark/15'
+                          : 'bg-ink/40 dark:bg-foreground/35',
+                      )}
+                    />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      {year}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative mt-14 border-t border-border/50 bg-background/55 sm:mt-16">
+          <dl className="mx-auto grid max-w-6xl grid-cols-2 sm:grid-cols-4">
+            {stats.map((stat, i) => (
+              <div
+                key={stat.label}
+                className={cn(
+                  'px-4 py-8 text-center sm:px-6',
+                  i % 2 === 1 && 'border-l border-border/50',
+                  i >= 2 && 'border-t border-border/50 sm:border-t-0',
+                  i > 0 && 'sm:border-l sm:border-border/50',
+                )}
+              >
+                <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {stat.label}
+                </dt>
+                <dd className="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 

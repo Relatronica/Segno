@@ -14,6 +14,10 @@ const translations = {
         'Le grandi aziende tecnologiche spendono per influenzare le norme che toccano privacy, piattaforme e intelligenza artificiale. Segno mette incontri, dichiarazioni e decisioni pubbliche su una timeline chiara — con fonti che puoi aprire e citare.',
       cta: 'Esplora la timeline',
       ctaSecondary: 'Perché riguarda tutti',
+      statsEvents: 'Eventi in timeline',
+      statsActors: 'Aziende tracciate',
+      statsSpan: 'Anni coperti',
+      statsSources: 'Fonti citabili',
     },
     home: {
       problemTitle: 'Le regole digitali non si scrivono da sole',
@@ -209,6 +213,10 @@ const translations = {
         'Big tech companies spend to influence the norms that touch privacy, platforms and artificial intelligence. Segno puts meetings, public statements and decisions on one clear timeline — with sources you can open and cite.',
       cta: 'Explore the timeline',
       ctaSecondary: 'Why it concerns everyone',
+      statsEvents: 'Timeline events',
+      statsActors: 'Companies tracked',
+      statsSpan: 'Years covered',
+      statsSources: 'Citable sources',
     },
     home: {
       problemTitle: 'Digital rules are not written alone',
