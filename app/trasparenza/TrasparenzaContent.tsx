@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, SlidersHorizontal, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { Calendar, SlidersHorizontal } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
@@ -65,7 +65,6 @@ export default function TrasparenzaContent() {
   ]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
 
   const todayLabel = useMemo(() => {
     try {
@@ -241,7 +240,6 @@ export default function TrasparenzaContent() {
 
   const selectEvent = (id: string) => {
     setActiveId(id);
-    setDetailOpen(true);
     setFiltersOpen(false);
   };
 
@@ -310,7 +308,7 @@ export default function TrasparenzaContent() {
             moodEvents={track.showSentiment ? moodEvents : []}
             moodLabels={track.showSentiment ? moodLabels : undefined}
             moodLegendClassName={
-              detailOpen
+              active
                 ? 'right-3 max-lg:hidden lg:right-[23rem] xl:right-[24.5rem]'
                 : 'right-3 max-lg:hidden'
             }
@@ -332,10 +330,7 @@ export default function TrasparenzaContent() {
             <div className="pointer-events-auto flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setFiltersOpen((o) => !o);
-                  if (!filtersOpen) setDetailOpen(false);
-                }}
+                onClick={() => setFiltersOpen((o) => !o)}
                 className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors ${
                   filtersOpen
                     ? 'border-foreground/15 bg-foreground text-background'
@@ -351,7 +346,7 @@ export default function TrasparenzaContent() {
                 )}
               </button>
 
-              <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md border border-border/60 bg-background/90 px-2.5 py-2 font-mono text-[11px] shadow-lg backdrop-blur-xl sm:gap-2 sm:px-3 sm:text-xs">
+              <span className="inline-flex min-w-0 max-w-[55%] flex-1 items-center gap-1.5 truncate rounded-md border border-border/60 bg-background/90 px-2.5 py-2 font-mono text-[11px] shadow-lg backdrop-blur-xl sm:max-w-none sm:flex-none sm:gap-2 sm:px-3 sm:text-xs">
                 <span className="inline-flex shrink-0 items-center gap-1 text-mark">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-55" />
@@ -369,7 +364,6 @@ export default function TrasparenzaContent() {
                 type="button"
                 onClick={() => {
                   setActiveId(null);
-                  setDetailOpen(false);
                   setPresentFocusToken((n) => n + 1);
                 }}
                 className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/90 px-2.5 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-xl transition-colors hover:bg-background hover:text-foreground sm:px-3"
@@ -378,20 +372,6 @@ export default function TrasparenzaContent() {
                 <Calendar className="h-4 w-4 sm:mr-1.5" />
                 <span className="hidden sm:inline">{t.trasparenza.jumpToToday}</span>
                 <span className="sm:hidden">{t.trasparenza.todayLabel}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDetailOpen((o) => !o)}
-                className="hidden h-10 items-center gap-2 rounded-md border border-border/60 bg-background/90 px-3 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors hover:bg-background lg:inline-flex"
-                aria-expanded={detailOpen}
-              >
-                {detailOpen ? (
-                  <PanelRightClose className="h-4 w-4" />
-                ) : (
-                  <PanelRightOpen className="h-4 w-4" />
-                )}
-                {t.trasparenza.detailPanel}
               </button>
             </div>
           </div>
@@ -443,7 +423,7 @@ export default function TrasparenzaContent() {
           </AnimatePresence>
 
           <AnimatePresence>
-            {detailOpen && (
+            {active && (
               <motion.div
                 className="absolute bottom-3 right-3 top-16 z-40 hidden w-[min(100%-1.5rem,340px)] sm:top-[4.25rem] lg:block xl:w-[360px]"
                 initial={{ opacity: 0, x: 12, scale: 0.98 }}
@@ -454,7 +434,7 @@ export default function TrasparenzaContent() {
                 <div className="flex h-full max-h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/90 shadow-2xl backdrop-blur-xl">
                   <EventDetailPanel
                     {...detailProps}
-                    onClose={() => setDetailOpen(false)}
+                    onClose={() => setActiveId(null)}
                     className="min-h-0 flex-1"
                   />
                 </div>
@@ -479,10 +459,7 @@ export default function TrasparenzaContent() {
             </div>
             <EventDetailPanel
               {...detailProps}
-              onClose={() => {
-                setActiveId(null);
-                setDetailOpen(false);
-              }}
+              onClose={() => setActiveId(null)}
               className="min-h-0 flex-1 overflow-hidden"
             />
           </motion.div>
