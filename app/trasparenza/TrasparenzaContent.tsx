@@ -14,6 +14,8 @@ import {
   type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
+import { applyStoreOverlays } from '@/lib/pipeline/edits';
+import type { TimelineEventEdit } from '@/lib/pipeline/types';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { EventDetailPanel } from '@/components/trasparenza/EventDetailPanel';
@@ -30,16 +32,28 @@ export default function TrasparenzaContent() {
 
   const [themeId, setThemeId] = useState(sentimentTheme.id);
   const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
+  const [edits, setEdits] = useState<Record<string, TimelineEventEdit>>({});
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [presentFocusToken, setPresentFocusToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     fetch('/api/pipeline/published')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { events?: TimelineEvent[] } | null) => {
-        if (cancelled || !data?.events) return;
-        setPipelineEvents(data.events);
-      })
+      .then(
+        (
+          data: {
+            events?: TimelineEvent[];
+            edits?: Record<string, TimelineEventEdit>;
+            hiddenIds?: string[];
+          } | null,
+        ) => {
+          if (cancelled || !data) return;
+          setPipelineEvents(data.events ?? []);
+          setEdits(data.edits ?? {});
+          setHiddenIds(data.hiddenIds ?? []);
+        },
+      )
       .catch(() => {
         /* pipeline optional offline */
       });
@@ -50,22 +64,27 @@ export default function TrasparenzaContent() {
 
   const track = useMemo(() => {
     const today = localIsoDate();
+    const hidden = new Set(hiddenIds);
     const base = timelineThemes.find((th) => th.id === themeId) ?? timelineThemes[0];
-    const withPresent = {
-      ...base,
-      events: base.events.map((e) =>
+    const withPresent = applyStoreOverlays(
+      base.events.map((e) =>
         e.id === PRESENT_PIN_ID ? { ...e, date: today } : e,
       ),
-    };
-    if (withPresent.id !== sentimentTheme.id || pipelineEvents.length === 0) {
-      return withPresent;
+      edits,
+      hiddenIds,
+    ).map((e) => (e.id === PRESENT_PIN_ID ? { ...e, date: today } : e));
+
+    if (base.id !== sentimentTheme.id) {
+      return { ...base, events: withPresent };
     }
-    const byId = new Map(withPresent.events.map((e) => [e.id, e]));
+
+    const byId = new Map(withPresent.map((e) => [e.id, e]));
     for (const e of pipelineEvents) {
+      if (hidden.has(e.id)) continue;
       byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
     }
-    return { ...withPresent, events: [...byId.values()] };
-  }, [themeId, pipelineEvents]);
+    return { ...base, events: [...byId.values()] };
+  }, [themeId, pipelineEvents, edits, hiddenIds]);
 
   const allYears = useMemo(() => {
     return [...new Set(track.events.map((e) => e.date.slice(0, 4)))].sort();

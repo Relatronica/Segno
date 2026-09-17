@@ -1,4 +1,8 @@
-import type { SentimentTag, TimelineEvent } from '@/lib/data/trasparenza';
+import type {
+  LocaleText,
+  SentimentTag,
+  TimelineEvent,
+} from '@/lib/data/trasparenza';
 
 export type CandidateStatus = 'pending' | 'approved' | 'rejected' | 'published';
 
@@ -29,9 +33,33 @@ export type SentimentCandidate = {
   reviewNote?: string;
 };
 
+/** Overlay applied on top of curated events in `lib/data/trasparenza.ts`. */
+export type TimelineEventEdit = {
+  date?: string;
+  actorId?: string | null;
+  personId?: string | null;
+  title?: LocaleText;
+  summary?: LocaleText;
+  detail?: LocaleText;
+  quote?: LocaleText | null;
+  sentiment?: SentimentTag | null;
+  sourceLabel?: LocaleText;
+  sourceUrl?: string;
+};
+
+export type CuratedPin = {
+  themeId: string;
+  themeName: LocaleText;
+  hidden: boolean;
+  edited: boolean;
+  event: TimelineEvent;
+};
+
 export type PipelineStore = {
   updatedAt: string;
   candidates: SentimentCandidate[];
+  edits?: Record<string, TimelineEventEdit>;
+  hiddenIds?: string[];
 };
 
 export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent | null {

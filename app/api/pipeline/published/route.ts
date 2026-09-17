@@ -14,7 +14,12 @@ export async function GET() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return NextResponse.json(
-    { events, updatedAt: store.updatedAt },
+    {
+      events,
+      edits: store.edits ?? {},
+      hiddenIds: store.hiddenIds ?? [],
+      updatedAt: store.updatedAt,
+    },
     {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',

@@ -5,6 +5,7 @@ import {
   SESSION_COOKIE,
   unauthorized,
 } from '@/lib/pipeline/auth';
+import { listCuratedPins } from '@/lib/pipeline/edits';
 import { loadPipelineStore, savePipelineStore, updateCandidateStatus } from '@/lib/pipeline/store';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import { ALL_SENTIMENT_TAGS, type SentimentTag } from '@/lib/data/trasparenza';
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     updatedAt: store.updatedAt,
     candidates,
+    curated: listCuratedPins(store),
     counts: {
       pending: store.candidates.filter((c) => c.status === 'pending').length,
       approved: store.candidates.filter((c) => c.status === 'approved').length,
@@ -71,10 +73,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
+  const store = await loadPipelineStore();
+  const current = store.candidates.find((c) => c.id === body.id);
+  if (!current) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
   const allowed: CandidateStatus[] = ['pending', 'approved', 'rejected', 'published'];
-  if (!body.status || !allowed.includes(body.status)) {
+  if (body.status && !allowed.includes(body.status)) {
     return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
   }
+  const nextStatus = body.status ?? current.status;
 
   if (
     body.suggestedSentiment &&
@@ -84,21 +93,14 @@ export async function PATCH(request: Request) {
   }
 
   // Publishing requires a quote — editorial bar
-  if (body.status === 'published' || body.status === 'approved') {
-    const store = await loadPipelineStore();
-    const current = store.candidates.find((c) => c.id === body.id);
-    const quote = body.quote ?? current?.quote;
+  if (nextStatus === 'published' || nextStatus === 'approved') {
+    const quote = body.quote ?? current.quote;
     if (!quote?.en?.trim()) {
       return NextResponse.json({ error: 'quote_required' }, { status: 400 });
     }
   }
 
-  const store = await loadPipelineStore();
-  if (!store.candidates.some((c) => c.id === body.id)) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  const next = updateCandidateStatus(store, body.id, body.status, {
+  const next = updateCandidateStatus(store, body.id, nextStatus, {
     title: body.title,
     summary: body.summary,
     quote: body.quote,

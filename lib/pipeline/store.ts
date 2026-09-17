@@ -1,7 +1,11 @@
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { PipelineStore, SentimentCandidate } from '@/lib/pipeline/types';
+import type {
+  PipelineStore,
+  SentimentCandidate,
+  TimelineEventEdit,
+} from '@/lib/pipeline/types';
 
 const STORE_KEY = 'store.json';
 const LOCAL_PATH = path.join(process.cwd(), '.data', 'pipeline-store.json');
@@ -9,7 +13,17 @@ const LOCAL_PATH = path.join(process.cwd(), '.data', 'pipeline-store.json');
 const emptyStore = (): PipelineStore => ({
   updatedAt: new Date().toISOString(),
   candidates: [],
+  edits: {},
+  hiddenIds: [],
 });
+
+function normalizeStore(store: PipelineStore): PipelineStore {
+  return {
+    ...store,
+    edits: store.edits ?? {},
+    hiddenIds: store.hiddenIds ?? [],
+  };
+}
 
 async function readLocal(): Promise<PipelineStore> {
   try {
@@ -50,8 +64,8 @@ async function writeBlobs(data: PipelineStore): Promise<boolean> {
 
 export async function loadPipelineStore(): Promise<PipelineStore> {
   const fromBlobs = await readBlobs();
-  if (fromBlobs) return fromBlobs;
-  return readLocal();
+  if (fromBlobs) return normalizeStore(fromBlobs);
+  return normalizeStore(await readLocal());
 }
 
 export async function savePipelineStore(store: PipelineStore): Promise<void> {
@@ -80,12 +94,35 @@ export function upsertCandidates(
 
   return {
     store: {
+      ...store,
       updatedAt: new Date().toISOString(),
       candidates: [...byUrl.values()].sort((a, b) =>
         b.discoveredAt.localeCompare(a.discoveredAt),
       ),
     },
     added,
+  };
+}
+
+export function patchCuratedEvent(
+  store: PipelineStore,
+  id: string,
+  patch: { hidden?: boolean; edit?: TimelineEventEdit },
+): PipelineStore {
+  const edits = { ...(store.edits ?? {}) };
+  if (patch.edit) {
+    edits[id] = { ...edits[id], ...patch.edit };
+  }
+
+  let hiddenIds = [...(store.hiddenIds ?? [])];
+  if (patch.hidden === true && !hiddenIds.includes(id)) hiddenIds.push(id);
+  if (patch.hidden === false) hiddenIds = hiddenIds.filter((item) => item !== id);
+
+  return {
+    ...store,
+    updatedAt: new Date().toISOString(),
+    edits,
+    hiddenIds,
   };
 }
 
@@ -107,6 +144,10 @@ export function updateCandidateStatus(
     >
   >,
 ): PipelineStore {
+  const cleaned = Object.fromEntries(
+    Object.entries(patch ?? {}).filter(([, value]) => value !== undefined),
+  ) as typeof patch;
+
   return {
     ...store,
     updatedAt: new Date().toISOString(),
@@ -114,7 +155,7 @@ export function updateCandidateStatus(
       c.id === id
         ? {
             ...c,
-            ...patch,
+            ...cleaned,
             status,
             reviewedAt: new Date().toISOString(),
           }
