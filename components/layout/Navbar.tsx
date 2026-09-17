@@ -5,16 +5,10 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
-import { Menu, X, Globe, Calendar, Heart } from 'lucide-react';
+import { Menu, X, Globe, Calendar, Heart, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
-
-const secondaryLinks = [
-  { href: '/chi-siamo', key: 'chiSiamo' as const },
-  { href: '/strumenti', key: 'strumenti' as const },
-  { href: '/news', key: 'news' as const },
-];
 
 export function Navbar() {
   const pathname = usePathname();
@@ -26,18 +20,16 @@ export function Navbar() {
   };
 
   const timelineActive = pathname === '/trasparenza' || pathname.startsWith('/trasparenza/');
+  const segnalaActive = pathname === '/segnala' || pathname.startsWith('/segnala/');
+  const homeActive = pathname === '/';
+
+  const closeMobile = () => setMobileMenuOpen(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setMobileMenuOpen(false)}>
-          <Image
-            src="/segno_logo.png"
-            alt="Segno"
-            width={28}
-            height={28}
-            className="dark:hidden"
-          />
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={closeMobile}>
+          <Image src="/segno_logo.png" alt="Segno" width={28} height={28} className="dark:hidden" />
           <Image
             src="/segno_logo_white.png"
             alt="Segno"
@@ -51,8 +43,24 @@ export function Navbar() {
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden items-center gap-1 md:flex">
             <Link
+              href="/"
+              className={`relative rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                homeActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t.nav.home}
+              {homeActive && (
+                <motion.div
+                  layoutId="navbar-indicator"
+                  className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-foreground"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+            </Link>
+
+            <Link
               href="/trasparenza"
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-semibold transition-colors ${
                 timelineActive
                   ? 'bg-foreground text-background'
                   : 'bg-foreground/95 text-background hover:opacity-90'
@@ -62,29 +70,22 @@ export function Navbar() {
               {t.nav.trasparenza}
             </Link>
 
-            {secondaryLinks.map((link) => {
-              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t.nav[link.key]}
-                  {isActive && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-foreground"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
+            <Link
+              href="/segnala"
+              className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                segnalaActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Flag className="h-3.5 w-3.5" />
+              {t.nav.segnala}
+              {segnalaActive && (
+                <motion.div
+                  layoutId="navbar-indicator"
+                  className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-foreground"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+            </Link>
           </div>
 
           <a
@@ -99,7 +100,7 @@ export function Navbar() {
 
           <button
             onClick={toggleLocale}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Change language"
           >
             <Globe className="h-4 w-4" />
@@ -108,7 +109,7 @@ export function Navbar() {
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -127,39 +128,41 @@ export function Navbar() {
           >
             <div className="space-y-1 px-4 py-4">
               <Link
+                href="/"
+                onClick={closeMobile}
+                className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  homeActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {t.nav.home}
+              </Link>
+              <Link
                 href="/trasparenza"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
-                  timelineActive
-                    ? 'bg-foreground text-background'
-                    : 'bg-accent text-foreground'
+                onClick={closeMobile}
+                className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  timelineActive ? 'bg-foreground text-background' : 'bg-accent text-foreground'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
                 {t.nav.trasparenza}
               </Link>
-              {secondaryLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    }`}
-                  >
-                    {t.nav[link.key]}
-                  </Link>
-                );
-              })}
+              <Link
+                href="/segnala"
+                onClick={closeMobile}
+                className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  segnalaActive
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                }`}
+              >
+                <Flag className="h-4 w-4" />
+                {t.nav.segnala}
+              </Link>
               <a
                 href={DONATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeMobile}
                 className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-mark"
               >
                 <Heart className="h-4 w-4" />

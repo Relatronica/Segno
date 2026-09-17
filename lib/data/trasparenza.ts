@@ -1376,7 +1376,7 @@ export const sentimentTheme: TimelineTheme = {
   ],
 };
 
-export const timelineThemes: TimelineTheme[] = [aiActTrack, sentimentTheme];
+export const timelineThemes: TimelineTheme[] = [sentimentTheme, aiActTrack];
 
 /** @deprecated Prefer timelineThemes */
 export const lawTracks = timelineThemes;

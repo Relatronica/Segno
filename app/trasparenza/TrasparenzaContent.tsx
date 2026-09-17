@@ -24,8 +24,9 @@ export default function TrasparenzaContent() {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
 
-  const [themeId, setThemeId] = useState(timelineThemes[0].id);
+  const [themeId, setThemeId] = useState(sentimentTheme.id);
   const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
+  const [presentFocusToken, setPresentFocusToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,8 +64,20 @@ export default function TrasparenzaContent() {
     ...ALL_SENTIMENT_TAGS,
   ]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [detailOpen, setDetailOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const todayLabel = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }).format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }, [locale]);
 
   useEffect(() => {
     setSelectedYears((prev) => {
@@ -84,6 +97,7 @@ export default function TrasparenzaContent() {
     setSelectedYears(years);
     setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
     setActiveId(null);
+    setPresentFocusToken((n) => n + 1);
   };
 
   const actorMap = useMemo(
@@ -130,8 +144,9 @@ export default function TrasparenzaContent() {
       setActiveId(null);
       return;
     }
-    if (!activeId || !filtered.some((e) => e.id === activeId)) {
-      setActiveId(filtered[0].id);
+    // Keep selection only if still visible — never auto-jump to the oldest pin
+    if (activeId && !filtered.some((e) => e.id === activeId)) {
+      setActiveId(null);
     }
   }, [filtered, activeId]);
 
@@ -227,6 +242,7 @@ export default function TrasparenzaContent() {
   const selectEvent = (id: string) => {
     setActiveId(id);
     setDetailOpen(true);
+    setFiltersOpen(false);
   };
 
   const activeFilters =
@@ -294,7 +310,9 @@ export default function TrasparenzaContent() {
             moodEvents={track.showSentiment ? moodEvents : []}
             moodLabels={track.showSentiment ? moodLabels : undefined}
             moodLegendClassName={
-              detailOpen ? 'right-3 lg:right-[23rem] xl:right-[24.5rem]' : 'right-3'
+              detailOpen
+                ? 'right-3 max-lg:hidden lg:right-[23rem] xl:right-[24.5rem]'
+                : 'right-3 max-lg:hidden'
             }
             actors={actorMap}
             people={personMap}
@@ -305,58 +323,92 @@ export default function TrasparenzaContent() {
             dragHint={t.trasparenza.dragHint}
             typeLabel={typeLabel}
             sentimentLabel={track.showSentiment ? sentimentTagLabel : undefined}
+            focusPresent
+            todayLabel={t.trasparenza.todayLabel}
+            presentFocusToken={presentFocusToken}
           />
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-3 sm:p-4">
-            <div className="pointer-events-auto flex flex-wrap items-center gap-2">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 p-2.5 sm:p-4">
+            <div className="pointer-events-auto flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setFiltersOpen((o) => !o)}
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors ${
+                onClick={() => {
+                  setFiltersOpen((o) => !o);
+                  if (!filtersOpen) setDetailOpen(false);
+                }}
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors ${
                   filtersOpen
                     ? 'border-foreground/15 bg-foreground text-background'
-                    : 'border-border/60 bg-background/85 text-foreground hover:bg-background'
+                    : 'border-border/60 bg-background/90 text-foreground hover:bg-background'
                 }`}
                 aria-expanded={filtersOpen}
+                aria-label={t.trasparenza.filterBy}
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                {t.trasparenza.filterBy}
+                <span className="hidden sm:inline">{t.trasparenza.filterBy}</span>
                 {activeFilters && !filtersOpen && (
                   <span className="h-1.5 w-1.5 rounded-full bg-mark" />
                 )}
               </button>
 
-              <span className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-background/85 px-3 py-2 font-mono text-xs text-muted-foreground shadow-lg backdrop-blur-xl">
-                <Calendar className="h-3.5 w-3.5" />
-                {track.name[locale]} · {track.period[locale]}
+              <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md border border-border/60 bg-background/90 px-2.5 py-2 font-mono text-[11px] shadow-lg backdrop-blur-xl sm:gap-2 sm:px-3 sm:text-xs">
+                <span className="inline-flex shrink-0 items-center gap-1 text-mark">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-55" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mark" />
+                  </span>
+                  {t.trasparenza.liveBadge}
+                </span>
+                <span className="shrink-0 text-border">·</span>
+                <span className="truncate text-foreground/85">{track.shortName}</span>
+                <span className="hidden text-border sm:inline">·</span>
+                <span className="hidden truncate text-muted-foreground sm:inline">{todayLabel}</span>
               </span>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => setDetailOpen((o) => !o)}
-              className="pointer-events-auto hidden items-center gap-2 rounded-xl border border-border/60 bg-background/85 px-3 py-2 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors hover:bg-background lg:inline-flex"
-              aria-expanded={detailOpen}
-            >
-              {detailOpen ? (
-                <PanelRightClose className="h-4 w-4" />
-              ) : (
-                <PanelRightOpen className="h-4 w-4" />
-              )}
-              {t.trasparenza.detailPanel}
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveId(null);
+                  setDetailOpen(false);
+                  setPresentFocusToken((n) => n + 1);
+                }}
+                className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/90 px-2.5 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-xl transition-colors hover:bg-background hover:text-foreground sm:px-3"
+                aria-label={t.trasparenza.jumpToToday}
+              >
+                <Calendar className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">{t.trasparenza.jumpToToday}</span>
+                <span className="sm:hidden">{t.trasparenza.todayLabel}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDetailOpen((o) => !o)}
+                className="hidden h-10 items-center gap-2 rounded-md border border-border/60 bg-background/90 px-3 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors hover:bg-background lg:inline-flex"
+                aria-expanded={detailOpen}
+              >
+                {detailOpen ? (
+                  <PanelRightClose className="h-4 w-4" />
+                ) : (
+                  <PanelRightOpen className="h-4 w-4" />
+                )}
+                {t.trasparenza.detailPanel}
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>
             {filtersOpen && (
               <motion.div
-                className="absolute bottom-3 left-3 top-16 z-40 w-[min(100%-1.5rem,300px)] sm:top-[4.25rem]"
-                initial={{ opacity: 0, x: -12, scale: 0.98 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -12, scale: 0.98 }}
+                className="absolute inset-x-0 bottom-0 top-14 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:top-[4.25rem] sm:w-[min(100%-1.5rem,300px)]"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
                 transition={{ duration: 0.2, ease: [0.25, 0.4, 0.25, 1] }}
               >
-                <div className="flex h-full max-h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/90 shadow-2xl backdrop-blur-xl">
+                <div className="flex h-full max-h-full flex-col overflow-hidden rounded-t-2xl border border-border/60 bg-background shadow-2xl sm:rounded-2xl sm:bg-background/95 sm:backdrop-blur-xl">
+                  <div className="flex justify-center py-2 sm:hidden" aria-hidden>
+                    <span className="h-1 w-10 rounded-full bg-border" />
+                  </div>
                   <FilterSidebar
                     themes={timelineThemes}
                     selectedThemeId={track.id}
@@ -409,20 +461,33 @@ export default function TrasparenzaContent() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 lg:block">
-            {!track.showSentiment && (
-              <p className="rounded-full border border-border/50 bg-background/80 px-3 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur-md">
-                {t.trasparenza.comingTitle}: DSA · DMA · GDPR
-              </p>
-            )}
-          </div>
         </div>
       </section>
 
-      <div className="relative z-10 max-h-[42%] shrink-0 overflow-y-auto border-t border-border/40 bg-background lg:hidden">
-        <EventDetailPanel {...detailProps} />
-      </div>
+      {/* Mobile detail: only when a pin is selected */}
+      <AnimatePresence>
+        {active && (
+          <motion.div
+            className="relative z-20 flex max-h-[58%] shrink-0 flex-col border-t border-border/50 bg-background shadow-[0_-8px_30px_rgba(0,0,0,0.08)] lg:hidden"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', bounce: 0.12, duration: 0.35 }}
+          >
+            <div className="flex justify-center py-2" aria-hidden>
+              <span className="h-1 w-10 rounded-full bg-border" />
+            </div>
+            <EventDetailPanel
+              {...detailProps}
+              onClose={() => {
+                setActiveId(null);
+                setDetailOpen(false);
+              }}
+              className="min-h-0 flex-1 overflow-hidden"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

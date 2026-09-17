@@ -67,8 +67,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'How can I contribute?',
     },
     answer: {
-      it: 'Condividi la timeline. Segnala errori o fonti mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
-      en: 'Share the timeline. Flag errors or missing sources. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
+      it: 'Condividi la timeline. Usa la pagina Segnala per errori o fonti mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
+      en: 'Share the timeline. Use the Report page for errors or missing sources. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
     },
   },
 ];

@@ -2,10 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  // Ottimizzazioni per produzione
   compress: true,
   poweredByHeader: false,
-  // Headers di sicurezza
   async headers() {
     return [
       {
@@ -21,6 +19,23 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+    ];
+  },
+  async redirects() {
+    return [
+      { source: '/strumenti', destination: '/', permanent: true },
+      { source: '/chi-siamo', destination: '/segnala', permanent: true },
+      { source: '/chi-siamo/:path*', destination: '/segnala', permanent: true },
+      { source: '/news', destination: '/', permanent: true },
+      { source: '/percorsi', destination: '/', permanent: true },
+      { source: '/percorsi/:path*', destination: '/', permanent: true },
+      { source: '/risorse', destination: '/', permanent: true },
+      { source: '/risorse/:path*', destination: '/', permanent: true },
+      { source: '/glossario', destination: '/', permanent: true },
+      { source: '/mappa-digitale', destination: '/', permanent: true },
+      { source: '/stack-etico', destination: '/', permanent: true },
+      { source: '/process-designer', destination: '/', permanent: true },
+      { source: '/metodologia', destination: '/', permanent: true },
     ];
   },
 };

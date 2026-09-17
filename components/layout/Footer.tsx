@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/lib/i18n/useT';
 
+const DONATE_URL = 'https://buymeacoffee.com/relatronica';
+
 export function Footer() {
   const t = useT();
   const pathname = usePathname();
   const year = new Date().getFullYear();
 
-  // Timeline / redazione are full-viewport experiences
   if (
     pathname === '/trasparenza' ||
     pathname.startsWith('/trasparenza/') ||
@@ -22,71 +23,37 @@ export function Footer() {
   return (
     <footer className="border-t border-border/50 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="sm:col-span-2 lg:col-span-1">
+        <div className="grid gap-8 sm:grid-cols-3">
+          <div>
             <h3 className="text-lg font-bold">Segno</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t.footer.description}
-            </p>
+            <p className="mt-2 max-w-sm text-sm text-muted-foreground">{t.footer.description}</p>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold">{t.footer.navigation}</h4>
             <ul className="mt-3 space-y-2">
               <li>
-                <Link href="/trasparenza" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link
+                  href="/"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t.nav.home}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/trasparenza"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   {t.nav.trasparenza}
                 </Link>
               </li>
               <li>
-                <Link href="/#avanzamento" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.home.roadmapTitle}
-                </Link>
-              </li>
-              <li>
-                <Link href="/#faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Link
+                  href="/#faq"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   {t.home.faqTitle}
-                </Link>
-              </li>
-              <li>
-                <Link href="/chi-siamo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.chiSiamo}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold">{t.footer.resources}</h4>
-            <ul className="mt-3 space-y-2">
-              <li>
-                <Link href="/strumenti" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.strumenti}
-                </Link>
-              </li>
-              <li>
-                <Link href="/percorsi" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.percorsi}
-                </Link>
-              </li>
-              <li>
-                <Link href="/mappa-digitale" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.mappaDigitale}
-                </Link>
-              </li>
-              <li>
-                <Link href="/stack-etico" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.stackEtico}
-                </Link>
-              </li>
-              <li>
-                <Link href="/process-designer" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.processDesigner}
-                </Link>
-              </li>
-              <li>
-                <Link href="/metodologia" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                  {t.nav.metodologia}
                 </Link>
               </li>
             </ul>
@@ -97,15 +64,15 @@ export function Footer() {
             <ul className="mt-3 space-y-2">
               <li>
                 <Link
-                  href="/chi-siamo#contatti"
+                  href="/segnala"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {t.footer.writeUs}
+                  {t.nav.segnala}
                 </Link>
               </li>
               <li>
                 <a
-                  href="https://buymeacoffee.com/relatronica"
+                  href={DONATE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"

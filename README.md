@@ -1,8 +1,6 @@
-# Segno — Sovranità digitale
+# Segno — Trasparenza sulle regole digitali
 
-Piattaforma per la consapevolezza e la sovranità digitale.
-
-Percorsi formativi, risorse, glossario e news per comprendere, difendere e rivendicare i tuoi diritti nel mondo digitale.
+Timeline pubblica su lobbying, dichiarazioni e decisioni europee sul digitale — con fonti e citazioni.
 
 ## Stack
 
@@ -10,30 +8,22 @@ Percorsi formativi, risorse, glossario e news per comprendere, difendere e riven
 - **React 19**
 - **TypeScript**
 - **Tailwind CSS 4**
-- **shadcn/ui** + Radix UI
 - **Framer Motion**
 - **Zustand**
+- **Resend** (form contatti)
+- **Netlify Blobs** (coda redazionale)
 
 ## Struttura
 
 ```
 app/
-├── page.tsx            # Homepage
-├── percorsi/           # Percorsi formativi / corsi
-├── risorse/            # Risorse e guide
-├── glossario/          # Glossario della sovranità digitale
-├── news/               # Feed notizie (RSS)
-├── chi-siamo/          # Chi siamo
-└── api/news/           # API RSS news
-components/
-├── layout/             # Navbar, Footer
-└── ui/                 # Componenti base (shadcn/ui)
-lib/
-├── data/               # Dati statici (corsi, risorse, glossario)
-├── i18n/               # Traduzioni IT/EN
-└── utils.ts
-store/
-└── useAppStore.ts      # Stato globale (Zustand)
+├── page.tsx            # Home
+├── trasparenza/        # Timeline
+├── segnala/            # Form segnalazioni
+├── redazione/          # Revisione candidati (protetta)
+└── api/
+    ├── contact/        # Invio email
+    └── pipeline/       # Discovery + candidati
 ```
 
 ## Sviluppo
@@ -43,6 +33,8 @@ npm install
 npm run dev
 ```
 
-## Bilingue
+Variabili utili: `RESEND_API_KEY`, `PIPELINE_SECRET`.
 
-Il sito supporta italiano e inglese. La lingua si cambia dal pulsante nella navbar.
+## Lingue
+
+Italiano e inglese dalla navbar.

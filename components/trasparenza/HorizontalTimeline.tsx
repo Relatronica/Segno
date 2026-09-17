@@ -51,6 +51,11 @@ type Props = {
   dragHint: string;
   typeLabel: (id: TimelineEvent['type']) => string;
   sentimentLabel?: (tag: SentimentTag) => string;
+  /** Scroll the present into view when the layout is ready */
+  focusPresent?: boolean;
+  todayLabel?: string;
+  /** Bump to re-center on today (e.g. jump button) */
+  presentFocusToken?: number;
 };
 
 /** Smooth open path through points (Catmull-Rom → cubic bezier) */
@@ -127,12 +132,24 @@ export function HorizontalTimeline({
   dragHint,
   typeLabel,
   sentimentLabel,
+  focusPresent = false,
+  todayLabel = 'Today',
+  presentFocusToken = 0,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [stageHeight, setStageHeight] = useState(0);
+  const [coarsePointer, setCoarsePointer] = useState(false);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    const update = () => setCoarsePointer(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const el = stageRef.current;
@@ -277,7 +294,17 @@ export function HorizontalTimeline({
       };
     });
 
-    return { width: finalWidth, points, years, mood, minT, maxT, usable };
+    return {
+      width: finalWidth,
+      points,
+      years,
+      mood,
+      todayX,
+      todayIso,
+      minT,
+      maxT,
+      usable,
+    };
   }, [events, moodEvents]);
 
   const moodGeometry = useMemo(() => {
@@ -317,11 +344,55 @@ export function HorizontalTimeline({
     [layout.points, layout.mood],
   );
 
+  const scrollToPresent = useCallback(
+    (behavior: ScrollBehavior = 'smooth') => {
+      const el = scrollerRef.current;
+      if (!el || layout.todayX == null || el.clientWidth === 0) return;
+      // Bias slightly left so recent past stays in frame, present near center-right
+      const target = layout.todayX - el.clientWidth * 0.62;
+      el.scrollTo({ left: Math.max(0, target), behavior });
+    },
+    [layout.todayX],
+  );
+
   useEffect(() => {
     if (activeId) scrollToId(activeId);
   }, [activeId, scrollToId]);
 
+  // Center on "today" when nothing is selected (initial load / jump to today)
+  useEffect(() => {
+    if (!focusPresent || activeId) return;
+    if (layout.todayX == null || layout.width <= 0) return;
+
+    let cancelled = false;
+    const run = (behavior: ScrollBehavior) => {
+      if (cancelled) return;
+      scrollToPresent(behavior);
+    };
+
+    // Wait for scroller to have a measurable width (layout + paint)
+    const t0 = window.setTimeout(() => run('auto'), 0);
+    const t1 = window.setTimeout(() => run('auto'), 120);
+    const t2 = window.setTimeout(() => run('smooth'), 320);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [
+    focusPresent,
+    activeId,
+    layout.width,
+    layout.todayX,
+    presentFocusToken,
+    scrollToPresent,
+    stageHeight,
+  ]);
+
   const onPointerDown = (e: React.PointerEvent) => {
+    // On touch phones, prefer native horizontal pan — custom drag fights it
+    if (coarsePointer || e.pointerType === 'touch') return;
     const el = scrollerRef.current;
     if (!el) return;
     const target = e.target as HTMLElement;
@@ -374,7 +445,7 @@ export function HorizontalTimeline({
 
   return (
     <div ref={stageRef} className="relative h-full w-full min-h-0">
-      <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 font-mono text-[11px] text-muted-foreground/70">
+      <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 font-mono text-[11px] text-muted-foreground/70 md:block">
         {dragHint}
       </p>
 
@@ -413,14 +484,14 @@ export function HorizontalTimeline({
 
       <div
         ref={scrollerRef}
-        className={`absolute inset-0 overflow-x-auto overflow-y-hidden touch-pan-x ${
+        className={`absolute inset-0 overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        style={{ scrollbarWidth: 'thin' }}
+        style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch' }}
       >
         <div
           className="relative select-none"
@@ -444,6 +515,26 @@ export function HorizontalTimeline({
               </span>
             </div>
           ))}
+
+          {stageHeight > 0 && layout.todayX != null && (
+            <div
+              aria-hidden
+              className="absolute z-[2] w-px bg-mark/70"
+              style={{
+                left: layout.todayX,
+                top: midY - stageHeight * 0.42,
+                height: stageHeight * 0.84,
+              }}
+            >
+              <span className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-md border border-mark/25 bg-mark-muted px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-mark">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mark" />
+                </span>
+                {todayLabel}
+              </span>
+            </div>
+          )}
 
           {stageHeight > 0 && (
             <>
@@ -547,7 +638,7 @@ export function HorizontalTimeline({
                   <button
                     type="button"
                     onClick={() => onSelect(event.id)}
-                    className={`absolute left-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform ${pinBg} ${pinColor} ring-2 ${
+                    className={`absolute left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform sm:h-10 sm:w-10 ${pinBg} ${pinColor} ring-2 ${
                       isActive
                         ? `${pinRing} scale-110 shadow-md`
                         : 'ring-background/80 hover:scale-105'
@@ -561,7 +652,7 @@ export function HorizontalTimeline({
                   <button
                     type="button"
                     onClick={() => onSelect(event.id)}
-                    className={`absolute left-1/2 z-20 w-[10.5rem] -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2 text-left transition-all sm:w-[12rem] ${
+                    className={`absolute left-1/2 z-20 w-[9.5rem] -translate-x-1/2 -translate-y-1/2 rounded-md border px-2.5 py-2 text-left transition-all sm:w-[12rem] sm:rounded-xl sm:px-3 ${
                       isActive
                         ? 'border-foreground/25 bg-card shadow-md'
                         : 'border-border/50 bg-card/92 hover:border-border hover:bg-card'
