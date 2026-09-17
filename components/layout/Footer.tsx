@@ -9,8 +9,13 @@ export function Footer() {
   const pathname = usePathname();
   const year = new Date().getFullYear();
 
-  // Timeline page is a full-viewport experience
-  if (pathname === '/trasparenza' || pathname.startsWith('/trasparenza/')) {
+  // Timeline / redazione are full-viewport experiences
+  if (
+    pathname === '/trasparenza' ||
+    pathname.startsWith('/trasparenza/') ||
+    pathname === '/redazione' ||
+    pathname.startsWith('/redazione/')
+  ) {
     return null;
   }
 

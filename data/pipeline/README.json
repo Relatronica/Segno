@@ -1,0 +1,4 @@
+{
+  "updatedAt": null,
+  "note": "Runtime store lives in Netlify Blobs (production) or .data/pipeline-store.json (local)."
+}

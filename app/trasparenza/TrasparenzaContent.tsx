@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, SlidersHorizontal, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import type { TimelineEvent } from '@/lib/data/trasparenza';
 import {
   timelineThemes,
   sentimentTheme,
@@ -24,10 +25,31 @@ export default function TrasparenzaContent() {
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
 
   const [themeId, setThemeId] = useState(timelineThemes[0].id);
-  const track = useMemo(
-    () => timelineThemes.find((th) => th.id === themeId) ?? timelineThemes[0],
-    [themeId],
-  );
+  const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/pipeline/published')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { events?: TimelineEvent[] } | null) => {
+        if (cancelled || !data?.events) return;
+        setPipelineEvents(data.events);
+      })
+      .catch(() => {
+        /* pipeline optional offline */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const track = useMemo(() => {
+    const base = timelineThemes.find((th) => th.id === themeId) ?? timelineThemes[0];
+    if (base.id !== sentimentTheme.id || pipelineEvents.length === 0) return base;
+    const byId = new Map(base.events.map((e) => [e.id, e]));
+    for (const e of pipelineEvents) byId.set(e.id, e);
+    return { ...base, events: [...byId.values()] };
+  }, [themeId, pipelineEvents]);
 
   const allYears = useMemo(() => {
     return [...new Set(track.events.map((e) => e.date.slice(0, 4)))].sort();
@@ -43,6 +65,14 @@ export default function TrasparenzaContent() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [detailOpen, setDetailOpen] = useState(true);
+
+  useEffect(() => {
+    setSelectedYears((prev) => {
+      const merged = [...new Set([...prev, ...allYears])].sort();
+      if (merged.length === prev.length && merged.every((y, i) => y === prev[i])) return prev;
+      return merged;
+    });
+  }, [allYears]);
 
   const switchTheme = (id: string) => {
     setThemeId(id);
