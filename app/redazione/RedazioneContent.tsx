@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/useT';
+import { localIsoDate } from '@/lib/dates';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -358,6 +359,7 @@ export default function RedazioneContent() {
                   <Input
                     id={`date-${c.id}`}
                     type="date"
+                    max={localIsoDate()}
                     value={draft.date ?? c.date}
                     onChange={(e) =>
                       setDrafts((d) => ({

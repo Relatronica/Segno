@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
+import { toMs as toMsDate } from '@/lib/dates';
 
 export const ALL_EVENT_TYPES: EventType[] = [
   'legislative',
@@ -118,5 +119,5 @@ export const SENTIMENT_FEAR_SCORE: Record<SentimentTag, number> = {
 };
 
 export function toMs(date: string): number {
-  return new Date(date).getTime();
+  return toMsDate(date);
 }

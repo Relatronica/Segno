@@ -8,6 +8,7 @@ import {
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
 import { EVENT_META, SENTIMENT_META, SENTIMENT_FEAR_SCORE, toMs } from './meta';
+import { localIsoDate } from '@/lib/dates';
 import type { SentimentTag } from '@/lib/data/trasparenza';
 
 const PAD_X_LEFT = 240;
@@ -196,17 +197,17 @@ export function HorizontalTimeline({
       };
     }
 
-    const today = new Date();
-    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayIso = localIsoDate();
     const todayMs = toMs(todayIso);
+    const atPresent = (date: string) => (toMs(date) > todayMs ? todayIso : date);
 
     const spanTimes = [
-      ...events.map((e) => toMs(e.date)),
-      ...moodWithTag.map((e) => toMs(e.date)),
+      ...events.map((e) => toMs(atPresent(e.date))),
+      ...moodWithTag.map((e) => toMs(atPresent(e.date))),
       todayMs,
     ];
     const minT = Math.min(...spanTimes);
-    const maxT = Math.max(...spanTimes);
+    const maxT = todayMs;
     const span = Math.max(maxT - minT, 1);
 
     const proportional = 1100;
@@ -215,7 +216,7 @@ export function HorizontalTimeline({
     const usable = width - PAD_X_LEFT - PAD_X_RIGHT;
 
     const xForDate = (date: string) =>
-      PAD_X_LEFT + ((toMs(date) - minT) / span) * usable;
+      PAD_X_LEFT + ((toMs(atPresent(date)) - minT) / span) * usable;
 
     const raw = events.map((e) => ({
       ...e,
@@ -253,14 +254,21 @@ export function HorizontalTimeline({
       x: pinById.get(m.id) ?? m.x,
     }));
 
-    // Hold last score through to today (no new pin — visual continuity only)
+    const lastMoodX = mood[mood.length - 1]?.x ?? PAD_X_LEFT;
+    // Oggi is always the rightmost mark — after packed pins, not a frozen date slot
+    const todayX = Math.max(
+      xForDate(todayIso),
+      lastPinX + CARD_W / 2 + 36,
+      lastMoodX + 32,
+    );
+
     if (mood.length > 0) {
       const last = mood[mood.length - 1];
-      if (todayMs > toMs(last.date)) {
+      if (todayX > last.x) {
         mood.push({
           id: 'mood-today-carry',
           date: todayIso,
-          x: xForDate(todayIso),
+          x: todayX,
           score: last.score,
           sentiment: last.sentiment,
           carry: true,
@@ -268,20 +276,13 @@ export function HorizontalTimeline({
       }
     }
 
-    const lastMoodX = mood[mood.length - 1]?.x ?? PAD_X_LEFT;
-    const todayX = xForDate(todayIso);
-    const finalWidth = Math.max(
-      width,
-      lastPinX + PAD_X_RIGHT,
-      lastMoodX + PAD_X_RIGHT,
-      todayX + PAD_X_RIGHT,
-    );
+    const finalWidth = Math.max(width, todayX + PAD_X_RIGHT);
     const points = assignLanes(sorted);
 
     const yearSet = [
       ...new Set([
-        ...events.map((e) => e.date.slice(0, 4)),
-        ...moodWithTag.map((e) => e.date.slice(0, 4)),
+        ...events.map((e) => atPresent(e.date).slice(0, 4)),
+        ...moodWithTag.map((e) => atPresent(e.date).slice(0, 4)),
         todayIso.slice(0, 4),
       ]),
     ].sort();

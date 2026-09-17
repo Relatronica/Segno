@@ -5,12 +5,13 @@ import { hintSentiment, matchPerson } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
 import { candidateIdFromUrl } from '@/lib/pipeline/store';
 import type { SentimentCandidate } from '@/lib/pipeline/types';
+import { clampIsoToToday, localIsoDate } from '@/lib/dates';
 
 function toDate(value?: string): string {
-  if (!value) return new Date().toISOString().slice(0, 10);
+  if (!value) return localIsoDate();
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
-  return d.toISOString().slice(0, 10);
+  if (Number.isNaN(d.getTime())) return localIsoDate();
+  return clampIsoToToday(localIsoDate(d));
 }
 
 function stripHtml(input: string): string {

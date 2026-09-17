@@ -8,6 +8,7 @@ import {
 import { loadPipelineStore, savePipelineStore, updateCandidateStatus } from '@/lib/pipeline/store';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import { ALL_SENTIMENT_TAGS, type SentimentTag } from '@/lib/data/trasparenza';
+import { clampIsoToToday } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -104,7 +105,7 @@ export async function PATCH(request: Request) {
     suggestedSentiment: body.suggestedSentiment,
     personId: body.personId,
     actorId: body.actorId,
-    date: body.date,
+    date: body.date ? clampIsoToToday(body.date) : body.date,
     reviewNote: body.reviewNote,
   });
 

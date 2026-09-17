@@ -13,12 +13,16 @@ import {
   type EventType,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
+import { localIsoDate } from '@/lib/dates';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { EventDetailPanel } from '@/components/trasparenza/EventDetailPanel';
 
 /** Navbar height (h-16) */
 const NAV_H = '4rem';
+
+/** Closing "today" pin on the AI Act track — date follows the calendar. */
+const PRESENT_PIN_ID = 'e-2026-09-today';
 
 export default function TrasparenzaContent() {
   const t = useT();
@@ -45,11 +49,22 @@ export default function TrasparenzaContent() {
   }, []);
 
   const track = useMemo(() => {
+    const today = localIsoDate();
     const base = timelineThemes.find((th) => th.id === themeId) ?? timelineThemes[0];
-    if (base.id !== sentimentTheme.id || pipelineEvents.length === 0) return base;
-    const byId = new Map(base.events.map((e) => [e.id, e]));
-    for (const e of pipelineEvents) byId.set(e.id, e);
-    return { ...base, events: [...byId.values()] };
+    const withPresent = {
+      ...base,
+      events: base.events.map((e) =>
+        e.id === PRESENT_PIN_ID ? { ...e, date: today } : e,
+      ),
+    };
+    if (withPresent.id !== sentimentTheme.id || pipelineEvents.length === 0) {
+      return withPresent;
+    }
+    const byId = new Map(withPresent.events.map((e) => [e.id, e]));
+    for (const e of pipelineEvents) {
+      byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
+    }
+    return { ...withPresent, events: [...byId.values()] };
   }, [themeId, pipelineEvents]);
 
   const allYears = useMemo(() => {
