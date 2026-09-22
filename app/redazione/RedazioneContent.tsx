@@ -5,6 +5,8 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Check,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Eye,
   EyeOff,
@@ -12,6 +14,7 @@ import {
   LogOut,
   RefreshCw,
   Save,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
@@ -45,10 +48,40 @@ type CuratedDraft = {
   personId?: string;
 };
 
+type QueueRow = {
+  kind: 'pipeline';
+  id: string;
+  date: string;
+  candidate: SentimentCandidate;
+};
+
+type TimelineRow =
+  | QueueRow
+  | { kind: 'curated'; id: string; date: string; pin: CuratedPin };
+
 const PRESENT_PIN_ID = 'e-2026-09-today';
 
 const fieldClass =
   'border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
+
+function yesterdayIso(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return localIsoDate(d);
+}
+
+function groupByDay<T extends { date: string }>(rows: T[]): { date: string; items: T[] }[] {
+  const map = new Map<string, T[]>();
+  for (const row of rows) {
+    const key = row.date.slice(0, 10) || 'undated';
+    const list = map.get(key) ?? [];
+    list.push(row);
+    map.set(key, list);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([date, items]) => ({ date, items }));
+}
 
 export default function RedazioneContent() {
   const t = useT();
@@ -68,6 +101,13 @@ export default function RedazioneContent() {
   const [message, setMessage] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Partial<SentimentCandidate>>>({});
   const [curatedDrafts, setCuratedDrafts] = useState<Record<string, CuratedDraft>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const today = localIsoDate();
+  const yesterday = yesterdayIso();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,6 +161,7 @@ export default function RedazioneContent() {
     setAuthed(false);
     setCandidates([]);
     setCurated([]);
+    setSelected([]);
   };
 
   const runDiscover = async () => {
@@ -225,13 +266,59 @@ export default function RedazioneContent() {
     await load();
   };
 
+  const bulkReject = async () => {
+    if (selected.length === 0) return;
+    setBulkBusy(true);
+    setMessage(null);
+    const res = await fetch('/api/pipeline/candidates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selected, status: 'rejected' }),
+    });
+    setBulkBusy(false);
+    if (!res.ok) {
+      setMessage(t.redazione.saveError);
+      return;
+    }
+    const n = selected.length;
+    setSelected([]);
+    setConfirmDelete(false);
+    setMessage(t.redazione.rejectedBulk.replace('{n}', String(n)));
+    await load();
+  };
+
+  const bulkDelete = async () => {
+    if (selected.length === 0) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setBulkBusy(true);
+    setMessage(null);
+    const res = await fetch('/api/pipeline/candidates', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selected }),
+    });
+    setBulkBusy(false);
+    if (!res.ok) {
+      setMessage(t.redazione.saveError);
+      return;
+    }
+    const n = selected.length;
+    setSelected([]);
+    setConfirmDelete(false);
+    setMessage(t.redazione.deleted.replace('{n}', String(n)));
+    await load();
+  };
+
   const visible = useMemo(() => {
     if (filter === 'all') return candidates;
     return candidates.filter((c) => c.status === filter);
   }, [candidates, filter]);
 
-  const timelineRows = useMemo(() => {
-    const published = candidates
+  const timelineRows = useMemo((): TimelineRow[] => {
+    const published: TimelineRow[] = candidates
       .filter((c) => c.status === 'published')
       .map((candidate) => ({
         kind: 'pipeline' as const,
@@ -239,7 +326,7 @@ export default function RedazioneContent() {
         date: drafts[candidate.id]?.date ?? candidate.date,
         candidate,
       }));
-    const curatedRows = curated.map((pin) => ({
+    const curatedRows: TimelineRow[] = curated.map((pin) => ({
       kind: 'curated' as const,
       id: pin.event.id,
       date: curatedDrafts[pin.event.id]?.date ?? pin.event.date,
@@ -247,6 +334,54 @@ export default function RedazioneContent() {
     }));
     return [...curatedRows, ...published].sort((a, b) => b.date.localeCompare(a.date));
   }, [candidates, curated, drafts, curatedDrafts]);
+
+  const rows: TimelineRow[] = useMemo(() => {
+    if (filter === 'published') return timelineRows;
+    return visible.map((candidate) => ({
+      kind: 'pipeline' as const,
+      id: candidate.id,
+      date: drafts[candidate.id]?.date ?? candidate.date,
+      candidate,
+    }));
+  }, [filter, timelineRows, visible, drafts]);
+
+  const grouped = useMemo(() => groupByDay(rows), [rows]);
+
+  const dayLabel = (date: string) => {
+    if (date === today) return t.redazione.today;
+    if (date === yesterday) return t.redazione.yesterday;
+    const [y, m, d] = date.split('-').map(Number);
+    if (!y || !m || !d) return date;
+    return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: date.slice(0, 4) !== today.slice(0, 4) ? 'numeric' : undefined,
+    }).format(new Date(y, m - 1, d));
+  };
+
+  const toggleSelected = (id: string) => {
+    setConfirmDelete(false);
+    setSelected((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
+  };
+
+  const toggleDay = (ids: string[]) => {
+    setConfirmDelete(false);
+    setSelected((current) => {
+      const allOn = ids.every((id) => current.includes(id));
+      if (allOn) return current.filter((id) => !ids.includes(id));
+      return [...new Set([...current, ...ids])];
+    });
+  };
+
+  const setFilterAndClear = (key: typeof filter) => {
+    setFilter(key);
+    setSelected([]);
+    setConfirmDelete(false);
+    setExpandedId(null);
+  };
 
   if (authed === null) {
     return (
@@ -288,7 +423,7 @@ export default function RedazioneContent() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className={cn('mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-mark/80">
@@ -328,7 +463,7 @@ export default function RedazioneContent() {
           <button
             key={key}
             type="button"
-            onClick={() => setFilter(key)}
+            onClick={() => setFilterAndClear(key)}
             className={cn(
               'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
               filter === key
@@ -341,13 +476,28 @@ export default function RedazioneContent() {
         ))}
       </div>
 
+      {grouped.length > 1 && (
+        <nav className="mt-6 flex flex-wrap gap-2" aria-label={t.redazione.jumpTo}>
+          {grouped.map((group) => (
+            <a
+              key={group.date}
+              href={`#day-${group.date}`}
+              className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              {dayLabel(group.date)}
+              <span className="ml-1 opacity-70">{group.items.length}</span>
+            </a>
+          ))}
+        </nav>
+      )}
+
       {message && (
         <p className="mt-4 text-sm text-muted-foreground" role="status">
           {message}
         </p>
       )}
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-8 space-y-10">
         {loading && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -355,56 +505,85 @@ export default function RedazioneContent() {
           </p>
         )}
 
-        {!loading && filter !== 'published' && visible.length === 0 && (
+        {!loading && grouped.length === 0 && (
           <p className="border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
             {t.redazione.empty}
           </p>
         )}
 
-        {filter === 'published' &&
-          timelineRows.map((row) =>
-            row.kind === 'pipeline' ? (
-              <CandidateCard
-                key={row.id}
-                c={row.candidate}
-                draft={drafts[row.id] || {}}
-                saving={savingId === row.id}
-                onDraft={(next) =>
-                  setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
-                }
-                onPatch={patch}
-              />
-            ) : (
-              <CuratedCard
-                key={row.id}
-                pin={row.pin}
-                draft={curatedDrafts[row.id] || {}}
-                locale={locale}
-                saving={savingId === row.id}
-                onDraft={(next) =>
-                  setCuratedDrafts((d) => ({
-                    ...d,
-                    [row.id]: { ...d[row.id], ...next },
-                  }))
-                }
-                onSave={saveCurated}
-              />
-            ),
-          )}
+        {grouped.map((group) => {
+          const pipelineIds = group.items
+            .filter((row): row is QueueRow => row.kind === 'pipeline')
+            .map((row) => row.id);
+          const allDayOn =
+            pipelineIds.length > 0 && pipelineIds.every((id) => selected.includes(id));
 
-        {filter !== 'published' &&
-          visible.map((c) => (
-            <CandidateCard
-              key={c.id}
-              c={c}
-              draft={drafts[c.id] || {}}
-              saving={savingId === c.id}
-              onDraft={(next) =>
-                setDrafts((d) => ({ ...d, [c.id]: { ...d[c.id], ...next } }))
-              }
-              onPatch={patch}
-            />
-          ))}
+          return (
+            <section key={group.date} id={`day-${group.date}`} className="scroll-mt-24">
+              <header className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                <div className="flex items-center gap-2">
+                  {pipelineIds.length > 0 && (
+                    <input
+                      type="checkbox"
+                      checked={allDayOn}
+                      onChange={() => toggleDay(pipelineIds)}
+                      className="size-4 accent-foreground"
+                      aria-label={t.redazione.selectDay}
+                    />
+                  )}
+                  <h2 className="font-serif text-xl font-semibold tracking-tight">
+                    {dayLabel(group.date)}
+                  </h2>
+                </div>
+                <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {t.redazione.itemsCount.replace('{n}', String(group.items.length))}
+                </p>
+              </header>
+
+              <div className="space-y-3">
+                {group.items.map((row) =>
+                  row.kind === 'pipeline' ? (
+                    <CandidateCard
+                      key={row.id}
+                      c={row.candidate}
+                      draft={drafts[row.id] || {}}
+                      saving={savingId === row.id}
+                      selected={selected.includes(row.id)}
+                      expanded={expandedId === row.id}
+                      onToggleSelect={() => toggleSelected(row.id)}
+                      onToggleExpand={() =>
+                        setExpandedId((current) => (current === row.id ? null : row.id))
+                      }
+                      onDraft={(next) =>
+                        setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
+                      }
+                      onPatch={patch}
+                    />
+                  ) : (
+                    <CuratedCard
+                      key={row.id}
+                      pin={row.pin}
+                      draft={curatedDrafts[row.id] || {}}
+                      locale={locale}
+                      saving={savingId === row.id}
+                      expanded={expandedId === row.id}
+                      onToggleExpand={() =>
+                        setExpandedId((current) => (current === row.id ? null : row.id))
+                      }
+                      onDraft={(next) =>
+                        setCuratedDrafts((d) => ({
+                          ...d,
+                          [row.id]: { ...d[row.id], ...next },
+                        }))
+                      }
+                      onSave={saveCurated}
+                    />
+                  ),
+                )}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <p className="mt-12 text-center text-sm text-muted-foreground">
@@ -413,7 +592,68 @@ export default function RedazioneContent() {
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </p>
+
+      {selected.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium">
+              {t.redazione.selectedCount.replace('{n}', String(selected.length))}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelected([]);
+                  setConfirmDelete(false);
+                }}
+              >
+                {t.redazione.clearSelection}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => void bulkReject()}
+              >
+                <X className="h-4 w-4" />
+                {t.redazione.bulkReject}
+              </Button>
+              <Button
+                type="button"
+                variant={confirmDelete ? 'destructive' : 'outline'}
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => void bulkDelete()}
+              >
+                {bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {confirmDelete ? t.redazione.bulkConfirm : t.redazione.bulkDelete}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function Thumb({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return null;
+  return (
+    // RSS thumbs come from many CDNs; a native img avoids next/image host allowlists.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      width={160}
+      height={100}
+      className="h-20 w-28 shrink-0 rounded-md bg-muted object-cover"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -421,12 +661,20 @@ function CandidateCard({
   c,
   draft,
   saving,
+  selected,
+  expanded,
+  onToggleSelect,
+  onToggleExpand,
   onDraft,
   onPatch,
 }: {
   c: SentimentCandidate;
   draft: Partial<SentimentCandidate>;
   saving: boolean;
+  selected: boolean;
+  expanded: boolean;
+  onToggleSelect: () => void;
+  onToggleExpand: () => void;
   onDraft: (next: Partial<SentimentCandidate>) => void;
   onPatch: (id: string, status?: SentimentCandidate['status']) => void;
 }) {
@@ -439,163 +687,191 @@ function CandidateCard({
     | undefined;
 
   return (
-    <article className="border border-border/60 bg-card/40 p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <article
+      className={cn(
+        'border bg-card/40 p-4 sm:p-5',
+        selected ? 'border-foreground/40' : 'border-border/60',
+      )}
+    >
+      <div className="flex gap-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          className="mt-1 size-4 shrink-0 accent-foreground"
+          aria-label={title}
+        />
+        <Thumb src={c.imageUrl} alt="" />
+        <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {c.date} · {c.personId || '—'} · {t.redazione.pipeline} · {c.status}
             {c.sourceTier ? ` · ${c.sourceTier}` : ''}
             {c.xQuoted ? ' · X' : ''}
           </p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight">{title}</h2>
+          <h3 className="mt-1 text-base font-semibold tracking-tight">{title}</h3>
+          {!expanded && (
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+              {c.rawSnippet || c.summary.en}
+            </p>
+          )}
         </div>
-        <a
-          href={c.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-mark hover:underline"
-        >
-          {t.redazione.openSource}
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      </div>
-
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {c.rawSnippet || c.summary.en}
-      </p>
-
-      <div className="mt-4 space-y-2">
-        <Label htmlFor={`title-${c.id}`}>{t.redazione.titleField}</Label>
-        <Input
-          id={`title-${c.id}`}
-          value={title}
-          onChange={(e) =>
-            onDraft({ title: { it: e.target.value, en: e.target.value } })
-          }
-        />
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <Label htmlFor={`summary-${c.id}`}>{t.redazione.summaryField}</Label>
-        <textarea
-          id={`summary-${c.id}`}
-          rows={2}
-          value={summary}
-          onChange={(e) =>
-            onDraft({ summary: { it: e.target.value, en: e.target.value } })
-          }
-          className={fieldClass}
-        />
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <Label htmlFor={`quote-${c.id}`}>{t.redazione.quote}</Label>
-        <textarea
-          id={`quote-${c.id}`}
-          rows={3}
-          value={quote}
-          onChange={(e) =>
-            onDraft({ quote: { it: e.target.value, en: e.target.value } })
-          }
-          className={fieldClass}
-          placeholder={t.redazione.quotePlaceholder}
-        />
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor={`sent-${c.id}`}>{t.redazione.sentiment}</Label>
-          <select
-            id={`sent-${c.id}`}
-            value={sentiment || ''}
-            onChange={(e) =>
-              onDraft({
-                suggestedSentiment: (e.target.value || undefined) as SentimentTag | undefined,
-              })
-            }
-            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <a
+            href={c.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-mark hover:underline"
           >
-            <option value="">{t.redazione.sentimentNone}</option>
-            {ALL_SENTIMENT_TAGS.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`date-${c.id}`}>{t.redazione.date}</Label>
-          <Input
-            id={`date-${c.id}`}
-            type="date"
-            max={localIsoDate()}
-            value={draft.date ?? c.date}
-            onChange={(e) => onDraft({ date: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`person-${c.id}`}>{t.redazione.person}</Label>
-          <select
-            id={`person-${c.id}`}
-            value={draft.personId ?? c.personId ?? ''}
-            onChange={(e) => onDraft({ personId: e.target.value || undefined })}
-            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-          >
-            <option value="">{t.redazione.personNone}</option>
-            {lobbyPeople.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {c.status === 'published' && (
-          <>
-            <Button type="button" onClick={() => void onPatch(c.id)} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {t.redazione.save}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void onPatch(c.id, 'pending')}
-              disabled={saving}
-            >
-              {t.redazione.unpublish}
-            </Button>
-          </>
-        )}
-        {c.status !== 'published' && (
-          <Button type="button" onClick={() => void onPatch(c.id, 'published')} disabled={saving}>
-            <Check className="h-4 w-4" />
-            {t.redazione.publish}
+            {t.redazione.openSource}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <Button type="button" variant="ghost" size="sm" onClick={onToggleExpand}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? t.redazione.collapse : t.redazione.expand}
           </Button>
-        )}
-        {c.status !== 'rejected' && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void onPatch(c.id, 'rejected')}
-            disabled={saving}
-          >
-            <X className="h-4 w-4" />
-            {t.redazione.reject}
-          </Button>
-        )}
-        {c.status === 'rejected' && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => void onPatch(c.id, 'pending')}
-            disabled={saving}
-          >
-            {t.redazione.restore}
-          </Button>
-        )}
+        </div>
       </div>
+
+      {expanded && (
+        <div className="mt-4 space-y-4 border-t border-border/50 pt-4">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {c.rawSnippet || c.summary.en}
+          </p>
+
+          <div className="space-y-2">
+            <Label htmlFor={`title-${c.id}`}>{t.redazione.titleField}</Label>
+            <Input
+              id={`title-${c.id}`}
+              value={title}
+              onChange={(e) =>
+                onDraft({ title: { it: e.target.value, en: e.target.value } })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`summary-${c.id}`}>{t.redazione.summaryField}</Label>
+            <textarea
+              id={`summary-${c.id}`}
+              rows={2}
+              value={summary}
+              onChange={(e) =>
+                onDraft({ summary: { it: e.target.value, en: e.target.value } })
+              }
+              className={fieldClass}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`quote-${c.id}`}>{t.redazione.quote}</Label>
+            <textarea
+              id={`quote-${c.id}`}
+              rows={3}
+              value={quote}
+              onChange={(e) =>
+                onDraft({ quote: { it: e.target.value, en: e.target.value } })
+              }
+              className={fieldClass}
+              placeholder={t.redazione.quotePlaceholder}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`sent-${c.id}`}>{t.redazione.sentiment}</Label>
+              <select
+                id={`sent-${c.id}`}
+                value={sentiment || ''}
+                onChange={(e) =>
+                  onDraft({
+                    suggestedSentiment: (e.target.value || undefined) as SentimentTag | undefined,
+                  })
+                }
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">{t.redazione.sentimentNone}</option>
+                {ALL_SENTIMENT_TAGS.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`date-${c.id}`}>{t.redazione.date}</Label>
+              <Input
+                id={`date-${c.id}`}
+                type="date"
+                max={localIsoDate()}
+                value={draft.date ?? c.date}
+                onChange={(e) => onDraft({ date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`person-${c.id}`}>{t.redazione.person}</Label>
+              <select
+                id={`person-${c.id}`}
+                value={draft.personId ?? c.personId ?? ''}
+                onChange={(e) => onDraft({ personId: e.target.value || undefined })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">{t.redazione.personNone}</option>
+                {lobbyPeople.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {c.status === 'published' && (
+              <>
+                <Button type="button" onClick={() => void onPatch(c.id)} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {t.redazione.save}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void onPatch(c.id, 'pending')}
+                  disabled={saving}
+                >
+                  {t.redazione.unpublish}
+                </Button>
+              </>
+            )}
+            {c.status !== 'published' && (
+              <Button type="button" onClick={() => void onPatch(c.id, 'published')} disabled={saving}>
+                <Check className="h-4 w-4" />
+                {t.redazione.publish}
+              </Button>
+            )}
+            {c.status !== 'rejected' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void onPatch(c.id, 'rejected')}
+                disabled={saving}
+              >
+                <X className="h-4 w-4" />
+                {t.redazione.reject}
+              </Button>
+            )}
+            {c.status === 'rejected' && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void onPatch(c.id, 'pending')}
+                disabled={saving}
+              >
+                {t.redazione.restore}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </article>
   );
 }
@@ -605,6 +881,8 @@ function CuratedCard({
   draft,
   locale,
   saving,
+  expanded,
+  onToggleExpand,
   onDraft,
   onSave,
 }: {
@@ -612,6 +890,8 @@ function CuratedCard({
   draft: CuratedDraft;
   locale: 'it' | 'en';
   saving: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onDraft: (next: CuratedDraft) => void;
   onSave: (id: string, hidden?: boolean) => void;
 }) {
@@ -635,171 +915,184 @@ function CuratedCard({
   return (
     <article
       className={cn(
-        'border bg-card/40 p-5 sm:p-6',
+        'border bg-card/40 p-4 sm:p-5',
         pin.hidden ? 'border-dashed border-border/50 opacity-70' : 'border-border/60',
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {event.date} · {event.personId || '—'} · {t.redazione.curated} · {pin.themeName[locale]}
             {pin.edited ? ` · ${t.redazione.edited}` : ''}
             {pin.hidden ? ` · ${t.redazione.hidden}` : ''}
           </p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight">{title[locale]}</h2>
+          <h3 className="mt-1 text-base font-semibold tracking-tight">{title[locale]}</h3>
+          {!expanded && (
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{summary[locale]}</p>
+          )}
         </div>
-        <a
-          href={event.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-mark hover:underline"
-        >
-          {t.redazione.openSource}
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`ct-it-${event.id}`}>{t.redazione.titleIt}</Label>
-          <Input
-            id={`ct-it-${event.id}`}
-            value={title.it}
-            onChange={(e) => setLocale('title', 'it', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`ct-en-${event.id}`}>{t.redazione.titleEn}</Label>
-          <Input
-            id={`ct-en-${event.id}`}
-            value={title.en}
-            onChange={(e) => setLocale('title', 'en', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`cs-it-${event.id}`}>{t.redazione.summaryIt}</Label>
-          <textarea
-            id={`cs-it-${event.id}`}
-            rows={3}
-            value={summary.it}
-            onChange={(e) => setLocale('summary', 'it', e.target.value)}
-            className={fieldClass}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`cs-en-${event.id}`}>{t.redazione.summaryEn}</Label>
-          <textarea
-            id={`cs-en-${event.id}`}
-            rows={3}
-            value={summary.en}
-            onChange={(e) => setLocale('summary', 'en', e.target.value)}
-            className={fieldClass}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`cq-it-${event.id}`}>{t.redazione.quoteIt}</Label>
-          <textarea
-            id={`cq-it-${event.id}`}
-            rows={3}
-            value={quote.it}
-            onChange={(e) => setLocale('quote', 'it', e.target.value)}
-            className={fieldClass}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`cq-en-${event.id}`}>{t.redazione.quoteEn}</Label>
-          <textarea
-            id={`cq-en-${event.id}`}
-            rows={3}
-            value={quote.en}
-            onChange={(e) => setLocale('quote', 'en', e.target.value)}
-            className={fieldClass}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor={`c-sent-${event.id}`}>{t.redazione.sentiment}</Label>
-          <select
-            id={`c-sent-${event.id}`}
-            value={draft.sentiment ?? event.sentiment ?? ''}
-            onChange={(e) =>
-              onDraft({ sentiment: (e.target.value || '') as SentimentTag | '' })
-            }
-            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <a
+            href={event.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-mark hover:underline"
           >
-            <option value="">{t.redazione.sentimentNone}</option>
-            {ALL_SENTIMENT_TAGS.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`c-date-${event.id}`}>{t.redazione.date}</Label>
-          <Input
-            id={`c-date-${event.id}`}
-            type="date"
-            max={localIsoDate()}
-            value={draft.date ?? event.date}
-            disabled={event.id === PRESENT_PIN_ID}
-            onChange={(e) => onDraft({ date: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`c-person-${event.id}`}>{t.redazione.person}</Label>
-          <select
-            id={`c-person-${event.id}`}
-            value={draft.personId ?? event.personId ?? ''}
-            onChange={(e) => onDraft({ personId: e.target.value })}
-            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-          >
-            <option value="">{t.redazione.personNone}</option>
-            {lobbyPeople.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Button type="button" onClick={() => void onSave(event.id)} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {t.redazione.save}
-        </Button>
-        {canHide && !pin.hidden && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void onSave(event.id, true)}
-            disabled={saving}
-          >
-            <EyeOff className="h-4 w-4" />
-            {t.redazione.hide}
+            {t.redazione.openSource}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <Button type="button" variant="ghost" size="sm" onClick={onToggleExpand}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? t.redazione.collapse : t.redazione.expand}
           </Button>
-        )}
-        {pin.hidden && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => void onSave(event.id, false)}
-            disabled={saving}
-          >
-            <Eye className="h-4 w-4" />
-            {t.redazione.unhide}
-          </Button>
-        )}
+        </div>
       </div>
+
+      {expanded && (
+        <div className="mt-4 space-y-4 border-t border-border/50 pt-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`ct-it-${event.id}`}>{t.redazione.titleIt}</Label>
+              <Input
+                id={`ct-it-${event.id}`}
+                value={title.it}
+                onChange={(e) => setLocale('title', 'it', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`ct-en-${event.id}`}>{t.redazione.titleEn}</Label>
+              <Input
+                id={`ct-en-${event.id}`}
+                value={title.en}
+                onChange={(e) => setLocale('title', 'en', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`cs-it-${event.id}`}>{t.redazione.summaryIt}</Label>
+              <textarea
+                id={`cs-it-${event.id}`}
+                rows={3}
+                value={summary.it}
+                onChange={(e) => setLocale('summary', 'it', e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`cs-en-${event.id}`}>{t.redazione.summaryEn}</Label>
+              <textarea
+                id={`cs-en-${event.id}`}
+                rows={3}
+                value={summary.en}
+                onChange={(e) => setLocale('summary', 'en', e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`cq-it-${event.id}`}>{t.redazione.quoteIt}</Label>
+              <textarea
+                id={`cq-it-${event.id}`}
+                rows={3}
+                value={quote.it}
+                onChange={(e) => setLocale('quote', 'it', e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`cq-en-${event.id}`}>{t.redazione.quoteEn}</Label>
+              <textarea
+                id={`cq-en-${event.id}`}
+                rows={3}
+                value={quote.en}
+                onChange={(e) => setLocale('quote', 'en', e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`c-sent-${event.id}`}>{t.redazione.sentiment}</Label>
+              <select
+                id={`c-sent-${event.id}`}
+                value={draft.sentiment ?? event.sentiment ?? ''}
+                onChange={(e) =>
+                  onDraft({ sentiment: (e.target.value || '') as SentimentTag | '' })
+                }
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">{t.redazione.sentimentNone}</option>
+                {ALL_SENTIMENT_TAGS.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`c-date-${event.id}`}>{t.redazione.date}</Label>
+              <Input
+                id={`c-date-${event.id}`}
+                type="date"
+                max={localIsoDate()}
+                value={draft.date ?? event.date}
+                disabled={event.id === PRESENT_PIN_ID}
+                onChange={(e) => onDraft({ date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`c-person-${event.id}`}>{t.redazione.person}</Label>
+              <select
+                id={`c-person-${event.id}`}
+                value={draft.personId ?? event.personId ?? ''}
+                onChange={(e) => onDraft({ personId: e.target.value })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">{t.redazione.personNone}</option>
+                {lobbyPeople.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={() => void onSave(event.id)} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {t.redazione.save}
+            </Button>
+            {canHide && !pin.hidden && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void onSave(event.id, true)}
+                disabled={saving}
+              >
+                <EyeOff className="h-4 w-4" />
+                {t.redazione.hide}
+              </Button>
+            )}
+            {pin.hidden && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void onSave(event.id, false)}
+                disabled={saving}
+              >
+                <Eye className="h-4 w-4" />
+                {t.redazione.unhide}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </article>
   );
 }

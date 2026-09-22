@@ -50,13 +50,82 @@ function sourceLabelFor(
   return { it, en };
 }
 
+function isHttpUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function isAudioVideo(url: string): boolean {
+  return /\.(mp3|mp4|m4a|mov|wav|webm)(\?|$)/i.test(url);
+}
+
+function attrUrl(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') return isHttpUrl(value) ? value : undefined;
+  if (typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  if (typeof record.url === 'string' && isHttpUrl(record.url)) return record.url;
+  const attrs = record.$;
+  if (attrs && typeof attrs === 'object') {
+    const url = (attrs as Record<string, unknown>).url;
+    if (typeof url === 'string' && isHttpUrl(url)) return url;
+  }
+  return undefined;
+}
+
+function extractImage(
+  item: Parser.Item & {
+    enclosure?: { url?: string; type?: string };
+    mediaContent?: unknown;
+    mediaThumbnail?: unknown;
+  },
+  html: string,
+): string | undefined {
+  const enclosure = item.enclosure;
+  if (
+    enclosure?.url &&
+    isHttpUrl(enclosure.url) &&
+    !isAudioVideo(enclosure.url) &&
+    (!enclosure.type || enclosure.type.startsWith('image/'))
+  ) {
+    return enclosure.url;
+  }
+
+  const media = item.mediaContent;
+  if (Array.isArray(media)) {
+    for (const entry of media) {
+      const url = attrUrl(entry);
+      if (url && !isAudioVideo(url)) return url;
+    }
+  } else {
+    const url = attrUrl(media);
+    if (url && !isAudioVideo(url)) return url;
+  }
+
+  const thumb = attrUrl(item.mediaThumbnail);
+  if (thumb && !isAudioVideo(thumb)) return thumb;
+
+  const decoded = html.replace(/&amp;/g, '&');
+  const img = decoded.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (img?.[1] && isHttpUrl(img[1]) && !isAudioVideo(img[1])) return img[1];
+
+  return undefined;
+}
+
 export async function discoverSentimentCandidates(): Promise<{
   candidates: SentimentCandidate[];
   scannedFeeds: number;
   matchedItems: number;
   rejectedBySource: number;
 }> {
-  const parser = new Parser({ timeout: 12000 });
+  const parser = new Parser({
+    timeout: 12000,
+    customFields: {
+      item: [
+        ['media:content', 'mediaContent', { keepArray: true }],
+        ['media:thumbnail', 'mediaThumbnail'],
+      ],
+    },
+  });
   const found: SentimentCandidate[] = [];
   const seen = new Set<string>();
   let matchedItems = 0;
@@ -71,9 +140,11 @@ export async function discoverSentimentCandidates(): Promise<{
         seen.add(url);
 
         const title = stripHtml(item.title || '');
+        const html = `${item.content || ''} ${item.summary || ''} ${(item as { description?: string }).description || ''}`;
         const snippet = stripHtml(
           item.contentSnippet || item.content || item.summary || '',
         );
+        const imageUrl = extractImage(item, html);
         const blob = `${title} ${snippet}`;
         const match = matchPerson(blob);
         if (!match) continue;
@@ -125,6 +196,7 @@ export async function discoverSentimentCandidates(): Promise<{
           sourceHost: classification.host,
           xQuoted: classification.xQuoted || undefined,
           xStatusUrl: classification.xStatusUrl,
+          ...(imageUrl ? { imageUrl } : {}),
         });
       }
     } catch (err) {

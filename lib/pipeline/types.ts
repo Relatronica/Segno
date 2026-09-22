@@ -29,6 +29,8 @@ export type SentimentCandidate = {
   /** Article or item references an official X status */
   xQuoted?: boolean;
   xStatusUrl?: string;
+  /** Thumbnail from the feed, when the source provides one */
+  imageUrl?: string;
   reviewedAt?: string;
   reviewNote?: string;
 };

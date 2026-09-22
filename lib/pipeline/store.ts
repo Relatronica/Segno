@@ -87,7 +87,13 @@ export function upsertCandidates(
   let added = 0;
 
   for (const c of incoming) {
-    if (byUrl.has(c.sourceUrl)) continue;
+    const prev = byUrl.get(c.sourceUrl);
+    if (prev) {
+      if (!prev.imageUrl && c.imageUrl) {
+        byUrl.set(c.sourceUrl, { ...prev, imageUrl: c.imageUrl });
+      }
+      continue;
+    }
     byUrl.set(c.sourceUrl, c);
     added += 1;
   }
@@ -123,6 +129,31 @@ export function patchCuratedEvent(
     updatedAt: new Date().toISOString(),
     edits,
     hiddenIds,
+  };
+}
+
+export function deleteCandidates(store: PipelineStore, ids: string[]): PipelineStore {
+  const remove = new Set(ids);
+  return {
+    ...store,
+    updatedAt: new Date().toISOString(),
+    candidates: store.candidates.filter((c) => !remove.has(c.id)),
+  };
+}
+
+export function updateManyCandidateStatus(
+  store: PipelineStore,
+  ids: string[],
+  status: SentimentCandidate['status'],
+): PipelineStore {
+  const target = new Set(ids);
+  const reviewedAt = new Date().toISOString();
+  return {
+    ...store,
+    updatedAt: reviewedAt,
+    candidates: store.candidates.map((c) =>
+      target.has(c.id) ? { ...c, status, reviewedAt } : c,
+    ),
   };
 }
 

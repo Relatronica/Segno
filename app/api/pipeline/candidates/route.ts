@@ -6,7 +6,13 @@ import {
   unauthorized,
 } from '@/lib/pipeline/auth';
 import { listCuratedPins } from '@/lib/pipeline/edits';
-import { loadPipelineStore, savePipelineStore, updateCandidateStatus } from '@/lib/pipeline/store';
+import {
+  deleteCandidates,
+  loadPipelineStore,
+  savePipelineStore,
+  updateCandidateStatus,
+  updateManyCandidateStatus,
+} from '@/lib/pipeline/store';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import { ALL_SENTIMENT_TAGS, type SentimentTag } from '@/lib/data/trasparenza';
 import { clampIsoToToday } from '@/lib/dates';
@@ -46,6 +52,7 @@ export async function GET(request: Request) {
 
 type PatchBody = {
   id?: string;
+  ids?: string[];
   status?: CandidateStatus;
   title?: SentimentCandidate['title'];
   summary?: SentimentCandidate['summary'];
@@ -57,6 +64,14 @@ type PatchBody = {
   reviewNote?: string;
 };
 
+const MAX_BULK = 200;
+
+function asIdList(ids: unknown): string[] | null {
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_BULK) return null;
+  const cleaned = ids.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  return cleaned.length ? [...new Set(cleaned)] : null;
+}
+
 export async function PATCH(request: Request) {
   const missing = assertPipelineConfigured();
   if (missing) return missing;
@@ -67,6 +82,22 @@ export async function PATCH(request: Request) {
     body = (await request.json()) as PatchBody;
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const bulkIds = asIdList(body.ids);
+  if (bulkIds) {
+    const bulkStatus = body.status;
+    if (bulkStatus !== 'rejected' && bulkStatus !== 'pending') {
+      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
+    const store = await loadPipelineStore();
+    const known = bulkIds.filter((id) => store.candidates.some((c) => c.id === id));
+    if (known.length === 0) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+    const next = updateManyCandidateStatus(store, known, bulkStatus);
+    await savePipelineStore(next);
+    return NextResponse.json({ ok: true, updated: known.length });
   }
 
   if (!body.id || typeof body.id !== 'string') {
@@ -115,4 +146,32 @@ export async function PATCH(request: Request) {
   const updated = next.candidates.find((c) => c.id === body.id);
 
   return NextResponse.json({ ok: true, candidate: updated });
+}
+
+export async function DELETE(request: Request) {
+  const missing = assertPipelineConfigured();
+  if (missing) return missing;
+  if (!isAuthorized(request, sessionFrom(request))) return unauthorized();
+
+  let body: { ids?: unknown };
+  try {
+    body = (await request.json()) as { ids?: unknown };
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const ids = asIdList(body.ids);
+  if (!ids) {
+    return NextResponse.json({ error: 'invalid_ids' }, { status: 400 });
+  }
+
+  const store = await loadPipelineStore();
+  const known = ids.filter((id) => store.candidates.some((c) => c.id === id));
+  if (known.length === 0) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const next = deleteCandidates(store, known);
+  await savePipelineStore(next);
+  return NextResponse.json({ ok: true, deleted: known.length });
 }
