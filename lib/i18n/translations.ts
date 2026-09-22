@@ -39,17 +39,17 @@ const translations = {
       solutionAsideLabel: 'La regola del progetto',
       solutionAside:
         'Ogni punto ha una fonte. Le dichiarazioni riportano una citazione. Il tag di tono è una lettura, non un punteggio scientifico. La vicinanza nel tempo aiuta a capire — non dimostra causalità.',
-      themesTitle: 'Due lenti, un solo progetto',
+      themesTitle: 'Una timeline, due letture',
       themesSubtitle:
-        'Prima il tono pubblico sull’IA. Poi, se vuoi approfondire il potere formale, le regole europee.',
-      themePrimary: 'Primario',
-      themeSecondary: 'Secondario',
+        'Sullo stesso asse: il tono pubblico dei leader e i passaggi delle regole europee. La curva parla dalle dichiarazioni; il resto è contesto verificabile.',
+      themePrimary: 'Curva',
+      themeSecondary: 'Contesto',
       themeSentimentTitle: 'Sentiment IA',
       themeSentimentText:
-        'Curva entusiasmo↔timore dalle dichiarazioni di Altman, Amodei, Musk, Huang e altri. Filtri per persona, attività nel tempo, citazione e fonte a un click.',
-      themeAiTitle: 'Regole sull’IA in Europa',
+        'Pallini e curva entusiasmo↔timore dalle dichiarazioni. Filtri per persona, citazione e fonte a un click.',
+      themeAiTitle: 'Regole e lobbying UE',
       themeAiText:
-        'Incontri dichiarati, spese di lobbying, passaggi legislativi e sanzioni — dal 2021 a oggi. Stessa timeline, pezzi diversi.',
+        'Incontri, spese, voti e sanzioni sulla stessa linea del tempo — marker sull’asse, dettaglio nella colonna destra.',
       themesCta: 'Apri il Sentiment',
       roadmapTitle: 'Cosa stiamo costruendo',
       roadmapSubtitle:
@@ -74,10 +74,10 @@ const translations = {
       ctaButton: 'Apri il Sentiment',
     },
     trasparenza: {
-      eyebrow: 'Sentiment IA · Regole europee',
+      eyebrow: 'Sentiment · Regole UE',
       title: 'Trasparenza',
       subtitle:
-        'Curva entusiasmo↔timore dalle dichiarazioni pubbliche — e, sulla stessa timeline, incontri, spese e passaggi legislativi.',
+        'Curva entusiasmo↔timore dalle dichiarazioni — e sullo stesso asse incontri, spese e passaggi legislativi.',
       exploreCta: 'Esplora la timeline',
       themeLabel: 'Tema',
       filterBy: 'Filtri',
@@ -86,6 +86,7 @@ const translations = {
       actorsLabel: 'Aziende',
       peopleLabel: 'Persone',
       typesLabel: 'Tipo',
+      allTypes: 'Tutti',
       yearsLabel: 'Anni',
       sentimentLabel: 'Sentiment',
       sentimentNote:
@@ -107,7 +108,7 @@ const translations = {
       moodTitle: 'Entusiasmo ↔ timore',
       moodFear: 'Timore',
       moodEnthusiasm: 'Entusiasmo',
-      moodHint: 'Curva editoriale dalle dichiarazioni — non una misura oggettiva',
+      moodHint: 'Curva dalle dichiarazioni · marker sull’asse = contesto UE',
       liveBadge: 'Live',
       todayLabel: 'Oggi',
       jumpToToday: 'Vai a oggi',
@@ -280,17 +281,17 @@ const translations = {
       solutionAsideLabel: 'The project rule',
       solutionAside:
         'Every pin has a source. Statements carry a quote. Tone tags are a reading, not a scientific score. Temporal proximity helps you understand — it does not prove causation.',
-      themesTitle: 'Two lenses, one project',
+      themesTitle: 'One timeline, two readings',
       themesSubtitle:
-        'First, the public tone on AI. Then, if you want the formal power story, Europe’s rules.',
-      themePrimary: 'Primary',
-      themeSecondary: 'Secondary',
+        'On the same axis: leaders’ public tone and Europe’s rule-making steps. The curve speaks through statements; the rest is verifiable context.',
+      themePrimary: 'Curve',
+      themeSecondary: 'Context',
       themeSentimentTitle: 'AI Sentiment',
       themeSentimentText:
-        'An enthusiasm↔fear curve from statements by Altman, Amodei, Musk, Huang and others. Filters by person, activity over time, quote and source in one click.',
-      themeAiTitle: 'AI rules in Europe',
+        'Dots and an enthusiasm↔fear curve from statements. Filters by person, quote and source in one click.',
+      themeAiTitle: 'EU rules & lobbying',
       themeAiText:
-        'Declared meetings, lobbying spend, legislative steps and sanctions — from 2021 to today. Same timeline, different pins.',
+        'Meetings, spend, votes and sanctions on the same time axis — markers on the rail, detail in the right column.',
       themesCta: 'Open Sentiment',
       roadmapTitle: 'What we are building',
       roadmapSubtitle:
@@ -315,10 +316,10 @@ const translations = {
       ctaButton: 'Open Sentiment',
     },
     trasparenza: {
-      eyebrow: 'AI Sentiment · Europe’s rules',
+      eyebrow: 'Sentiment · EU rules',
       title: 'Transparency',
       subtitle:
-        'An enthusiasm↔fear curve from public statements — and, on the same timeline, meetings, spend and legislative steps.',
+        'An enthusiasm↔fear curve from public statements — and on the same axis, meetings, spend and legislative steps.',
       exploreCta: 'Explore the timeline',
       themeLabel: 'Theme',
       filterBy: 'Filters',
@@ -327,6 +328,7 @@ const translations = {
       actorsLabel: 'Companies',
       peopleLabel: 'People',
       typesLabel: 'Type',
+      allTypes: 'All',
       yearsLabel: 'Years',
       sentimentLabel: 'Sentiment',
       sentimentNote:
@@ -347,7 +349,7 @@ const translations = {
       moodTitle: 'Enthusiasm ↔ fear',
       moodFear: 'Fear',
       moodEnthusiasm: 'Enthusiasm',
-      moodHint: 'Editorial curve from statements — not an objective measure',
+      moodHint: 'Curve from statements · axis markers = EU context',
       liveBadge: 'Live',
       todayLabel: 'Today',
       jumpToToday: 'Jump to today',

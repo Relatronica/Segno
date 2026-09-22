@@ -3,7 +3,7 @@ export const SITE_NAME = 'Segno';
 export const SITE_TAGLINE = 'Il tono pubblico sull’IA, con fonti';
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const SITE_DESCRIPTION =
-  'Segno segue entusiasmo e timore nelle dichiarazioni dei leader sull’IA — su una timeline chiara, con citazioni e fonti. In più: le regole europee e il lobbying, stessa mappa.';
+  'Segno segue entusiasmo e timore nelle dichiarazioni dei leader sull’IA — e sullo stesso asse le regole europee. Una timeline con citazioni e fonti.';
 
 export const SITE_KEYWORDS = [
   'sentiment IA',
@@ -24,9 +24,9 @@ export const SITE_KEYWORDS = [
 
 export const pages = {
   trasparenza: {
-    title: 'Timeline',
+    title: 'Sentiment',
     description:
-      'Sentiment sull’IA: curva entusiasmo↔timore dalle dichiarazioni pubbliche. Oppure le regole europee — incontri, spese e passaggi legislativi. Sempre con fonte.',
+      'Curva entusiasmo↔timore dalle dichiarazioni pubbliche, più incontri, spese e passaggi legislativi UE sullo stesso asse. Sempre con fonte.',
   },
   segnala: {
     title: 'Segnala',

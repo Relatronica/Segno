@@ -12,8 +12,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Uno strumento per seguire il tono pubblico sull’IA — entusiasmo e timore nelle parole di Altman, Amodei, Musk, Huang e altri — su una timeline con citazioni e fonti. Sulla stessa mappa restano le regole europee e il lobbying, come seconda lente.',
-      en: 'A tool to follow the public tone on AI — enthusiasm and fear in the words of Altman, Amodei, Musk, Huang and others — on a timeline with quotes and sources. Europe’s rules and lobbying stay on the same map, as a second lens.',
+      it: 'Uno strumento per seguire il tono pubblico sull’IA — e sullo stesso asse le regole europee e il lobbying. La curva nasce dalle dichiarazioni; incontri, spese e voti restano contesto con fonte.',
+      en: 'A tool to follow the public tone on AI — and, on the same axis, Europe’s rules and lobbying. The curve comes from statements; meetings, spend and votes stay as sourced context.',
     },
   },
   {
@@ -23,8 +23,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'Modi diversi di guardare la stessa mappa. La lente primaria è il Sentiment: dichiarazioni pubbliche, filtri per persona, curva entusiasmo↔timore. La seconda mostra la pressione sulle regole europee sull’IA (incontri, spese, voti, sanzioni). Le cambi dalla barra laterale: i punti si aggiornano.',
-      en: 'Different ways to look at the same map. The primary lens is Sentiment: public statements, filters by person, an enthusiasm↔fear curve. The second shows pressure on Europe’s AI rules (meetings, spend, votes, sanctions). Switch them in the sidebar: the pins update.',
+      it: 'La curva Sentiment usa solo le dichiarazioni con tag di tono. Nella cronologia trovi anche incontri, spese e passaggi legislativi: marker sull’asse del tempo, dettaglio a destra. Filtri per tipo e persona nella sidebar.',
+      en: 'The Sentiment curve uses only statements with a tone tag. The feed also lists meetings, spend and legislative steps: markers on the time axis, detail on the right. Filter by type and person in the sidebar.',
     },
   },
   {

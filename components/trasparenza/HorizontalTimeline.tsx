@@ -14,7 +14,6 @@ import type { SentimentTag } from '@/lib/data/trasparenza';
 const PAD_X_LEFT = 240;
 const PAD_X_RIGHT = 200;
 const MIN_GAP_PX = 112;
-const CHART_MIN_GAP = 18;
 const CARD_W = 192;
 const CARD_APPROX_H = 96;
 const LANE_ORDER = [-1, 1, -2, 2] as const;
@@ -53,6 +52,8 @@ type Props = {
   onSelect: (id: string) => void;
   /** Nearest pin under the viewport center while the user pans the chart */
   onScrollFocus?: (id: string) => void;
+  /** Playhead from the feed list scroll — no selection */
+  scrubId?: string | null;
   emptyLabel: string;
   dragHint: string;
   typeLabel: (id: TimelineEvent['type']) => string;
@@ -192,6 +193,7 @@ export function HorizontalTimeline({
   activeId,
   onSelect,
   onScrollFocus,
+  scrubId = null,
   emptyLabel,
   dragHint,
   typeLabel,
@@ -209,6 +211,8 @@ export function HorizontalTimeline({
   const [stageHeight, setStageHeight] = useState(0);
   const [coarsePointer, setCoarsePointer] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
   const isChart = mode === 'chart';
 
@@ -276,6 +280,7 @@ export function HorizontalTimeline({
         }>,
         activity: emptyActivity,
         maxActivity: 1,
+        contextMarks: [] as Array<{ id: string; x: number; type: TimelineEvent['type'] }>,
         minT: 0,
         maxT: 1,
         usable: 640,
@@ -313,25 +318,17 @@ export function HorizontalTimeline({
     }));
 
     const sorted = [...raw].sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
-    const minGap = isChart ? CHART_MIN_GAP : MIN_GAP_PX * 0.55;
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].x - sorted[i - 1].x < minGap) {
-        sorted[i].x = sorted[i - 1].x + minGap;
+    // Cards need spacing so pins don't stack; chart stays on proportional time.
+    if (!isChart) {
+      const minGap = MIN_GAP_PX * 0.55;
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].x - sorted[i - 1].x < minGap) {
+          sorted[i].x = sorted[i - 1].x + minGap;
+        }
       }
     }
 
     const lastPinX = sorted[sorted.length - 1]?.x ?? padLeft;
-    const moodProportional = moodWithTag
-      .map((e) => ({
-        id: e.id,
-        date: e.date,
-        x: xForDate(e.date),
-        score: SENTIMENT_FEAR_SCORE[e.sentiment!],
-        sentiment: e.sentiment!,
-      }))
-      .sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
-
-    const pinById = new Map(sorted.map((p) => [p.id, p.x]));
     const mood: Array<{
       id: string;
       date: string;
@@ -339,10 +336,13 @@ export function HorizontalTimeline({
       score: number;
       sentiment: SentimentTag;
       carry?: boolean;
-    }> = moodProportional
-      .map((m) => ({
-        ...m,
-        x: pinById.get(m.id) ?? m.x,
+    }> = moodWithTag
+      .map((e) => ({
+        id: e.id,
+        date: e.date,
+        x: xForDate(e.date),
+        score: SENTIMENT_FEAR_SCORE[e.sentiment!],
+        sentiment: e.sentiment!,
       }))
       .sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
 
@@ -372,6 +372,17 @@ export function HorizontalTimeline({
         });
       }
     }
+
+    const moodIds = new Set(moodWithTag.map((e) => e.id));
+    const contextMarks = isChart
+      ? sorted
+          .filter((e) => !moodIds.has(e.id))
+          .map((e) => ({
+            id: e.id,
+            x: e.x,
+            type: e.type,
+          }))
+      : [];
 
     const buckets = new Map<string, { count: number; scoreSum: number; x: number }>();
     for (const e of events) {
@@ -473,6 +484,7 @@ export function HorizontalTimeline({
       mood,
       activity,
       maxActivity,
+      contextMarks,
       todayX,
       todayIso,
       minT,
@@ -546,6 +558,42 @@ export function HorizontalTimeline({
     scrollToId(activeId);
   }, [focusEventToken, activeId, scrollToId]);
 
+  // Keep the feed playhead in frame while scrubbing — no selection, only pan.
+  useEffect(() => {
+    if (!scrubId || scrubId === activeId) return;
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+
+    const point =
+      layout.points.find((p) => p.id === scrubId) ??
+      layout.mood.find((m) => m.id === scrubId) ??
+      layout.contextMarks.find((m) => m.id === scrubId);
+    if (!point) return;
+
+    const margin = Math.max(48, el.clientWidth * 0.2);
+    const left = el.scrollLeft + margin;
+    const right = el.scrollLeft + el.clientWidth - margin;
+    if (point.x >= left && point.x <= right) return;
+
+    const target =
+      point.x < left
+        ? point.x - margin
+        : point.x - el.clientWidth + margin;
+
+    suppressScrollFocus.current = true;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    const t = window.setTimeout(() => {
+      suppressScrollFocus.current = false;
+    }, 320);
+    return () => window.clearTimeout(t);
+  }, [
+    scrubId,
+    activeId,
+    layout.points,
+    layout.mood,
+    layout.contextMarks,
+  ]);
+
   // Center on "today" when nothing is selected (initial load / jump to today)
   useEffect(() => {
     if (!focusPresent || activeId) return;
@@ -607,6 +655,23 @@ export function HorizontalTimeline({
       if (scrollFocusRaf.current) cancelAnimationFrame(scrollFocusRaf.current);
     };
   }, [onScrollFocus, reportScrollFocus]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const sync = () => {
+      setScrollLeft(el.scrollLeft);
+      setViewportWidth(el.clientWidth);
+    };
+    sync();
+    el.addEventListener('scroll', sync, { passive: true });
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', sync);
+      ro.disconnect();
+    };
+  }, [layout.width, stageHeight]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     // On touch phones, prefer native horizontal pan — custom drag fights it
@@ -693,8 +758,46 @@ export function HorizontalTimeline({
     ? layout.activity.find((b) => `act-${b.key}` === hoveredId)
     : undefined;
 
+  const scrubPoint =
+    scrubId != null
+      ? layout.points.find((p) => p.id === scrubId) ??
+        layout.mood.find((m) => m.id === scrubId) ??
+        layout.contextMarks.find((m) => m.id === scrubId)
+      : undefined;
+  const scrubEvent = scrubId ? events.find((e) => e.id === scrubId) : undefined;
+  const scrubContentX = scrubPoint && 'x' in scrubPoint ? scrubPoint.x : null;
+  const scrubViewportX =
+    scrubContentX != null && viewportWidth > 0
+      ? Math.min(Math.max(scrubContentX - scrollLeft, 14), viewportWidth - 14)
+      : null;
+
   return (
     <div ref={stageRef} className="relative h-full w-full min-h-0">
+      {isChart &&
+        scrubViewportX != null &&
+        stageHeight > 0 &&
+        scrubId &&
+        scrubId !== activeId && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 z-30 will-change-[left]"
+            style={{
+              left: scrubViewportX,
+              transition: 'left 130ms linear',
+            }}
+          >
+            <div
+              className="absolute inset-y-[6%] left-0 w-px -translate-x-1/2 bg-foreground/45"
+            />
+            <div className="absolute left-1/2 top-[6%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-foreground shadow-md" />
+            {scrubEvent && (
+              <span className="absolute left-1/2 top-[calc(6%+10px)] -translate-x-1/2 whitespace-nowrap rounded-md border border-border/50 bg-background/95 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground shadow-sm backdrop-blur-sm">
+                {formatEventDate(scrubEvent.date, locale)}
+              </span>
+            )}
+          </div>
+        )}
+
       {/* Sticky Y-axis: reads with the chart, stays put while scrolling */}
       {moodLabels && hasMood && stageHeight > 0 && (
         <div
@@ -824,6 +927,42 @@ export function HorizontalTimeline({
               style={{ top: timeAxisY }}
             />
           )}
+
+          {isChart &&
+            stageHeight > 0 &&
+            layout.contextMarks.map((mark) => {
+              const meta = EVENT_META[mark.type];
+              const isActive = activeId === mark.id;
+              return (
+                <button
+                  key={`ctx-${mark.id}`}
+                  type="button"
+                  onClick={() => onSelect(mark.id)}
+                  onMouseEnter={() => setHoveredId(mark.id)}
+                  onMouseLeave={() =>
+                    setHoveredId((id) => (id === mark.id ? null : id))
+                  }
+                  className="absolute z-[3] -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: mark.x, top: timeAxisY }}
+                  aria-label={
+                    events.find((e) => e.id === mark.id)?.title[locale] ?? mark.type
+                  }
+                  aria-pressed={isActive}
+                >
+                  <span
+                    className={`block rounded-sm transition-transform ${
+                      isActive ? 'scale-125 ring-2 ring-foreground/30' : 'hover:scale-110'
+                    }`}
+                    style={{
+                      width: isActive ? 8 : 6,
+                      height: isActive ? 8 : 6,
+                      backgroundColor: meta.dot,
+                      opacity: isActive ? 1 : 0.55,
+                    }}
+                  />
+                </button>
+              );
+            })}
 
           {stageHeight > 0 && layout.todayX != null && (
             <div
@@ -969,7 +1108,7 @@ export function HorizontalTimeline({
             moodGeometry.points
               .filter((p) => !p.carry)
               .map((p) => {
-                const event = layout.points.find((e) => e.id === p.id);
+                const event = events.find((e) => e.id === p.id);
                 if (!event) return null;
                 const isActive = activeId === event.id;
                 const isHot = hoveredId === event.id || isActive;
@@ -1046,6 +1185,29 @@ export function HorizontalTimeline({
               </p>
             </div>
           )}
+
+          {isChart &&
+            hoveredEvent &&
+            !hovered &&
+            !hoveredId?.startsWith('act-') &&
+            layout.contextMarks.some((m) => m.id === hoveredEvent.id) && (
+              <div
+                className="pointer-events-none absolute z-30 w-48 -translate-x-1/2 rounded-lg border border-border/60 bg-background/95 px-2.5 py-2 shadow-lg backdrop-blur-xl"
+                style={{
+                  left: layout.contextMarks.find((m) => m.id === hoveredEvent.id)!.x,
+                  top: Math.max(8, timeAxisY - 72),
+                }}
+              >
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {formatEventDate(hoveredEvent.date, locale)}
+                  {' · '}
+                  {typeLabel(hoveredEvent.type)}
+                </p>
+                <p className="mt-1 line-clamp-2 text-xs font-semibold leading-snug">
+                  {hoveredEvent.title[locale]}
+                </p>
+              </div>
+            )}
 
           {isChart && hoveredActivity && (
             <div

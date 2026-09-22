@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, List, SlidersHorizontal, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
 import {
+  unifiedTheme,
   timelineThemes,
-  sentimentTheme,
+  lobbyPeople,
   ALL_SENTIMENT_TAGS,
   type EventType,
   type SentimentTag,
@@ -18,7 +19,6 @@ import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import type { TimelineEventEdit } from '@/lib/pipeline/types';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
-import { EventDetailPanel } from '@/components/trasparenza/EventDetailPanel';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
 
 /** Navbar height (h-16) */
@@ -31,7 +31,7 @@ export default function TrasparenzaContent() {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
 
-  const [themeId, setThemeId] = useState(sentimentTheme.id);
+  const [themeId] = useState(unifiedTheme.id);
   const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
   const [edits, setEdits] = useState<Record<string, TimelineEventEdit>>({});
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function TrasparenzaContent() {
   const track = useMemo(() => {
     const today = localIsoDate();
     const hidden = new Set(hiddenIds);
-    const base = timelineThemes.find((th) => th.id === themeId) ?? timelineThemes[0];
+    const base = timelineThemes.find((th) => th.id === themeId) ?? unifiedTheme;
     const withPresent = applyStoreOverlays(
       base.events.map((e) =>
         e.id === PRESENT_PIN_ID ? { ...e, date: today } : e,
@@ -81,10 +81,6 @@ export default function TrasparenzaContent() {
       edits,
       hiddenIds,
     ).map((e) => (e.id === PRESENT_PIN_ID ? { ...e, date: today } : e));
-
-    if (base.id !== sentimentTheme.id) {
-      return { ...base, events: withPresent };
-    }
 
     const byId = new Map(withPresent.map((e) => [e.id, e]));
     for (const e of pipelineEvents) {
@@ -106,10 +102,9 @@ export default function TrasparenzaContent() {
     ...ALL_SENTIMENT_TAGS,
   ]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [focusId, setFocusId] = useState<string | null>(null);
+  const [scrubId, setScrubId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feedOpen, setFeedOpen] = useState(false);
-  const syncOwner = useRef<'timeline' | 'feed' | 'select' | null>(null);
 
   const todayLabel = useMemo(() => {
     try {
@@ -131,18 +126,8 @@ export default function TrasparenzaContent() {
     });
   }, [allYears]);
 
-  const switchTheme = (id: string) => {
-    setThemeId(id);
-    const next = timelineThemes.find((th) => th.id === id) ?? timelineThemes[0];
-    const years = [...new Set(next.events.map((e) => e.date.slice(0, 4)))].sort();
-    setSelectedActor('all');
-    setSelectedPerson('all');
-    setSelectedTypes([...next.filterTypes]);
-    setSelectedYears(years);
-    setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
-    setActiveId(null);
-    setFocusId(null);
-    setPresentFocusToken((n) => n + 1);
+  const switchTheme = (_id: string) => {
+    /* single unified track — theme switch retained for FilterSidebar API */
   };
 
   const actorMap = useMemo(
@@ -151,8 +136,8 @@ export default function TrasparenzaContent() {
   );
 
   const personMap = useMemo(
-    () => Object.fromEntries(track.people.map((p) => [p.id, p])),
-    [track.people],
+    () => Object.fromEntries(lobbyPeople.map((p) => [p.id, p])),
+    [],
   );
 
   const filtered = useMemo(() => {
@@ -167,16 +152,16 @@ export default function TrasparenzaContent() {
       })
       .filter((e) => {
         if (selectedPerson === 'all') return true;
+        // Person filter scopes statements; context pins stay visible on the axis
+        if (e.type !== 'statement') return true;
         return e.personId === selectedPerson;
       })
       .filter((e) => {
-        if (!track.showSentiment) return true;
         if (!e.sentiment) return true;
         return selectedSentiments.includes(e.sentiment);
       });
   }, [
     track.events,
-    track.showSentiment,
     selectedActor,
     selectedPerson,
     selectedTypes,
@@ -192,20 +177,18 @@ export default function TrasparenzaContent() {
   useEffect(() => {
     if (filtered.length === 0) {
       setActiveId(null);
-      setFocusId(null);
+      setScrubId(null);
       return;
     }
     if (activeId && !filtered.some((e) => e.id === activeId)) {
       setActiveId(null);
     }
-    if (focusId && !filtered.some((e) => e.id === focusId)) {
-      setFocusId(feedEvents[0]?.id ?? null);
+    if (scrubId && !filtered.some((e) => e.id === scrubId)) {
+      setScrubId(null);
     }
-  }, [filtered, feedEvents, activeId, focusId]);
+  }, [filtered, activeId, scrubId]);
 
-  const highlightId = focusId ?? activeId;
   const activeIndex = filtered.findIndex((e) => e.id === activeId);
-  const active = activeIndex >= 0 ? filtered[activeIndex] : null;
 
   const toggleType = (type: EventType) => {
     setSelectedTypes((prev) => {
@@ -249,20 +232,16 @@ export default function TrasparenzaContent() {
   const sentimentTagLabel = (tag: SentimentTag) => t.trasparenza.sentiments[tag];
 
   const centerOnEvent = (id: string) => {
-    setFocusId(id);
     setActiveId(id);
+    setScrubId(null);
     setFocusEventToken((n) => n + 1);
   };
 
   const goPrev = () => {
-    if (activeIndex > 0) {
-      syncOwner.current = 'select';
-      centerOnEvent(filtered[activeIndex - 1].id);
-    }
+    if (activeIndex > 0) centerOnEvent(filtered[activeIndex - 1].id);
   };
   const goNext = () => {
     if (activeIndex >= 0 && activeIndex < filtered.length - 1) {
-      syncOwner.current = 'select';
       centerOnEvent(filtered[activeIndex + 1].id);
     }
   };
@@ -306,29 +285,17 @@ export default function TrasparenzaContent() {
   };
 
   const selectEvent = (id: string) => {
-    syncOwner.current = 'select';
+    if (activeId === id) {
+      setActiveId(null);
+      return;
+    }
     centerOnEvent(id);
     setFiltersOpen(false);
+    setFeedOpen(true);
   };
 
-  const onTimelineScrollFocus = (id: string) => {
-    if (syncOwner.current === 'feed' || syncOwner.current === 'select') return;
-    syncOwner.current = 'timeline';
-    setFocusId(id);
-    window.setTimeout(() => {
-      if (syncOwner.current === 'timeline') syncOwner.current = null;
-    }, 100);
-  };
-
-  const onFeedScrollFocus = (id: string) => {
-    if (syncOwner.current === 'timeline') return;
-    syncOwner.current = 'feed';
-    setFocusId(id);
-    setActiveId(id);
-    setFocusEventToken((n) => n + 1);
-    window.setTimeout(() => {
-      if (syncOwner.current === 'feed') syncOwner.current = null;
-    }, 100);
+  const onFeedScrub = (id: string | null) => {
+    setScrubId(id);
   };
 
   const activeFilters =
@@ -336,12 +303,11 @@ export default function TrasparenzaContent() {
     selectedPerson !== 'all' ||
     selectedTypes.length < track.filterTypes.length ||
     selectedYears.length < allYears.length ||
-    (track.showSentiment && selectedSentiments.length < ALL_SENTIMENT_TAGS.length);
+    selectedSentiments.length < ALL_SENTIMENT_TAGS.length;
 
   const moodEvents = useMemo(
-    () =>
-      (track.showSentiment ? filtered : track.events).filter((e) => Boolean(e.sentiment)),
-    [track.events, track.showSentiment, filtered],
+    () => filtered.filter((e) => Boolean(e.sentiment)),
+    [filtered],
   );
 
   const moodLabels = useMemo(
@@ -356,46 +322,30 @@ export default function TrasparenzaContent() {
     [t],
   );
 
-  const activePerson = active?.personId ? personMap[active.personId] : undefined;
-
-  const detailProps = {
-    event: active,
-    locale,
-    actorName: active?.actorId ? actorMap[active.actorId]?.name : undefined,
-    actorColor: active?.actorId ? actorMap[active.actorId]?.color : undefined,
-    personName: activePerson?.name,
-    personRole: activePerson ? activePerson.role[locale] : undefined,
-    typeLabel: active ? typeLabel(active.type) : '',
-    sentimentLabel:
-      active?.sentiment && track.showSentiment
-        ? sentimentTagLabel(active.sentiment)
-        : undefined,
-    sentimentNote: track.showSentiment ? t.trasparenza.sentimentNote : undefined,
-    selectHint: t.trasparenza.selectHint,
-    closeLabel: t.trasparenza.close,
-    sourceLabel: t.trasparenza.source,
-    prevLabel: t.trasparenza.prevEvent,
-    nextLabel: t.trasparenza.nextEvent,
-    onPrev: goPrev,
-    onNext: goNext,
-    hasPrev: activeIndex > 0,
-    hasNext: activeIndex >= 0 && activeIndex < filtered.length - 1,
-  };
-
   const renderFeed = (opts?: { onPick?: (id: string) => void; className?: string }) => (
     <TimelineFeed
       events={feedEvents}
       locale={locale}
       people={personMap}
-      personOptions={track.showSentiment ? track.people : []}
+      actors={actorMap}
+      personOptions={track.people}
       selectedPerson={selectedPerson}
-      onPersonChange={track.showSentiment ? setSelectedPerson : undefined}
+      onPersonChange={setSelectedPerson}
       allPeopleLabel={t.trasparenza.allPeople}
       peopleLabel={t.trasparenza.peopleLabel}
-      activeId={highlightId}
+      typeOptions={track.filterTypes}
+      selectedTypes={selectedTypes}
+      onToggleType={toggleType}
+      onResetTypes={() => setSelectedTypes([...track.filterTypes])}
+      typesLabel={t.trasparenza.typesLabel}
+      allTypesLabel={t.trasparenza.allTypes}
+      activeId={activeId}
       onSelect={opts?.onPick ?? selectEvent}
-      onScrollFocus={onFeedScrollFocus}
-      sentimentLabel={track.showSentiment ? sentimentTagLabel : undefined}
+      onScrub={onFeedScrub}
+      sentimentLabel={sentimentTagLabel}
+      typeLabel={typeLabel}
+      sentimentNote={t.trasparenza.sentimentNote}
+      sourceLabel={t.trasparenza.source}
       title={t.trasparenza.feedTitle}
       newestFirstLabel={t.trasparenza.feedNewest}
       emptyLabel={t.trasparenza.empty}
@@ -417,21 +367,19 @@ export default function TrasparenzaContent() {
         <div className="absolute inset-0">
           <HorizontalTimeline
             events={filtered}
-            mode={track.showSentiment ? 'chart' : 'cards'}
-            moodEvents={track.showSentiment ? moodEvents : []}
-            moodLabels={track.showSentiment ? moodLabels : undefined}
+            mode="chart"
+            moodEvents={moodEvents}
+            moodLabels={moodLabels}
             actors={actorMap}
             people={personMap}
             locale={locale}
-            activeId={highlightId}
+            activeId={activeId}
             onSelect={selectEvent}
-            onScrollFocus={onTimelineScrollFocus}
+            scrubId={scrubId}
             emptyLabel={t.trasparenza.empty}
-            dragHint={
-              track.showSentiment ? t.trasparenza.inspectHint : t.trasparenza.dragHint
-            }
+            dragHint={t.trasparenza.inspectHint}
             typeLabel={typeLabel}
-            sentimentLabel={track.showSentiment ? sentimentTagLabel : undefined}
+            sentimentLabel={sentimentTagLabel}
             focusPresent
             todayLabel={t.trasparenza.todayLabel}
             presentFocusToken={presentFocusToken}
@@ -476,7 +424,7 @@ export default function TrasparenzaContent() {
                 type="button"
                 onClick={() => {
                   setActiveId(null);
-                  setFocusId(null);
+                  setScrubId(null);
                   setPresentFocusToken((n) => n + 1);
                 }}
                 className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/90 px-2.5 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-xl transition-colors hover:bg-background hover:text-foreground sm:px-3"
@@ -497,21 +445,15 @@ export default function TrasparenzaContent() {
                 <span className="hidden sm:inline">{t.trasparenza.feedOpen}</span>
               </button>
             </div>
-            {track.showSentiment && (
-              <p className="mt-2 max-w-xl rounded-md border border-border/40 bg-background/75 px-2.5 py-1.5 font-mono text-[10px] leading-snug text-muted-foreground shadow-sm backdrop-blur-xl sm:text-[11px]">
-                {t.trasparenza.moodHint}
-              </p>
-            )}
+            <p className="mt-2 max-w-xl rounded-md border border-border/40 bg-background/75 px-2.5 py-1.5 font-mono text-[10px] leading-snug text-muted-foreground shadow-sm backdrop-blur-xl sm:text-[11px]">
+              {t.trasparenza.moodHint}
+            </p>
           </div>
 
           <AnimatePresence>
             {filtersOpen && (
               <motion.div
-                className={`absolute inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:w-[min(100%-1.5rem,300px)] ${
-                  track.showSentiment
-                    ? 'top-24 sm:top-[6.5rem]'
-                    : 'top-14 sm:top-[4.25rem]'
-                }`}
+                className="absolute inset-x-0 bottom-0 z-40 top-24 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:top-[6.5rem] sm:w-[min(100%-1.5rem,300px)]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 16 }}
@@ -555,51 +497,11 @@ export default function TrasparenzaContent() {
           </AnimatePresence>
         </div>
 
-        {/* Mobile detail */}
-        <AnimatePresence>
-          {active && (
-            <motion.div
-              className="absolute inset-x-0 bottom-0 z-20 flex max-h-[48%] flex-col border-t border-border/50 bg-background shadow-[0_-8px_30px_rgba(0,0,0,0.08)] lg:hidden"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', bounce: 0.12, duration: 0.35 }}
-            >
-              <div className="flex justify-center py-2" aria-hidden>
-                <span className="h-1 w-10 rounded-full bg-border" />
-              </div>
-              <EventDetailPanel
-                {...detailProps}
-                onClose={() => setActiveId(null)}
-                className="min-h-0 flex-1 overflow-hidden"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </section>
 
-      {/* Desktop feed + detail */}
+      {/* Desktop feed */}
       <aside className="relative z-20 hidden w-[min(100%,360px)] shrink-0 flex-col border-l border-border/50 bg-background/95 backdrop-blur-xl lg:flex xl:w-[380px]">
-        <div className={`flex min-h-0 flex-col ${active ? 'h-[48%]' : 'h-full'}`}>
-          {renderFeed()}
-        </div>
-        <AnimatePresence>
-          {active && (
-            <motion.div
-              className="flex min-h-0 flex-1 flex-col border-t border-border/50"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <EventDetailPanel
-                {...detailProps}
-                onClose={() => setActiveId(null)}
-                className="min-h-0 flex-1 overflow-hidden"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {renderFeed()}
       </aside>
 
       {/* Mobile feed drawer */}
@@ -624,15 +526,6 @@ export default function TrasparenzaContent() {
               </button>
             </div>
             <div className="min-h-0 flex-1">{renderFeed()}</div>
-            {active && (
-              <div className="max-h-[42%] border-t border-border/50">
-                <EventDetailPanel
-                  {...detailProps}
-                  onClose={() => setActiveId(null)}
-                  className="h-full max-h-[40dvh] overflow-hidden"
-                />
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

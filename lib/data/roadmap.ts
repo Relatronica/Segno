@@ -16,8 +16,8 @@ export const roadmapPhases: RoadmapPhase[] = [
       en: 'Sentiment: leaders’ tone on AI',
     },
       description: {
-      it: 'Dichiarazioni pubbliche dal 2021 a oggi, filtri per persona, citazione e fonte — con curva entusiasmo↔timore sullo stesso asse.',
-      en: 'Public statements from 2021 to today, filters by person, quote and source — with an enthusiasm↔fear curve on the same axis.',
+      it: 'Dichiarazioni pubbliche dal 2021 a oggi — più contesto UE (incontri, spese, voti) sullo stesso asse. Curva solo dal tono; il resto in cronologia.',
+      en: 'Public statements from 2021 to today — plus EU context (meetings, spend, votes) on the same axis. Curve from tone only; the rest in the feed.',
     },
   },
   {

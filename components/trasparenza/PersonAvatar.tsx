@@ -6,13 +6,20 @@ import type { LobbyPerson } from '@/lib/data/trasparenza';
 
 type Props = {
   person: Pick<LobbyPerson, 'name' | 'shortName' | 'avatar'>;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 };
 
 const SIZE = {
   sm: 'h-6 w-6 text-[9px]',
-  md: 'h-7 w-7 text-[10px]',
+  md: 'h-8 w-8 text-[10px]',
+  lg: 'h-10 w-10 text-[11px]',
+} as const;
+
+const PX = {
+  sm: 24,
+  md: 32,
+  lg: 40,
 } as const;
 
 export function PersonAvatar({ person, size = 'sm', className }: Props) {
@@ -26,8 +33,8 @@ export function PersonAvatar({ person, size = 'sm', className }: Props) {
       <img
         src={person.avatar}
         alt=""
-        width={size === 'md' ? 28 : 24}
-        height={size === 'md' ? 28 : 24}
+        width={PX[size]}
+        height={PX[size]}
         className={cn(
           'shrink-0 rounded-full object-cover ring-1 ring-border/60',
           SIZE[size],

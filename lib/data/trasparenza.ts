@@ -937,20 +937,23 @@ export const sentimentTheme: TimelineTheme = {
     en: "2021 — today",
   },
   intro: {
-    it: "Come cambia il tono pubblico dei leader big tech sull’IA dal pre-ChatGPT a oggi: allarme, cautela, ottimismo, spinta deregulation, scommessa open source — sempre con citazione e fonte.",
-    en: "How big-tech leaders’ public tone on AI shifts from pre-ChatGPT to today: alarm, caution, optimism, deregulation push, open-source bet — always with quote and source.",
+    it: "Tono pubblico dei leader sull’IA e, sullo stesso asse, incontri, spese e passaggi delle regole europee — curva solo sulle dichiarazioni, contesto nel dettaglio.",
+    en: "Public tone from AI leaders and, on the same axis, meetings, spend and EU rule-making steps — curve from statements only, context in the detail.",
   },
   disclaimer: {
-    it: "Il tag di sentiment è una lettura editoriale della citazione, non un punteggio oggettivo. Ogni pin ha fonte e testo verificabile. Non misura “quanto è pericolosa” l’IA.",
-    en: "The sentiment tag is an editorial reading of the quote, not an objective score. Every pin has a source and verifiable text. It does not measure “how dangerous” AI is.",
+    it: "Il tag di sentiment è una lettura editoriale della citazione, non un punteggio oggettivo. Gli altri pin (incontri, spese, voti) sono contesto verificabile: la vicinanza nel tempo non dimostra causalità.",
+    en: "The sentiment tag is an editorial reading of the quote, not an objective score. Other pins (meetings, spend, votes) are verifiable context: temporal proximity does not prove causation.",
   },
-  filterTypes: ["statement"],
+  filterTypes: [
+    "statement",
+    "legislative",
+    "meeting",
+    "spending",
+    "milestone",
+    "sanction",
+  ],
   showSentiment: true,
-  actors: lobbyActors.filter((a) =>
-    ["xai", "microsoft", "openai", "anthropic", "nvidia", "meta", "google"].includes(
-      a.id,
-    ),
-  ),
+  actors: lobbyActors,
   people: techLeaderPeople,
   events: [
     {
@@ -1622,7 +1625,37 @@ export const sentimentTheme: TimelineTheme = {
   ],
 };
 
-export const timelineThemes: TimelineTheme[] = [sentimentTheme, aiActTrack];
+/**
+ * Merge AI Act context pins into the Sentiment track without duplicating
+ * statements already curated on the mood curve (same date + person).
+ */
+function mergeContextEvents(
+  statements: TimelineEvent[],
+  contextSource: TimelineEvent[],
+): TimelineEvent[] {
+  const statementKey = new Set(
+    statements
+      .filter((e) => e.type === "statement")
+      .map((e) => `${e.date}|${e.personId ?? ""}`),
+  );
+  const extras = contextSource.filter((e) => {
+    if (e.type === "statement") {
+      return !statementKey.has(`${e.date}|${e.personId ?? ""}`);
+    }
+    return true;
+  });
+  return [...statements, ...extras].sort(
+    (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
+  );
+}
+
+/** Single live track: sentiment curve + EU rules context on one axis. */
+export const unifiedTheme: TimelineTheme = {
+  ...sentimentTheme,
+  events: mergeContextEvents(sentimentTheme.events, aiActTrack.events),
+};
+
+export const timelineThemes: TimelineTheme[] = [unifiedTheme];
 
 /** @deprecated Prefer timelineThemes */
 export const lawTracks = timelineThemes;
@@ -1636,10 +1669,9 @@ export function getLawTrack(slug: string): TimelineTheme | undefined {
   return getTimelineTheme(slug);
 }
 
-
 /** Counts used by the homepage stats strip and the Open Graph image. */
 export function getHomeSnapshot() {
-  const events = timelineThemes.flatMap((theme) => theme.events);
+  const events = unifiedTheme.events;
   const years = events.map((e) => Number(e.date.slice(0, 4)));
   return {
     eventCount: events.length,

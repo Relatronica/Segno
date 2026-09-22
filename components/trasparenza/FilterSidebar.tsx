@@ -115,6 +115,7 @@ export function FilterSidebar({
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-3 py-3">
+        {themes.length > 1 && (
         <FilterSection title={labels.themeLabel}>
           <div className="flex flex-col gap-1">
             {themes.map((theme) => {
@@ -145,6 +146,7 @@ export function FilterSidebar({
             })}
           </div>
         </FilterSection>
+        )}
 
         <FilterSection title={labels.actorsLabel}>
           <div className="flex flex-wrap gap-1">
