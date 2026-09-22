@@ -20,7 +20,6 @@ import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { EventDetailPanel } from '@/components/trasparenza/EventDetailPanel';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
-import { PersonAvatar } from '@/components/trasparenza/PersonAvatar';
 
 /** Navbar height (h-16) */
 const NAV_H = '4rem';
@@ -388,6 +387,11 @@ export default function TrasparenzaContent() {
       events={feedEvents}
       locale={locale}
       people={personMap}
+      personOptions={track.showSentiment ? track.people : []}
+      selectedPerson={selectedPerson}
+      onPersonChange={track.showSentiment ? setSelectedPerson : undefined}
+      allPeopleLabel={t.trasparenza.allPeople}
+      peopleLabel={t.trasparenza.peopleLabel}
       activeId={highlightId}
       onSelect={opts?.onPick ?? selectEvent}
       onScrollFocus={onFeedScrollFocus}
@@ -498,55 +502,6 @@ export default function TrasparenzaContent() {
                 {t.trasparenza.moodHint}
               </p>
             )}
-            {track.showSentiment && (
-              <div
-                className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none]"
-                role="tablist"
-                aria-label={t.trasparenza.peopleLabel}
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedPerson === 'all'}
-                  onClick={() => setSelectedPerson('all')}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-[11px] shadow-lg backdrop-blur-xl transition-colors ${
-                    selectedPerson === 'all'
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border/60 bg-background/90 text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t.trasparenza.allPeople}
-                </button>
-                {track.people.map((person) => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={selectedPerson === person.id}
-                    title={person.name}
-                    onClick={() =>
-                      setSelectedPerson((current) =>
-                        current === person.id ? 'all' : person.id,
-                      )
-                    }
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 shadow-lg backdrop-blur-xl transition-colors ${
-                      selectedPerson === person.id
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border/60 bg-background/90 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <PersonAvatar
-                      person={person}
-                      size="md"
-                      className={
-                        selectedPerson === person.id ? 'ring-background/40' : undefined
-                      }
-                    />
-                    <span className="font-mono text-[11px]">{person.shortName}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           <AnimatePresence>
@@ -554,7 +509,7 @@ export default function TrasparenzaContent() {
               <motion.div
                 className={`absolute inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:w-[min(100%-1.5rem,300px)] ${
                   track.showSentiment
-                    ? 'top-[6.25rem] sm:top-[6.75rem]'
+                    ? 'top-24 sm:top-[6.5rem]'
                     : 'top-14 sm:top-[4.25rem]'
                 }`}
                 initial={{ opacity: 0, y: 16 }}
