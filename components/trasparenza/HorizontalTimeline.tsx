@@ -594,10 +594,20 @@ export function HorizontalTimeline({
     layout.contextMarks,
   ]);
 
-  // Center on "today" when nothing is selected (initial load / jump to today)
+  // Center on "today" only on first ready layout, or when the jump button bumps the token.
+  // Do not re-run when selection clears — that used to yank the viewport back to today.
+  const initialPresentDone = useRef(false);
+  const lastPresentToken = useRef(presentFocusToken);
+
   useEffect(() => {
-    if (!focusPresent || activeId) return;
+    if (!focusPresent) return;
     if (layout.todayX == null || layout.width <= 0) return;
+
+    const tokenBumped = presentFocusToken !== lastPresentToken.current;
+    if (tokenBumped) lastPresentToken.current = presentFocusToken;
+
+    const needsInitial = !initialPresentDone.current;
+    if (!needsInitial && !tokenBumped) return;
 
     let cancelled = false;
     const run = (behavior: ScrollBehavior) => {
@@ -605,19 +615,23 @@ export function HorizontalTimeline({
       scrollToPresent(behavior);
     };
 
-    // Wait for scroller to have a measurable width (layout + paint)
-    const t0 = window.setTimeout(() => run('auto'), 0);
-    const t1 = window.setTimeout(() => run('auto'), 120);
-    const t2 = window.setTimeout(() => run('smooth'), 320);
+    if (needsInitial) {
+      initialPresentDone.current = true;
+      const t0 = window.setTimeout(() => run('auto'), 0);
+      const t1 = window.setTimeout(() => run('auto'), 120);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(t0);
+        window.clearTimeout(t1);
+      };
+    }
+
+    run('smooth');
     return () => {
       cancelled = true;
-      window.clearTimeout(t0);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
     };
   }, [
     focusPresent,
-    activeId,
     layout.width,
     layout.todayX,
     presentFocusToken,
@@ -757,6 +771,22 @@ export function HorizontalTimeline({
   const hoveredActivity = hoveredId?.startsWith('act-')
     ? layout.activity.find((b) => `act-${b.key}` === hoveredId)
     : undefined;
+
+  const activeMoodPoint =
+    activeId != null
+      ? moodGeometry.points.find((p) => p.id === activeId && !p.carry)
+      : undefined;
+  const activeContextMark =
+    activeId != null && !activeMoodPoint
+      ? layout.contextMarks.find((m) => m.id === activeId)
+      : undefined;
+  const activeEvent = activeId ? events.find((e) => e.id === activeId) : undefined;
+  const activeAccent =
+    activeEvent?.sentiment != null
+      ? SENTIMENT_META[activeEvent.sentiment].dot
+      : activeEvent
+        ? EVENT_META[activeEvent.type].dot
+        : undefined;
 
   const scrubPoint =
     scrubId != null
@@ -943,19 +973,26 @@ export function HorizontalTimeline({
                     setHoveredId((id) => (id === mark.id ? null : id))
                   }
                   className="absolute z-[3] -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: mark.x, top: timeAxisY }}
+                  style={{ left: mark.x, top: timeAxisY, width: 20, height: 20 }}
                   aria-label={
                     events.find((e) => e.id === mark.id)?.title[locale] ?? mark.type
                   }
                   aria-pressed={isActive}
                 >
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-sm opacity-40"
+                      style={{ backgroundColor: meta.dot }}
+                    />
+                  )}
                   <span
-                    className={`block rounded-sm transition-transform ${
-                      isActive ? 'scale-125 ring-2 ring-foreground/30' : 'hover:scale-110'
+                    className={`absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 rounded-sm transition-transform ${
+                      isActive ? 'scale-125 ring-2 ring-foreground/40' : 'hover:scale-110'
                     }`}
                     style={{
-                      width: isActive ? 8 : 6,
-                      height: isActive ? 8 : 6,
+                      width: isActive ? 9 : 6,
+                      height: isActive ? 9 : 6,
                       backgroundColor: meta.dot,
                       opacity: isActive ? 1 : 0.55,
                     }}
@@ -1091,7 +1128,8 @@ export function HorizontalTimeline({
 
           {isChart &&
             hovered &&
-            stageHeight > 0 && (
+            stageHeight > 0 &&
+            hoveredId !== activeId && (
               <div
                 aria-hidden
                 className="pointer-events-none absolute z-[2] w-px bg-foreground/25"
@@ -1099,6 +1137,22 @@ export function HorizontalTimeline({
                   left: hovered.x,
                   top: stageHeight * 0.08,
                   height: stageHeight * 0.84,
+                }}
+              />
+            )}
+
+          {isChart &&
+            stageHeight > 0 &&
+            activeAccent &&
+            (activeMoodPoint || activeContextMark) && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute z-[2] w-px"
+                style={{
+                  left: activeMoodPoint?.x ?? activeContextMark!.x,
+                  top: stageHeight * 0.06,
+                  height: stageHeight * 0.88,
+                  background: `linear-gradient(to bottom, transparent, ${activeAccent}99, ${activeAccent}cc, ${activeAccent}99, transparent)`,
                 }}
               />
             )}
@@ -1121,17 +1175,33 @@ export function HorizontalTimeline({
                     onMouseEnter={() => setHoveredId(event.id)}
                     onMouseLeave={() => setHoveredId((id) => (id === event.id ? null : id))}
                     className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{ left: p.x, top: p.y, width: 28, height: 28 }}
+                    style={{ left: p.x, top: p.y, width: 36, height: 36 }}
                     aria-pressed={isActive}
                     aria-label={event.title[locale]}
                   >
+                    {isActive && (
+                      <>
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-40"
+                          style={{ backgroundColor: dot }}
+                        />
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30"
+                          style={{ backgroundColor: dot }}
+                        />
+                      </>
+                    )}
                     <span
-                      className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background transition-transform"
+                      className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background transition-[width,height,box-shadow] duration-200"
                       style={{
-                        width: isHot ? 12 : 8,
-                        height: isHot ? 12 : 8,
+                        width: isActive ? 14 : isHot ? 11 : 8,
+                        height: isActive ? 14 : isHot ? 11 : 8,
                         backgroundColor: dot,
-                        boxShadow: isActive ? `0 0 0 4px ${dot}33` : undefined,
+                        boxShadow: isActive
+                          ? `0 0 0 3px ${dot}73, 0 0 16px ${dot}66`
+                          : undefined,
                       }}
                     />
                   </button>
