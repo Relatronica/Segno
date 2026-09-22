@@ -38,27 +38,33 @@ export default function TrasparenzaContent() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/pipeline/published')
-      .then((r) => (r.ok ? r.json() : null))
-      .then(
-        (
-          data: {
-            events?: TimelineEvent[];
-            edits?: Record<string, TimelineEventEdit>;
-            hiddenIds?: string[];
-          } | null,
-        ) => {
-          if (cancelled || !data) return;
-          setPipelineEvents(data.events ?? []);
-          setEdits(data.edits ?? {});
-          setHiddenIds(data.hiddenIds ?? []);
-        },
-      )
-      .catch(() => {
-        /* pipeline optional offline */
-      });
+    const loadPublished = () => {
+      fetch('/api/pipeline/published', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(
+          (
+            data: {
+              events?: TimelineEvent[];
+              edits?: Record<string, TimelineEventEdit>;
+              hiddenIds?: string[];
+            } | null,
+          ) => {
+            if (cancelled || !data) return;
+            setPipelineEvents(data.events ?? []);
+            setEdits(data.edits ?? {});
+            setHiddenIds(data.hiddenIds ?? []);
+          },
+        )
+        .catch(() => {
+          /* pipeline optional offline */
+        });
+    };
+
+    loadPublished();
+    window.addEventListener('focus', loadPublished);
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', loadPublished);
     };
   }, []);
 
@@ -285,8 +291,8 @@ export default function TrasparenzaContent() {
     (track.showSentiment && selectedSentiments.length < ALL_SENTIMENT_TAGS.length);
 
   const moodEvents = useMemo(
-    () => sentimentTheme.events.filter((e) => Boolean(e.sentiment)),
-    [],
+    () => track.events.filter((e) => Boolean(e.sentiment)),
+    [track.events],
   );
 
   const moodLabels = useMemo(
