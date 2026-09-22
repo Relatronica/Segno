@@ -647,10 +647,6 @@ export function HorizontalTimeline({
 
   return (
     <div ref={stageRef} className="relative h-full w-full min-h-0">
-      <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 font-mono text-[11px] text-muted-foreground/70 md:block">
-        {dragHint}
-      </p>
-
       {/* Sticky Y-axis: reads with the chart, stays put while scrolling */}
       {moodLabels && hasMood && stageHeight > 0 && (
         <div
@@ -684,19 +680,22 @@ export function HorizontalTimeline({
           </div>
           {isChart && moodLabels.activity && (
             <div
-              className="absolute left-2 sm:left-3"
-              style={{ top: activityTop + activityMaxH + 4 }}
+              className="absolute left-2 flex -translate-y-1/2 items-center gap-1.5 sm:left-3"
+              style={{ top: activityTop + activityMaxH / 2 }}
+              title={moodLabels.activityHint}
             >
-              <p className="font-mono text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/35" />
+              <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {moodLabels.activity}
-              </p>
+              </span>
             </div>
           )}
-          <p className="absolute bottom-10 left-2 max-w-[4.5rem] text-[8px] leading-snug text-muted-foreground/70 sm:left-3 sm:max-w-[5rem] sm:text-[9px]">
-            {moodLabels.hint}
-          </p>
         </div>
       )}
+
+      <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 font-mono text-[11px] text-muted-foreground/70 md:block">
+        {dragHint}
+      </p>
 
       <div
         ref={scrollerRef}

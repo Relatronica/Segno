@@ -12,7 +12,7 @@ export default function Home() {
         data={{
           '@context': 'https://schema.org',
           '@type': 'Dataset',
-          name: `${SITE_NAME} — Timeline regole digitali UE`,
+          name: `${SITE_NAME} — Sentiment IA e regole europee`,
           description: SITE_DESCRIPTION,
           url: SITE_URL,
           creator: {
@@ -22,7 +22,7 @@ export default function Home() {
           },
           temporalCoverage: `${snapshot.fromYear}/${snapshot.toYear}`,
           variableMeasured: [
-            `${snapshot.eventCount} eventi in timeline`,
+            `${snapshot.eventCount} punti in timeline`,
             `${snapshot.actorCount} aziende`,
             `${snapshot.sourceCount} fonti citabili`,
           ],

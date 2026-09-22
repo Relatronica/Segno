@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
-import { Menu, X, Globe, Calendar, Heart, Flag } from 'lucide-react';
+import { Menu, X, Globe, Quote, Heart, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
@@ -63,7 +63,7 @@ export function Navbar() {
                 timelineActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Calendar className="h-3.5 w-3.5" />
+              <Quote className="h-3.5 w-3.5" />
               {t.nav.trasparenza}
               {timelineActive && (
                 <motion.div
@@ -149,7 +149,7 @@ export function Navbar() {
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
               >
-                <Calendar className="h-4 w-4" />
+                <Quote className="h-4 w-4" />
                 {t.nav.trasparenza}
               </Link>
               <Link

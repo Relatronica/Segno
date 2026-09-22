@@ -1,31 +1,32 @@
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://segno.app';
 export const SITE_NAME = 'Segno';
-export const SITE_TAGLINE = 'Chi influenza le regole digitali in Europa';
+export const SITE_TAGLINE = 'Il tono pubblico sull’IA, con fonti';
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const SITE_DESCRIPTION =
-  'Timeline di trasparenza sul lobbying e le regole digitali in Europa: incontri, spese dichiarate, dichiarazioni e decisioni — ogni punto con fonte citabile.';
+  'Segno segue entusiasmo e timore nelle dichiarazioni dei leader sull’IA — su una timeline chiara, con citazioni e fonti. In più: le regole europee e il lobbying, stessa mappa.';
 
 export const SITE_KEYWORDS = [
-  'trasparenza',
-  'lobbying',
-  'AI Act',
-  'intelligenza artificiale',
-  'timeline',
-  'DSA',
-  'DMA',
-  'GDPR',
-  'big tech',
-  'Registro trasparenza UE',
-  'diritti digitali',
-  'sovranità digitale',
+  'sentiment IA',
   'dichiarazioni CEO',
+  'tono sull’intelligenza artificiale',
+  'Altman',
+  'Amodei',
+  'timeline',
+  'trasparenza',
+  'AI Act',
+  'lobbying',
+  'big tech',
+  'fonti citabili',
+  'diritti digitali',
+  'entusiasmo',
+  'timore',
 ];
 
 export const pages = {
   trasparenza: {
     title: 'Timeline',
     description:
-      'Lobbying sull’AI Act e tono dei leader sull’IA: incontri, spese, dichiarazioni e passaggi legislativi sulla stessa timeline, con fonti e citazioni.',
+      'Sentiment sull’IA: curva entusiasmo↔timore dalle dichiarazioni pubbliche. Oppure le regole europee — incontri, spese e passaggi legislativi. Sempre con fonte.',
   },
   segnala: {
     title: 'Segnala',

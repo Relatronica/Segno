@@ -12,8 +12,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Uno strumento per capire chi influenza le regole digitali in Europa. Mette su una timeline — con fonti e citazioni — incontri, spese dichiarate, dichiarazioni pubbliche e decisioni legislative. Puoi cambiare lente (regole sull’IA, tono dei leader, e in seguito altre norme).',
-      en: 'A tool to understand who influences digital rules in Europe. It places meetings, declared spend, public statements and legislative decisions on one timeline — with sources and quotes. You can switch lenses (AI rules, leaders’ tone, and later other norms).',
+      it: 'Uno strumento per seguire il tono pubblico sull’IA — entusiasmo e timore nelle parole di Altman, Amodei, Musk, Huang e altri — su una timeline con citazioni e fonti. Sulla stessa mappa restano le regole europee e il lobbying, come seconda lente.',
+      en: 'A tool to follow the public tone on AI — enthusiasm and fear in the words of Altman, Amodei, Musk, Huang and others — on a timeline with quotes and sources. Europe’s rules and lobbying stay on the same map, as a second lens.',
     },
   },
   {
@@ -23,19 +23,30 @@ export const homeFaqs: FaqItem[] = [
       en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'Modi diversi di guardare la stessa storia. Una lente mostra la pressione sulle regole europee sull’IA (incontri, spese, voti, sanzioni). Un’altra mostra come cambia il tono dei leader del settore (allarme, cautela, ottimismo…). Le cambi dalla barra laterale: i punti sulla timeline si aggiornano.',
-      en: 'Different ways to look at the same story. One lens shows pressure on Europe’s AI rules (meetings, spend, votes, sanctions). Another shows how industry leaders’ tone shifts (alarm, caution, optimism…). Switch them in the sidebar: the pins update.',
+      it: 'Modi diversi di guardare la stessa mappa. La lente primaria è il Sentiment: dichiarazioni pubbliche, filtri per persona, curva entusiasmo↔timore. La seconda mostra la pressione sulle regole europee sull’IA (incontri, spese, voti, sanzioni). Le cambi dalla barra laterale: i punti si aggiornano.',
+      en: 'Different ways to look at the same map. The primary lens is Sentiment: public statements, filters by person, an enthusiasm↔fear curve. The second shows pressure on Europe’s AI rules (meetings, spend, votes, sanctions). Switch them in the sidebar: the pins update.',
+    },
+  },
+  {
+    id: 'sentiment',
+    question: {
+      it: 'Il “sentiment” è un punteggio oggettivo?',
+      en: 'Is “sentiment” an objective score?',
+    },
+    answer: {
+      it: 'No. È una lettura editoriale della citazione — allarme, cautela, ottimismo e così via. La prova resta il testo e il link alla fonte. La curva aiuta a vedere l’oscillazione nel tempo; non è una misura scientifica.',
+      en: 'No. It is an editorial reading of the quote — alarm, caution, optimism, and so on. The proof remains the text and the source link. The curve helps you see the swing over time; it is not a scientific measure.',
     },
   },
   {
     id: 'causation',
     question: {
-      it: 'Dimostrate che il lobbying ha cambiato le leggi?',
-      en: 'Do you prove that lobbying changed the laws?',
+      it: 'Dimostrate che il tono (o il lobbying) ha cambiato le leggi?',
+      en: 'Do you prove that tone (or lobbying) changed the laws?',
     },
     answer: {
-      it: 'No — e lo diciamo chiaramente. Mettiamo sullo stesso asse fatti verificabili. La vicinanza nel tempo aiuta a leggere le pressioni; non è prova di causalità.',
-      en: 'No — and we say so clearly. We place verifiable facts on one axis. Temporal proximity helps you read pressure; it is not proof of causation.',
+      it: 'No — e lo diciamo chiaramente. Mettiamo sullo stesso asse fatti verificabili. La vicinanza nel tempo aiuta a leggere pressioni e messaggi; non è prova di causalità.',
+      en: 'No — and we say so clearly. We place verifiable facts on one axis. Temporal proximity helps you read pressure and messaging; it is not proof of causation.',
     },
   },
   {
@@ -45,8 +56,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'Where does the information come from?',
     },
     answer: {
-      it: 'Ogni punto ha un link stabile. Preferiamo fonti istituzionali, registri pubblici di trasparenza, documenti ottenuti con accesso agli atti e giornalismo citabile. Le dichiarazioni includono una citazione verificabile. I tag sul “tono” sono una lettura editoriale, non un punteggio scientifico.',
-      en: 'Every pin has a stable link. We prefer institutional sources, public transparency registers, freedom-of-information documents and citable journalism. Statements include a verifiable quote. Tone tags are an editorial reading, not a scientific score.',
+      it: 'Ogni punto ha un link stabile. Preferiamo fonti istituzionali, registri pubblici, documenti con accesso agli atti e giornalismo citabile. Le dichiarazioni includono una citazione verificabile.',
+      en: 'Every pin has a stable link. We prefer institutional sources, public registers, freedom-of-information documents and citable journalism. Statements include a verifiable quote.',
     },
   },
   {
@@ -67,8 +78,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'How can I contribute?',
     },
     answer: {
-      it: 'Condividi la timeline. Usa la pagina Segnala per errori o fonti mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
-      en: 'Share the timeline. Use the Report page for errors or missing sources. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
+      it: 'Condividi la curva e le fonti. Usa la pagina Segnala per errori o pezzi mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
+      en: 'Share the curve and the sources. Use the Report page for errors or missing pieces. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
     },
   },
 ];

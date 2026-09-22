@@ -4,77 +4,80 @@ const translations = {
   it: {
     nav: {
       home: 'Home',
-      trasparenza: 'Timeline',
+      trasparenza: 'Sentiment',
       segnala: 'Segnala',
       donate: 'Dona',
     },
     hero: {
-      title: 'Chi decide le regole del digitale? Lo scopriamo insieme.',
+      title: 'Entusiasmo e timore sull’IA, misurati nelle parole pubbliche.',
       subtitle:
-        'Le grandi aziende tecnologiche spendono per influenzare le norme che toccano privacy, piattaforme e intelligenza artificiale. Segno mette incontri, dichiarazioni e decisioni pubbliche su una timeline chiara — con fonti che puoi aprire e citare.',
-      cta: 'Esplora la timeline',
-      ctaSecondary: 'Perché riguarda tutti',
-      statsEvents: 'Eventi in timeline',
+        'Segno segue come cambiano i messaggi di Altman, Amodei, Musk, Huang e altri — su una curva chiara, con citazione e fonte. Le regole europee e il lobbying restano sulla stessa mappa, come seconda lente.',
+      cta: 'Apri il Sentiment',
+      ctaSecondary: 'Perché conta',
+      statsEvents: 'Punti in timeline',
       statsActors: 'Aziende tracciate',
       statsSpan: 'Anni coperti',
       statsSources: 'Fonti citabili',
     },
     home: {
-      problemTitle: 'Le regole digitali non si scrivono da sole',
+      problemTitle: 'Il tono sull’IA muove la conversazione — e le regole',
       problemSubtitle:
-        'Milioni di euro in incontri e campagne pubbliche. Messaggi che passano dalla paura all’entusiasmo. Intanto le norme europee sul digitale si decidono lontano dalla conversazione quotidiana — anche se riguardano la vita di tutti.',
-      problem1Title: 'Dati pubblici, ma illeggibili',
+        'Un giorno è allarme esistenziale, il giorno dopo ottimismo senza freni. Quei messaggi guidano investimenti, paure e pressioni su Bruxelles. Restano sparsi tra interviste, blog e conferenze — difficili da seguire nel tempo.',
+      problem1Title: 'Parole che spariscono',
       problem1Text:
-        'Esistono registri e documenti aperti. Per un cittadino restano archivi tecnici: senza un racconto, la pressione economica non diventa consapevolezza.',
-      problem2Title: 'Parole e decisioni separate',
+        'Una dichiarazione fa notizia un giorno, poi scompare. Senza una linea temporale non si vede se il tono è davvero cambiato — o solo il titolo.',
+      problem2Title: 'Entusiasmo e timore nello stesso discorso',
       problem2Text:
-        'Dichiarazioni dei CEO, incontri a Bruxelles e voti del Parlamento vivono in silos. Senza un asse comune è difficile capire cosa sta succedendo.',
-      problem3Title: 'Serve una mappa condivisa',
+        'Gli stessi leader passano da “rischio di estinzione” a “AGI è vicina”. Serve uno strumento che mostri l’oscillazione, non solo l’ultimo pezzo.',
+      problem3Title: 'Fonti, non vibes',
       problem3Text:
-        'Cittadini, giornalisti e associazioni hanno bisogno di fatti verificabili — non di sensazioni. La trasparenza serve se si può leggere, condividere e controllare.',
-      solutionTitle: 'Una timeline che chiunque può seguire',
+        'Il tag di lettura è editoriale. La prova resta la citazione e il link. Così cittadini e redazioni possono verificare, non solo “avere un’opinione”.',
+      solutionTitle: 'Un grafico del tono — e una timeline da aprire',
       solutionText:
-        'Segno mette sullo stesso asse incontri, spese dichiarate, dichiarazioni pubbliche e passaggi legislativi. Puoi cambiare lente: le regole sull’IA, oppure il tono dei leader del settore — sempre con citazione e link alla fonte.',
-      solutionCta: 'Guarda come funziona',
+        'La lente Sentiment mette le dichiarazioni pubbliche sull’asse del tempo: curva entusiasmo↔timore, attività per mese, filtri per persona. Clicchi un punto e leggi citazione e fonte. Quando serve, passi alle regole sull’IA: incontri, spese, voti.',
+      solutionCta: 'Vedi il Sentiment',
       solutionAsideLabel: 'La regola del progetto',
       solutionAside:
-        'Ogni punto ha una fonte. Le dichiarazioni riportano una citazione. La vicinanza nel tempo aiuta a leggere le pressioni — non è una prova di causalità.',
-      themesTitle: 'Due modi di guardare lo stesso potere',
-      themesSubtitle: 'Stessa timeline, storie diverse. Scegli una lente e segui i fatti.',
+        'Ogni punto ha una fonte. Le dichiarazioni riportano una citazione. Il tag di tono è una lettura, non un punteggio scientifico. La vicinanza nel tempo aiuta a capire — non dimostra causalità.',
+      themesTitle: 'Due lenti, un solo progetto',
+      themesSubtitle:
+        'Prima il tono pubblico sull’IA. Poi, se vuoi approfondire il potere formale, le regole europee.',
+      themePrimary: 'Primario',
+      themeSecondary: 'Secondario',
+      themeSentimentTitle: 'Sentiment IA',
+      themeSentimentText:
+        'Curva entusiasmo↔timore dalle dichiarazioni di Altman, Amodei, Musk, Huang e altri. Filtri per persona, attività nel tempo, citazione e fonte a un click.',
       themeAiTitle: 'Regole sull’IA in Europa',
       themeAiText:
-        'Incontri dichiarati, spese di lobbying, passaggi legislativi e sanzioni — dal 2021 a oggi, con link verificabili.',
-      themeSentimentTitle: 'Cosa dicono i leader sull’IA',
-      themeSentimentText:
-        'Come oscillano allarme e entusiasmo nelle parole pubbliche di Altman, Amodei, Musk, Huang e altri — con una curva di lettura.',
-      themesCta: 'Entra nella timeline',
+        'Incontri dichiarati, spese di lobbying, passaggi legislativi e sanzioni — dal 2021 a oggi. Stessa timeline, pezzi diversi.',
+      themesCta: 'Apri il Sentiment',
       roadmapTitle: 'Cosa stiamo costruendo',
       roadmapSubtitle:
-        'Non è un archivio chiuso: è uno strumento vivo per capire — e far circolare — chi influenza le regole digitali.',
+        'Il Sentiment è vivo e in aggiornamento. Intorno: fonti più precise, racconti da condividere, altre lenti sulle regole digitali.',
       statusDone: 'Online',
       statusActive: 'In corso',
       statusNext: 'Prossimo',
-      shareTitle: 'La trasparenza conta se circola',
+      shareTitle: 'Il tono conta se si vede',
       shareSubtitle:
-        'Condividi la timeline. Più persone la leggono, più difficile è fingere che queste pressioni non esistano.',
+        'Condividi la curva e le fonti. Più persone leggono le dichiarazioni nel tempo, meno spazio resta alle narrazioni a senso unico.',
       shareText:
-        'Segno: chi influenza le regole digitali in Europa, in una timeline con fonti. Guarda e condividi:',
+        'Segno: entusiasmo e timore sull’IA nelle parole pubbliche dei leader — timeline con fonti. Guarda e condividi:',
       copyLink: 'Copia link',
       copied: 'Copiato',
       shareNative: 'Condividi',
       mastodonPrompt: 'La tua istanza Mastodon (es. mastodon.social):',
       faqTitle: 'Domande frequenti',
       faqSubtitle: 'Cosa facciamo, cosa non pretendiamo di dimostrare, come puoi partecipare.',
-      ctaTitle: 'Il potere lascia tracce. Possiamo seguirle.',
+      ctaTitle: 'Il tono lascia tracce. Possiamo seguirle.',
       ctaSubtitle:
-        'Apri la timeline, cambia lente, apri le fonti. Poi condividila con chi pensa ancora che “non si possa sapere”.',
-      ctaButton: 'Vai alla timeline',
+        'Apri il Sentiment, filtra per persona, apri le fonti. Poi, se vuoi, passa alle regole europee sulla stessa timeline.',
+      ctaButton: 'Apri il Sentiment',
     },
     trasparenza: {
-      eyebrow: 'Lobbying · Leggi digitali UE',
+      eyebrow: 'Sentiment IA · Regole europee',
       title: 'Trasparenza',
       subtitle:
-        'Incontri dichiarati, spese di lobbying e passaggi legislativi sullo stesso asse temporale.',
+        'Curva entusiasmo↔timore dalle dichiarazioni pubbliche — e, sulla stessa timeline, incontri, spese e passaggi legislativi.',
       exploreCta: 'Esplora la timeline',
       themeLabel: 'Tema',
       filterBy: 'Filtri',
@@ -229,7 +232,7 @@ const translations = {
     },
     footer: {
       description:
-        'Chi influenza le regole digitali in Europa? Una timeline chiara, con fonti, per chiunque voglia capire.',
+        'Entusiasmo e timore sull’IA nelle parole pubbliche dei leader — su una timeline con fonti. Poi, se vuoi, le regole europee.',
       navigation: 'Progetto',
       contact: 'Partecipa',
       rights: 'Tutti i diritti riservati.',
@@ -239,76 +242,80 @@ const translations = {
   en: {
     nav: {
       home: 'Home',
-      trasparenza: 'Timeline',
+      trasparenza: 'Sentiment',
       segnala: 'Report',
       donate: 'Donate',
     },
     hero: {
-      title: 'Who sets the rules of digital life? Let’s find out together.',
+      title: 'Enthusiasm and fear around AI, measured in public words.',
       subtitle:
-        'Big tech companies spend to influence the norms that touch privacy, platforms and artificial intelligence. Segno puts meetings, public statements and decisions on one clear timeline — with sources you can open and cite.',
-      cta: 'Explore the timeline',
-      ctaSecondary: 'Why it concerns everyone',
-      statsEvents: 'Timeline events',
+        'Segno tracks how the messages of Altman, Amodei, Musk, Huang and others shift — on a clear curve, with quotes and sources. Europe’s AI rules and lobbying stay on the same map, as a second lens.',
+      cta: 'Open Sentiment',
+      ctaSecondary: 'Why it matters',
+      statsEvents: 'Timeline points',
       statsActors: 'Companies tracked',
       statsSpan: 'Years covered',
       statsSources: 'Citable sources',
     },
     home: {
-      problemTitle: 'Digital rules are not written alone',
+      problemTitle: 'The tone on AI moves the conversation — and the rules',
       problemSubtitle:
-        'Millions spent on meetings and public campaigns. Messages that swing from fear to enthusiasm. Meanwhile Europe’s digital norms are decided far from everyday conversation — even though they shape everyone’s life.',
-      problem1Title: 'Public data, still unreadable',
+        'One day it is existential alarm, the next boundless optimism. Those messages shape investment, fear and pressure on Brussels. They stay scattered across interviews, blogs and stages — hard to follow over time.',
+      problem1Title: 'Words that vanish',
       problem1Text:
-        'Open registers and documents exist. For a citizen they remain technical archives: without a story, economic pressure never becomes awareness.',
-      problem2Title: 'Words and decisions apart',
+        'A statement makes news for a day, then disappears. Without a timeline you cannot see whether the tone really changed — or only the headline.',
+      problem2Title: 'Enthusiasm and fear in the same voice',
       problem2Text:
-        'CEO statements, Brussels meetings and parliamentary votes live in silos. Without one shared axis, it is hard to see what is happening.',
-      problem3Title: 'We need a shared map',
+        'The same leaders move from “extinction risk” to “AGI is near”. You need a tool that shows the swing, not just the latest piece.',
+      problem3Title: 'Sources, not vibes',
       problem3Text:
-        'Citizens, journalists and organisations need verifiable facts — not vibes. Transparency only works if it can be read, shared and checked.',
-      solutionTitle: 'A timeline anyone can follow',
+        'The reading tag is editorial. The proof remains the quote and the link. Citizens and newsrooms can verify — not just “have a feeling”.',
+      solutionTitle: 'A chart of tone — and a timeline you can open',
       solutionText:
-        'Segno places meetings, declared spend, public statements and legislative steps on the same axis. Switch lenses: the rules on AI, or the tone of industry leaders — always with a quote and a source link.',
-      solutionCta: 'See how it works',
+        'The Sentiment lens places public statements on the time axis: an enthusiasm↔fear curve, monthly activity, filters by person. Click a point to read the quote and source. When you need it, switch to AI rules: meetings, spend, votes.',
+      solutionCta: 'See Sentiment',
       solutionAsideLabel: 'The project rule',
       solutionAside:
-        'Every pin has a source. Statements carry a quote. Temporal proximity helps you read pressure — it is not proof of causation.',
-      themesTitle: 'Two ways to look at the same power',
-      themesSubtitle: 'Same timeline, different stories. Pick a lens and follow the facts.',
+        'Every pin has a source. Statements carry a quote. Tone tags are a reading, not a scientific score. Temporal proximity helps you understand — it does not prove causation.',
+      themesTitle: 'Two lenses, one project',
+      themesSubtitle:
+        'First, the public tone on AI. Then, if you want the formal power story, Europe’s rules.',
+      themePrimary: 'Primary',
+      themeSecondary: 'Secondary',
+      themeSentimentTitle: 'AI Sentiment',
+      themeSentimentText:
+        'An enthusiasm↔fear curve from statements by Altman, Amodei, Musk, Huang and others. Filters by person, activity over time, quote and source in one click.',
       themeAiTitle: 'AI rules in Europe',
       themeAiText:
-        'Declared meetings, lobbying spend, legislative steps and sanctions — from 2021 to today, with verifiable links.',
-      themeSentimentTitle: 'What leaders say about AI',
-      themeSentimentText:
-        'How alarm and enthusiasm swing in the public words of Altman, Amodei, Musk, Huang and others — with a reading curve.',
-      themesCta: 'Enter the timeline',
+        'Declared meetings, lobbying spend, legislative steps and sanctions — from 2021 to today. Same timeline, different pins.',
+      themesCta: 'Open Sentiment',
       roadmapTitle: 'What we are building',
       roadmapSubtitle:
-        'Not a closed archive: a living tool to understand — and circulate — who influences digital rules.',
+        'Sentiment is live and updating. Around it: sharper sources, stories worth sharing, more lenses on digital rules.',
       statusDone: 'Live',
       statusActive: 'In progress',
       statusNext: 'Next',
-      shareTitle: 'Transparency matters when it circulates',
+      shareTitle: 'Tone matters when it is visible',
       shareSubtitle:
-        'Share the timeline. The more people read it, the harder it is to pretend these pressures do not exist.',
+        'Share the curve and the sources. The more people read statements over time, the less room left for one-sided narratives.',
       shareText:
-        'Segno: who influences digital rules in Europe, on one sourced timeline. Explore and share:',
+        'Segno: enthusiasm and fear around AI in leaders’ public words — a sourced timeline. Explore and share:',
       copyLink: 'Copy link',
       copied: 'Copied',
       shareNative: 'Share',
       mastodonPrompt: 'Your Mastodon instance (e.g. mastodon.social):',
       faqTitle: 'FAQ',
       faqSubtitle: 'What we do, what we do not pretend to prove, how you can take part.',
-      ctaTitle: 'Power leaves traces. We can follow them.',
+      ctaTitle: 'Tone leaves traces. We can follow them.',
       ctaSubtitle:
-        'Open the timeline, switch lenses, open the sources. Then share it with anyone who still thinks “you can’t know”.',
-      ctaButton: 'Go to the timeline',
+        'Open Sentiment, filter by person, open the sources. Then, if you want, switch to Europe’s rules on the same timeline.',
+      ctaButton: 'Open Sentiment',
     },
     trasparenza: {
-      eyebrow: 'Lobbying · EU digital laws',
+      eyebrow: 'AI Sentiment · Europe’s rules',
       title: 'Transparency',
-      subtitle: 'Declared meetings, lobbying spend and legislative steps on one timeline.',
+      subtitle:
+        'An enthusiasm↔fear curve from public statements — and, on the same timeline, meetings, spend and legislative steps.',
       exploreCta: 'Explore the timeline',
       themeLabel: 'Theme',
       filterBy: 'Filters',
@@ -462,7 +469,7 @@ const translations = {
     },
     footer: {
       description:
-        'Who influences digital rules in Europe? A clear timeline, with sources, for anyone who wants to understand.',
+        'Enthusiasm and fear around AI in leaders’ public words — on a sourced timeline. Then, if you want, Europe’s rules.',
       navigation: 'Project',
       contact: 'Take part',
       rights: 'All rights reserved.',

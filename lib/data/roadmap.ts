@@ -9,27 +9,27 @@ export type RoadmapPhase = {
 
 export const roadmapPhases: RoadmapPhase[] = [
   {
-    id: 'ai-act',
-    status: 'done',
-    title: {
-      it: 'Timeline: regole sull’IA',
-      en: 'Timeline: AI rules',
-    },
-    description: {
-      it: 'Incontri, spese dichiarate, dichiarazioni, passaggi legislativi e sanzioni — ogni punto con fonte e link.',
-      en: 'Meetings, declared spend, statements, legislative steps and sanctions — every pin with source and link.',
-    },
-  },
-  {
     id: 'sentiment',
     status: 'done',
     title: {
-      it: 'Lente: tono dei leader sull’IA',
-      en: 'Lens: leaders’ tone on AI',
+      it: 'Sentiment: tono dei leader sull’IA',
+      en: 'Sentiment: leaders’ tone on AI',
     },
     description: {
-      it: 'Dichiarazioni pubbliche 2022–oggi, tag di lettura e curva timore↔entusiasmo sullo stesso asse.',
-      en: 'Public statements 2022–today, editorial tags and a fear↔enthusiasm curve on the same axis.',
+      it: 'Dichiarazioni pubbliche, filtri per persona, citazione e fonte — con curva entusiasmo↔timore sullo stesso asse.',
+      en: 'Public statements, filters by person, quote and source — with an enthusiasm↔fear curve on the same axis.',
+    },
+  },
+  {
+    id: 'ai-act',
+    status: 'done',
+    title: {
+      it: 'Timeline: regole sull’IA in Europa',
+      en: 'Timeline: AI rules in Europe',
+    },
+    description: {
+      it: 'Incontri, spese dichiarate, passaggi legislativi e sanzioni — ogni punto con fonte e link.',
+      en: 'Meetings, declared spend, legislative steps and sanctions — every pin with source and link.',
     },
   },
   {
@@ -52,8 +52,8 @@ export const roadmapPhases: RoadmapPhase[] = [
       en: 'Stories for citizens & newsrooms',
     },
     description: {
-      it: 'Sintesi periodiche in italiano sui movimenti più rilevanti — da condividere, non da archiviare.',
-      en: 'Periodic Italian digests of the most relevant moves — meant to share, not to archive.',
+      it: 'Sintesi periodiche in italiano sui movimenti di tono più rilevanti — da condividere, non da archiviare.',
+      en: 'Periodic Italian digests of the most relevant tone shifts — meant to share, not to archive.',
     },
   },
   {

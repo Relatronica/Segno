@@ -13,9 +13,6 @@ import {
   Share2,
   ChevronDown,
   Eye,
-  Scale,
-  Megaphone,
-  Calendar,
   Quote,
   Waypoints,
 } from 'lucide-react';
@@ -175,7 +172,7 @@ export default function HomeContent() {
                 href="/trasparenza"
                 className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
-                <Calendar className="h-4 w-4" />
+                <Quote className="h-4 w-4" />
                 {t.hero.cta}
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -255,8 +252,8 @@ export default function HomeContent() {
           <div className="mt-12 grid gap-10 sm:grid-cols-3">
             {[
               { icon: Eye, title: t.home.problem1Title, text: t.home.problem1Text },
-              { icon: Scale, title: t.home.problem2Title, text: t.home.problem2Text },
-              { icon: Megaphone, title: t.home.problem3Title, text: t.home.problem3Text },
+              { icon: Quote, title: t.home.problem2Title, text: t.home.problem2Text },
+              { icon: Link2, title: t.home.problem3Title, text: t.home.problem3Text },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
@@ -323,11 +320,16 @@ export default function HomeContent() {
               custom={0}
               variants={fadeUp}
             >
-              <div className="mb-3 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
-                <Waypoints className="h-3.5 w-3.5" />
-                {t.home.themeAiTitle}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
+                  <Quote className="h-3.5 w-3.5" />
+                  {t.home.themeSentimentTitle}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t.home.themePrimary}
+                </span>
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeAiText}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeSentimentText}</p>
             </motion.div>
             <motion.div
               initial="hidden"
@@ -336,11 +338,16 @@ export default function HomeContent() {
               custom={1}
               variants={fadeUp}
             >
-              <div className="mb-3 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
-                <Quote className="h-3.5 w-3.5" />
-                {t.home.themeSentimentTitle}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
+                  <Waypoints className="h-3.5 w-3.5" />
+                  {t.home.themeAiTitle}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t.home.themeSecondary}
+                </span>
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeSentimentText}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeAiText}</p>
             </motion.div>
           </div>
 

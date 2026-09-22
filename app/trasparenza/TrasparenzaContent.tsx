@@ -418,6 +418,11 @@ export default function TrasparenzaContent() {
               </button>
             </div>
             {track.showSentiment && (
+              <p className="mt-2 max-w-xl rounded-md border border-border/40 bg-background/75 px-2.5 py-1.5 font-mono text-[10px] leading-snug text-muted-foreground shadow-sm backdrop-blur-xl sm:text-[11px]">
+                {t.trasparenza.moodHint}
+              </p>
+            )}
+            {track.showSentiment && (
               <div
                 className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none]"
                 role="tablist"
