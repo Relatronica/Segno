@@ -933,12 +933,12 @@ export const sentimentTheme: TimelineTheme = {
   },
   shortName: "Sentiment",
   period: {
-    it: "2022 — oggi",
-    en: "2022 — today",
+    it: "2021 — oggi",
+    en: "2021 — today",
   },
   intro: {
-    it: "Come cambia il tono pubblico dei leader big tech sull’IA: allarme, cautela, ottimismo, spinta deregulation, scommessa open source — sempre con citazione e fonte.",
-    en: "How big-tech leaders’ public tone on AI shifts: alarm, caution, optimism, deregulation push, open-source bet — always with quote and source.",
+    it: "Come cambia il tono pubblico dei leader big tech sull’IA dal pre-ChatGPT a oggi: allarme, cautela, ottimismo, spinta deregulation, scommessa open source — sempre con citazione e fonte.",
+    en: "How big-tech leaders’ public tone on AI shifts from pre-ChatGPT to today: alarm, caution, optimism, deregulation push, open-source bet — always with quote and source.",
   },
   disclaimer: {
     it: "Il tag di sentiment è una lettura editoriale della citazione, non un punteggio oggettivo. Ogni pin ha fonte e testo verificabile. Non misura “quanto è pericolosa” l’IA.",
@@ -953,6 +953,31 @@ export const sentimentTheme: TimelineTheme = {
   ),
   people: techLeaderPeople,
   events: [
+    {
+      id: "s-2021-03-altman-moore",
+      date: "2021-03-16",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "optimism",
+      title: {
+        it: "Altman: “Moore’s Law for Everything”",
+        en: "Altman: “Moore’s Law for Everything”",
+      },
+      summary: {
+        it: "Saggio pre-ChatGPT: l’IA farà sempre più lavoro umano e sposterà potere dal lavoro al capitale — ottimismo radicale con richiamo alla policy.",
+        en: "Pre-ChatGPT essay: AI will do more and more human work and shift power from labour to capital — radical optimism with a policy call.",
+      },
+      quote: {
+        it: "Software that can think and learn will do more and more of the work that people now do. Even more power will shift from labor to capital.",
+        en: "Software that can think and learn will do more and more of the work that people now do. Even more power will shift from labor to capital.",
+      },
+      sourceLabel: {
+        it: "Sam Altman — Moore’s Law for Everything",
+        en: "Sam Altman — Moore’s Law for Everything",
+      },
+      sourceUrl: "https://moores.samaltman.com/",
+    },
     {
       id: "s-2022-11-chatgpt",
       date: "2022-11-30",
@@ -979,6 +1004,56 @@ export const sentimentTheme: TimelineTheme = {
       sourceUrl: "https://openai.com/index/chatgpt/",
     },
     {
+      id: "s-2023-02-altman-agi",
+      date: "2023-02-24",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "caution",
+      title: {
+        it: "Altman: “Planning for AGI” — cautela crescente",
+        en: "Altman: “Planning for AGI” — growing caution",
+      },
+      summary: {
+        it: "Post OpenAI pre-GPT-4: upside enorme, ma rischio esistenziale trattato come reale — tono di stewarding e deployment graduale.",
+        en: "OpenAI post before GPT-4: huge upside, but existential risk treated as real — stewarding and gradual-deployment tone.",
+      },
+      quote: {
+        it: "As our systems get closer to AGI, we are becoming increasingly cautious with the creation and deployment of our models… we are going to operate as if these risks are existential.",
+        en: "As our systems get closer to AGI, we are becoming increasingly cautious with the creation and deployment of our models… we are going to operate as if these risks are existential.",
+      },
+      sourceLabel: {
+        it: "OpenAI — Planning for AGI and beyond",
+        en: "OpenAI — Planning for AGI and beyond",
+      },
+      sourceUrl: "https://openai.com/index/planning-for-agi-and-beyond/",
+    },
+    {
+      id: "s-2023-03-huang-gtc",
+      date: "2023-03-21",
+      type: "statement",
+      actorId: "nvidia",
+      personId: "huang",
+      sentiment: "optimism",
+      title: {
+        it: "Huang al GTC: “iPhone moment” dell’IA",
+        en: "Huang at GTC: AI’s “iPhone moment”",
+      },
+      summary: {
+        it: "Keynote NVIDIA: ChatGPT come svolta di piattaforma — picco di ottimismo industriale, stesso mese della lettera “pause”.",
+        en: "NVIDIA keynote: ChatGPT as a platform breakthrough — industrial optimism peak, same month as the “pause” letter.",
+      },
+      quote: {
+        it: "We are at the iPhone moment of AI.",
+        en: "We are at the iPhone moment of AI.",
+      },
+      sourceLabel: {
+        it: "NVIDIA Blog — GTC keynote wrap-up (marzo 2023)",
+        en: "NVIDIA Blog — GTC keynote wrap-up (March 2023)",
+      },
+      sourceUrl: "https://blogs.nvidia.com/blog/gtc-keynote-spring-2023/",
+    },
+    {
       id: "s-2023-03-musk",
       date: "2023-03-22",
       type: "statement",
@@ -1003,6 +1078,58 @@ export const sentimentTheme: TimelineTheme = {
       },
       sourceUrl:
         "https://futureoflife.org/open-letter/pause-giant-ai-experiments/",
+    },
+    {
+      id: "s-2023-04-pichai-60min",
+      date: "2023-04-16",
+      type: "statement",
+      actorId: "google",
+      personId: "pichai",
+      sentiment: "optimism",
+      title: {
+        it: "Pichai a 60 Minutes: più profonda di fuoco ed elettricità",
+        en: "Pichai on 60 Minutes: more profound than fire or electricity",
+      },
+      summary: {
+        it: "CEO Google: l’IA come tecnologia più profonda nella storia umana — tono di scala storica, non solo prodotto.",
+        en: "Google’s CEO: AI as the most profound technology in human history — civilisational scale, not just product talk.",
+      },
+      quote: {
+        it: "I’ve always thought of AI as the most profound technology humanity is working on—more profound than fire or electricity or anything that we’ve done in the past.",
+        en: "I’ve always thought of AI as the most profound technology humanity is working on—more profound than fire or electricity or anything that we’ve done in the past.",
+      },
+      sourceLabel: {
+        it: "Fortune — copertura intervista 60 Minutes (aprile 2023)",
+        en: "Fortune — coverage of 60 Minutes interview (April 2023)",
+      },
+      sourceUrl:
+        "https://fortune.com/2023/04/17/sundar-pichai-a-i-more-profound-than-fire-electricity/",
+    },
+    {
+      id: "s-2023-05-pichai-io",
+      date: "2023-05-10",
+      type: "statement",
+      actorId: "google",
+      personId: "pichai",
+      sentiment: "optimism",
+      title: {
+        it: "Pichai a Google I/O: IA “helpful for everyone”",
+        en: "Pichai at Google I/O: AI “helpful for everyone”",
+      },
+      summary: {
+        it: "Keynote I/O 2023: framing di missione e opportunità — tono di ottimismo di prodotto dopo mesi di allarme pubblico.",
+        en: "I/O 2023 keynote: mission and opportunity framing — product optimism after months of public alarm.",
+      },
+      quote: {
+        it: "Looking ahead, making AI helpful for everyone is the most profound way we’ll advance our mission.",
+        en: "Looking ahead, making AI helpful for everyone is the most profound way we’ll advance our mission.",
+      },
+      sourceLabel: {
+        it: "Google Blog — I/O 2023 keynote",
+        en: "Google Blog — I/O 2023 keynote",
+      },
+      sourceUrl:
+        "https://blog.google/technology/ai/google-io-2023-keynote-sundar-pichai/",
     },
     {
       id: "s-2023-05-altman-senate",
@@ -1116,6 +1243,31 @@ export const sentimentTheme: TimelineTheme = {
       sourceUrl: "https://www.safe.ai/work/statement-on-ai-risk",
     },
     {
+      id: "s-2023-07-zuck-llama2",
+      date: "2023-07-18",
+      type: "statement",
+      actorId: "meta",
+      personId: "zuckerberg",
+      sentiment: "open_source",
+      title: {
+        it: "Zuckerberg: Llama 2 open source per ricerca e commercial use",
+        en: "Zuckerberg: Llama 2 open source for research and commercial use",
+      },
+      summary: {
+        it: "Meta rilascia Llama 2 con licenza commerciale — prima grande scommessa pubblica sull’open come vantaggio di sicurezza e innovazione.",
+        en: "Meta releases Llama 2 with a commercial licence — first major public bet on openness as a safety and innovation advantage.",
+      },
+      quote: {
+        it: "Open source drives innovation because it enables many more developers to build with new technology. It also improves safety and security because when software is open, more people can scrutinize it.",
+        en: "Open source drives innovation because it enables many more developers to build with new technology. It also improves safety and security because when software is open, more people can scrutinize it.",
+      },
+      sourceLabel: {
+        it: "Meta — Llama 2 announcement (luglio 2023)",
+        en: "Meta — Llama 2 announcement (July 2023)",
+      },
+      sourceUrl: "https://about.fb.com/news/2023/07/llama-2/",
+    },
+    {
       id: "s-2023-07-amodei",
       date: "2023-07-25",
       type: "statement",
@@ -1140,6 +1292,61 @@ export const sentimentTheme: TimelineTheme = {
       },
       sourceUrl:
         "https://www.judiciary.senate.gov/committee-activity/hearings/oversight-of-ai-principles-for-regulation",
+    },
+    {
+      id: "s-2023-11-altman-apec",
+      date: "2023-11-16",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "deregulation",
+      title: {
+        it: "Altman ad APEC: modelli attuali “senza heavy regulation”",
+        en: "Altman at APEC: current models “don’t need heavy regulation”",
+      },
+      summary: {
+        it: "Panel APEC il giorno prima dell’uscita da OpenAI: tecnologia “most transformative”, ma regolazione pesante rimandata alle generazioni future.",
+        en: "APEC panel the day before his OpenAI ouster: “most transformative” tech, but heavy regulation deferred to later generations.",
+      },
+      quote: {
+        it: "It’s a hard message to explain to people that current models are fine. We don’t need heavy regulation here. Probably not even for the next couple of generations.",
+        en: "It’s a hard message to explain to people that current models are fine. We don’t need heavy regulation here. Probably not even for the next couple of generations.",
+      },
+      sourceLabel: {
+        it: "SF Standard — APEC CEO Summit transcript (16 nov 2023)",
+        en: "SF Standard — APEC CEO Summit transcript (16 Nov 2023)",
+      },
+      sourceUrl:
+        "https://sfstandard.com/2023/11/17/openai-sam-altman-fired-apec-talk/",
+    },
+    {
+      id: "s-2024-03-amodei-claude3",
+      date: "2024-03-04",
+      type: "statement",
+      actorId: "anthropic",
+      personId: "amodei",
+      sentiment: "optimism",
+      title: {
+        it: "Amodei: Claude 3 Opus ai “outer limits”",
+        en: "Amodei: Claude 3 Opus at the “outer limits”",
+      },
+      summary: {
+        it: "Lancio Claude 3: Anthropic rivendica frontier capability — spostamento dal solo safety-first verso performance competitiva.",
+        en: "Claude 3 launch: Anthropic claims frontier capability — a shift from safety-only framing toward competitive performance.",
+      },
+      quote: {
+        it: "Opus shows us the outer limits of what’s possible with generative AI.",
+        en: "Opus shows us the outer limits of what’s possible with generative AI.",
+      },
+      detail: {
+        it: "In interviste Amodei lo chiama anche “the Rolls-Royce of models”; qui usiamo il wording del post ufficiale Anthropic.",
+        en: "In interviews Amodei also called it “the Rolls-Royce of models”; here we use Anthropic’s official post wording.",
+      },
+      sourceLabel: {
+        it: "Anthropic — Introducing the next generation of Claude",
+        en: "Anthropic — Introducing the next generation of Claude",
+      },
+      sourceUrl: "https://www.anthropic.com/news/claude-3-family",
     },
     {
       id: "s-2024-06-huang",
@@ -1222,6 +1429,31 @@ export const sentimentTheme: TimelineTheme = {
       sourceUrl: "https://darioamodei.com/essay/machines-of-loving-grace",
     },
     {
+      id: "s-2025-01-altman-reflections",
+      date: "2025-01-05",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "optimism",
+      title: {
+        it: "Altman: “sappiamo come costruire l’AGI”",
+        en: "Altman: “we know how to build AGI”",
+      },
+      summary: {
+        it: "Post Reflections: fiducia su AGI e agenti nel 2025, con richiamo a procedere con grande cura verso la superintelligenza.",
+        en: "Reflections post: confidence on AGI and 2025 agents, with a call to proceed with great care toward superintelligence.",
+      },
+      quote: {
+        it: "We are now confident we know how to build AGI as we have traditionally understood it. We believe that, in 2025, we may see the first AI agents “join the workforce”.",
+        en: "We are now confident we know how to build AGI as we have traditionally understood it. We believe that, in 2025, we may see the first AI agents “join the workforce”.",
+      },
+      sourceLabel: {
+        it: "Sam Altman — Reflections",
+        en: "Sam Altman — Reflections",
+      },
+      sourceUrl: "https://blog.samaltman.com/reflections",
+    },
+    {
       id: "s-2025-01-huang-ces",
       date: "2025-01-06",
       type: "statement",
@@ -1246,31 +1478,6 @@ export const sentimentTheme: TimelineTheme = {
       },
       sourceUrl:
         "https://nvidianews.nvidia.com/news/nvidia-puts-grace-blackwell-on-every-desk-and-at-every-ai-developers-fingertips",
-    },
-    {
-      id: "s-2025-01-altman-reflections",
-      date: "2025-01-05",
-      type: "statement",
-      actorId: "openai",
-      personId: "altman",
-      sentiment: "optimism",
-      title: {
-        it: "Altman: “sappiamo come costruire l’AGI”",
-        en: "Altman: “we know how to build AGI”",
-      },
-      summary: {
-        it: "Post Reflections: fiducia su AGI e agenti nel 2025, con richiamo a procedere con grande cura verso la superintelligenza.",
-        en: "Reflections post: confidence on AGI and 2025 agents, with a call to proceed with great care toward superintelligence.",
-      },
-      quote: {
-        it: "We are now confident we know how to build AGI as we have traditionally understood it. We believe that, in 2025, we may see the first AI agents “join the workforce”.",
-        en: "We are now confident we know how to build AGI as we have traditionally understood it. We believe that, in 2025, we may see the first AI agents “join the workforce”.",
-      },
-      sourceLabel: {
-        it: "Sam Altman — Reflections",
-        en: "Sam Altman — Reflections",
-      },
-      sourceUrl: "https://blog.samaltman.com/reflections",
     },
     {
       id: "s-2025-01-hassabis",
@@ -1301,6 +1508,35 @@ export const sentimentTheme: TimelineTheme = {
       },
       sourceUrl:
         "https://www.zeit.de/digital/internet/2025-01/demis-hassabis-nobel-prize-artificial-intelligence-deepmind-english",
+    },
+    {
+      id: "s-2025-01-altman-stargate",
+      date: "2025-01-21",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "optimism",
+      title: {
+        it: "Altman: Stargate “the most important project of this era”",
+        en: "Altman: Stargate “the most important project of this era”",
+      },
+      summary: {
+        it: "Annuncio infrastruttura da 500 miliardi con SoftBank/Oracle: picco di ottimismo industriale e geopolitico sull’AGI “made in USA”.",
+        en: "$500B infrastructure announcement with SoftBank/Oracle: peak industrial and geopolitical optimism on AGI “made in the USA”.",
+      },
+      quote: {
+        it: "I think this will be the most important project of this era… for AGI to get built here, to create hundreds of thousands of jobs.",
+        en: "I think this will be the most important project of this era… for AGI to get built here, to create hundreds of thousands of jobs.",
+      },
+      detail: {
+        it: "Citazione dai remarks alla Casa Bianca; il post OpenAI descrive il progetto e l’investimento.",
+        en: "Quote from White House remarks; OpenAI’s post describes the project and investment.",
+      },
+      sourceLabel: {
+        it: "OpenAI — Announcing The Stargate Project",
+        en: "OpenAI — Announcing The Stargate Project",
+      },
+      sourceUrl: "https://openai.com/index/announcing-the-stargate-project/",
     },
     {
       id: "s-2025-03-huang-gtc",

@@ -114,6 +114,9 @@ const translations = {
       activity: 'Attività',
       activityHint: 'Dichiarazioni in quel mese — non un volume di mercato.',
       inspectHint: 'Clicca un punto per aprire citazione e fonte.',
+      feedTitle: 'Cronologia',
+      feedNewest: 'Dal più recente',
+      feedOpen: 'Lista',
       types: {
         meeting: 'Incontro',
         spending: 'Spesa',
@@ -351,6 +354,9 @@ const translations = {
       activity: 'Activity',
       activityHint: 'Statements in that month — not market volume.',
       inspectHint: 'Click a point to open the quote and source.',
+      feedTitle: 'Feed',
+      feedNewest: 'Newest first',
+      feedOpen: 'List',
       types: {
         meeting: 'Meeting',
         spending: 'Spending',

@@ -51,6 +51,8 @@ type Props = {
   locale: 'it' | 'en';
   activeId: string | null;
   onSelect: (id: string) => void;
+  /** Nearest pin under the viewport center while the user pans the chart */
+  onScrollFocus?: (id: string) => void;
   emptyLabel: string;
   dragHint: string;
   typeLabel: (id: TimelineEvent['type']) => string;
@@ -60,6 +62,8 @@ type Props = {
   todayLabel?: string;
   /** Bump to re-center on today (e.g. jump button) */
   presentFocusToken?: number;
+  /** Bump to center the chart on activeId (list/click/keyboard) */
+  focusEventToken?: number;
 };
 
 type Point = { x: number; y: number };
@@ -187,6 +191,7 @@ export function HorizontalTimeline({
   locale,
   activeId,
   onSelect,
+  onScrollFocus,
   emptyLabel,
   dragHint,
   typeLabel,
@@ -194,8 +199,11 @@ export function HorizontalTimeline({
   focusPresent = false,
   todayLabel = 'Today',
   presentFocusToken = 0,
+  focusEventToken = 0,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const suppressScrollFocus = useRef(false);
+  const scrollFocusRaf = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [stageHeight, setStageHeight] = useState(0);
@@ -502,14 +510,18 @@ export function HorizontalTimeline({
   }, [layout.mood, stageHeight, isChart]);
 
   const scrollToId = useCallback(
-    (id: string) => {
+    (id: string, behavior: ScrollBehavior = 'smooth') => {
       const el = scrollerRef.current;
       const point =
         layout.points.find((p) => p.id === id) ??
         layout.mood.find((m) => m.id === id);
       if (!el || !point) return;
+      suppressScrollFocus.current = true;
       const target = point.x - el.clientWidth / 2;
-      el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+      el.scrollTo({ left: Math.max(0, target), behavior });
+      window.setTimeout(() => {
+        suppressScrollFocus.current = false;
+      }, behavior === 'smooth' ? 420 : 80);
     },
     [layout.points, layout.mood],
   );
@@ -518,16 +530,21 @@ export function HorizontalTimeline({
     (behavior: ScrollBehavior = 'smooth') => {
       const el = scrollerRef.current;
       if (!el || layout.todayX == null || el.clientWidth === 0) return;
+      suppressScrollFocus.current = true;
       // Bias slightly left so recent past stays in frame, present near center-right
       const target = layout.todayX - el.clientWidth * 0.62;
       el.scrollTo({ left: Math.max(0, target), behavior });
+      window.setTimeout(() => {
+        suppressScrollFocus.current = false;
+      }, behavior === 'smooth' ? 420 : 80);
     },
     [layout.todayX],
   );
 
   useEffect(() => {
-    if (activeId) scrollToId(activeId);
-  }, [activeId, scrollToId]);
+    if (!activeId || focusEventToken <= 0) return;
+    scrollToId(activeId);
+  }, [focusEventToken, activeId, scrollToId]);
 
   // Center on "today" when nothing is selected (initial load / jump to today)
   useEffect(() => {
@@ -559,6 +576,37 @@ export function HorizontalTimeline({
     scrollToPresent,
     stageHeight,
   ]);
+
+  const reportScrollFocus = useCallback(() => {
+    if (!onScrollFocus || suppressScrollFocus.current) return;
+    const el = scrollerRef.current;
+    if (!el || layout.points.length === 0) return;
+    const center = el.scrollLeft + el.clientWidth / 2;
+    let bestId = layout.points[0].id;
+    let bestDist = Infinity;
+    for (const point of layout.points) {
+      const dist = Math.abs(point.x - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestId = point.id;
+      }
+    }
+    if (bestId) onScrollFocus(bestId);
+  }, [onScrollFocus, layout.points]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || !onScrollFocus) return;
+    const onScroll = () => {
+      if (scrollFocusRaf.current) cancelAnimationFrame(scrollFocusRaf.current);
+      scrollFocusRaf.current = requestAnimationFrame(reportScrollFocus);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (scrollFocusRaf.current) cancelAnimationFrame(scrollFocusRaf.current);
+    };
+  }, [onScrollFocus, reportScrollFocus]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     // On touch phones, prefer native horizontal pan — custom drag fights it
