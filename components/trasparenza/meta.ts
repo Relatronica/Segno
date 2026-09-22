@@ -108,7 +108,8 @@ export const SENTIMENT_META: Record<
 
 /**
  * Editorial fear↔enthusiasm axis for the ambient mood curve.
- * +1 = peak alarm (above the rail), −1 = peak optimism (below the rail).
+ * Chart Y: enthusiasm up, fear down — so +1 alarm maps below the rail,
+ * −1 optimism above it (`y = mid + score * amp`).
  */
 export const SENTIMENT_FEAR_SCORE: Record<SentimentTag, number> = {
   alarm: 1,

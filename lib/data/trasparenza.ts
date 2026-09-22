@@ -14,6 +14,8 @@ export type LobbyPerson = {
   /** Organisation / affiliation for filters & labels */
   orgId?: string;
   role: LocaleText;
+  /** Optional portrait under /public (e.g. /avatars/altman.png) */
+  avatar?: string;
 };
 
 export type EventType =
@@ -109,6 +111,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Altman",
     orgId: "openai",
     role: { it: "CEO OpenAI", en: "CEO, OpenAI" },
+    avatar: "/avatars/altman.png",
   },
   {
     id: "amodei",
@@ -116,6 +119,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Amodei",
     orgId: "anthropic",
     role: { it: "CEO Anthropic", en: "CEO, Anthropic" },
+    avatar: "/avatars/amodei.png",
   },
   {
     id: "musk",
@@ -123,6 +127,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Musk",
     orgId: "xai",
     role: { it: "xAI / Tesla", en: "xAI / Tesla" },
+    avatar: "/avatars/musk.png",
   },
   {
     id: "huang",
@@ -130,6 +135,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Huang",
     orgId: "nvidia",
     role: { it: "CEO NVIDIA", en: "CEO, NVIDIA" },
+    avatar: "/avatars/huang.png",
   },
   {
     id: "hassabis",
@@ -137,6 +143,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Hassabis",
     orgId: "google",
     role: { it: "CEO Google DeepMind", en: "CEO, Google DeepMind" },
+    avatar: "/avatars/hassabis.png",
   },
   {
     id: "zuckerberg",
@@ -144,6 +151,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Zuckerberg",
     orgId: "meta",
     role: { it: "CEO Meta", en: "CEO, Meta" },
+    avatar: "/avatars/zuckerberg.png",
   },
   {
     id: "nadella",
@@ -151,6 +159,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Nadella",
     orgId: "microsoft",
     role: { it: "CEO Microsoft", en: "CEO, Microsoft" },
+    avatar: "/avatars/nadella.png",
   },
   {
     id: "pichai",
@@ -158,6 +167,7 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "Pichai",
     orgId: "google",
     role: { it: "CEO Google", en: "CEO, Google" },
+    avatar: "/avatars/pichai.png",
   },
   {
     id: "von-der-leyen",

@@ -2,6 +2,7 @@
 
 import { Filter, RotateCcw, X } from 'lucide-react';
 import { EVENT_META, SENTIMENT_META } from './meta';
+import { PersonAvatar } from './PersonAvatar';
 import type {
   EventType,
   LobbyActor,
@@ -177,6 +178,7 @@ export function FilterSidebar({
                 active={selectedPerson === person.id}
                 onClick={() => onPersonChange(person.id)}
                 label={person.shortName}
+                avatar={<PersonAvatar person={person} size="sm" />}
               />
             ))}
           </div>
@@ -290,23 +292,26 @@ function Chip({
   onClick,
   label,
   dot,
+  avatar,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
   dot?: string;
+  avatar?: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
         active
           ? 'bg-foreground text-background'
           : 'bg-muted/50 text-muted-foreground hover:text-foreground'
       }`}
     >
-      {dot && (
+      {avatar}
+      {dot && !avatar && (
         <span
           className="h-1.5 w-1.5 shrink-0 rounded-full"
           style={{ backgroundColor: dot, opacity: active ? 1 : 0.7 }}

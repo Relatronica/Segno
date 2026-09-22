@@ -19,6 +19,7 @@ import type { TimelineEventEdit } from '@/lib/pipeline/types';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { EventDetailPanel } from '@/components/trasparenza/EventDetailPanel';
+import { PersonAvatar } from '@/components/trasparenza/PersonAvatar';
 
 /** Navbar height (h-16) */
 const NAV_H = '4rem';
@@ -254,6 +255,7 @@ export default function TrasparenzaContent() {
       }
       if (e.key === 'Escape') {
         setFiltersOpen(false);
+        setActiveId(null);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -291,8 +293,9 @@ export default function TrasparenzaContent() {
     (track.showSentiment && selectedSentiments.length < ALL_SENTIMENT_TAGS.length);
 
   const moodEvents = useMemo(
-    () => track.events.filter((e) => Boolean(e.sentiment)),
-    [track.events],
+    () =>
+      (track.showSentiment ? filtered : track.events).filter((e) => Boolean(e.sentiment)),
+    [track.events, track.showSentiment, filtered],
   );
 
   const moodLabels = useMemo(
@@ -301,6 +304,8 @@ export default function TrasparenzaContent() {
       fear: t.trasparenza.moodFear,
       enthusiasm: t.trasparenza.moodEnthusiasm,
       hint: t.trasparenza.moodHint,
+      activity: t.trasparenza.activity,
+      activityHint: t.trasparenza.activityHint,
     }),
     [t],
   );
@@ -345,20 +350,18 @@ export default function TrasparenzaContent() {
         <div className="absolute inset-0">
           <HorizontalTimeline
             events={filtered}
+            mode={track.showSentiment ? 'chart' : 'cards'}
             moodEvents={track.showSentiment ? moodEvents : []}
             moodLabels={track.showSentiment ? moodLabels : undefined}
-            moodLegendClassName={
-              active
-                ? 'right-3 max-lg:hidden lg:right-[23rem] xl:right-[24.5rem]'
-                : 'right-3 max-lg:hidden'
-            }
             actors={actorMap}
             people={personMap}
             locale={locale}
             activeId={activeId}
             onSelect={selectEvent}
             emptyLabel={t.trasparenza.empty}
-            dragHint={t.trasparenza.dragHint}
+            dragHint={
+              track.showSentiment ? t.trasparenza.inspectHint : t.trasparenza.dragHint
+            }
             typeLabel={typeLabel}
             sentimentLabel={track.showSentiment ? sentimentTagLabel : undefined}
             focusPresent
@@ -414,12 +417,65 @@ export default function TrasparenzaContent() {
                 <span className="sm:hidden">{t.trasparenza.todayLabel}</span>
               </button>
             </div>
+            {track.showSentiment && (
+              <div
+                className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none]"
+                role="tablist"
+                aria-label={t.trasparenza.peopleLabel}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedPerson === 'all'}
+                  onClick={() => setSelectedPerson('all')}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-[11px] shadow-lg backdrop-blur-xl transition-colors ${
+                    selectedPerson === 'all'
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border/60 bg-background/90 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t.trasparenza.allPeople}
+                </button>
+                {track.people.map((person) => (
+                  <button
+                    key={person.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selectedPerson === person.id}
+                    title={person.name}
+                    onClick={() =>
+                      setSelectedPerson((current) =>
+                        current === person.id ? 'all' : person.id,
+                      )
+                    }
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 shadow-lg backdrop-blur-xl transition-colors ${
+                      selectedPerson === person.id
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border/60 bg-background/90 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <PersonAvatar
+                      person={person}
+                      size="md"
+                      className={
+                        selectedPerson === person.id ? 'ring-background/40' : undefined
+                      }
+                    />
+                    <span className="font-mono text-[11px]">{person.shortName}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <AnimatePresence>
             {filtersOpen && (
               <motion.div
-                className="absolute inset-x-0 bottom-0 top-14 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:top-[4.25rem] sm:w-[min(100%-1.5rem,300px)]"
+                className={`absolute inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:w-[min(100%-1.5rem,300px)] ${
+                  track.showSentiment
+                    ? 'top-[6.25rem] sm:top-[6.75rem]'
+                    : 'top-14 sm:top-[4.25rem]'
+                }`}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 16 }}
@@ -465,7 +521,9 @@ export default function TrasparenzaContent() {
           <AnimatePresence>
             {active && (
               <motion.div
-                className="absolute bottom-3 right-3 top-16 z-40 hidden w-[min(100%-1.5rem,340px)] sm:top-[4.25rem] lg:block xl:w-[360px]"
+                className={`absolute bottom-3 right-3 z-40 hidden w-[min(100%-1.5rem,340px)] lg:block xl:w-[360px] ${
+                  track.showSentiment ? 'top-[6.75rem]' : 'top-16 sm:top-[4.25rem]'
+                }`}
                 initial={{ opacity: 0, x: 12, scale: 0.98 }}
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 12, scale: 0.98 }}

@@ -14,6 +14,7 @@ import type { SentimentTag } from '@/lib/data/trasparenza';
 const PAD_X_LEFT = 240;
 const PAD_X_RIGHT = 200;
 const MIN_GAP_PX = 112;
+const CHART_MIN_GAP = 18;
 const CARD_W = 192;
 const CARD_APPROX_H = 96;
 const LANE_ORDER = [-1, 1, -2, 2] as const;
@@ -34,6 +35,8 @@ type MoodLabels = {
   fear: string;
   enthusiasm: string;
   hint: string;
+  activity?: string;
+  activityHint?: string;
 };
 
 type Props = {
@@ -41,8 +44,8 @@ type Props = {
   /** Sentiment mood series — only for the sentiment theme */
   moodEvents?: TimelineEvent[];
   moodLabels?: MoodLabels;
-  /** Extra classes for the bottom-right mood legend (e.g. avoid detail panel) */
-  moodLegendClassName?: string;
+  /** Chart: series + ticks + activity. Cards: existing pin/card timeline. */
+  mode?: 'cards' | 'chart';
   actors: Record<string, LobbyActor>;
   people: Record<string, LobbyPerson>;
   locale: 'it' | 'en';
@@ -59,27 +62,82 @@ type Props = {
   presentFocusToken?: number;
 };
 
-/** Smooth open path through points (Catmull-Rom → cubic bezier) */
-function smoothPath(points: Array<{ x: number; y: number }>): string {
-  if (points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (points.length === 2) {
-    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+type Point = { x: number; y: number };
+
+/**
+ * Fritsch–Carlson monotone cubic, as a cubic Bézier SVG path.
+ * X is time: the curve never loops backwards, and tight fear↔enthusiasm
+ * jumps do not overshoot into a knot (the Catmull-Rom issue).
+ */
+function monotoneCubicPath(points: Point[]): string {
+  const n = points.length;
+  if (n === 0) return '';
+  if (n === 1) return `M ${fmt(points[0].x)} ${fmt(points[0].y)}`;
+
+  const pts = points.map((p) => ({ x: p.x, y: p.y }));
+  for (let i = 1; i < n; i++) {
+    if (pts[i].x <= pts[i - 1].x) pts[i].x = pts[i - 1].x + 1;
   }
 
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i === 0 ? i : i - 1];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  const dx: number[] = [];
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = pts[i + 1].x - pts[i].x;
+    slope[i] = (pts[i + 1].y - pts[i].y) / dx[i];
+  }
+
+  const tan = new Array<number>(n);
+  tan[0] = slope[0];
+  tan[n - 1] = slope[n - 2];
+  for (let i = 1; i < n - 1; i++) {
+    tan[i] = slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2;
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    if (Math.abs(slope[i]) < 1e-8) {
+      tan[i] = 0;
+      tan[i + 1] = 0;
+      continue;
+    }
+    const a = tan[i] / slope[i];
+    const b = tan[i + 1] / slope[i];
+    const s = a * a + b * b;
+    if (s > 9) {
+      const tau = 3 / Math.sqrt(s);
+      tan[i] = tau * a * slope[i];
+      tan[i + 1] = tau * b * slope[i];
+    }
+  }
+
+  let d = `M ${fmt(pts[0].x)} ${fmt(pts[0].y)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i];
+    const c1x = pts[i].x + h / 3;
+    const c1y = pts[i].y + (tan[i] * h) / 3;
+    const c2x = pts[i + 1].x - h / 3;
+    const c2y = pts[i + 1].y - (tan[i + 1] * h) / 3;
+    d += ` C ${fmt(c1x)} ${fmt(c1y)}, ${fmt(c2x)} ${fmt(c2y)}, ${fmt(pts[i + 1].x)} ${fmt(pts[i + 1].y)}`;
   }
   return d;
+}
+
+function fmt(n: number): string {
+  return n.toFixed(2);
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/** Map fear score (+1 alarm … −1 optimism) to the chart palette. */
+function scoreToRgb(score: number): string {
+  const red = [153, 27, 27];
+  const slate = [100, 116, 139];
+  const green = [4, 120, 87];
+  const t = Math.abs(Math.min(1, Math.max(-1, score)));
+  const to = score >= 0 ? red : green;
+  const c = slate.map((ch, i) => Math.round(lerp(ch, to[i], t)));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 
 function assignLanes(sorted: Array<TimelineEvent & { x: number }>): LaidOutEvent[] {
@@ -123,7 +181,7 @@ export function HorizontalTimeline({
   events,
   moodEvents = [],
   moodLabels,
-  moodLegendClassName = '',
+  mode = 'cards',
   actors,
   people,
   locale,
@@ -142,7 +200,9 @@ export function HorizontalTimeline({
   const [dragging, setDragging] = useState(false);
   const [stageHeight, setStageHeight] = useState(0);
   const [coarsePointer, setCoarsePointer] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const isChart = mode === 'chart';
 
   useEffect(() => {
     const mq = window.matchMedia('(pointer: coarse)');
@@ -178,12 +238,27 @@ export function HorizontalTimeline({
   const layout = useMemo(() => {
     const moodWithTag = moodEvents.filter((e) => e.sentiment);
     const spanSource = events.length > 0 ? events : moodWithTag;
+    const emptyActivity = [] as Array<{
+      key: string;
+      x: number;
+      count: number;
+      score: number;
+      label: string;
+    }>;
 
     if (spanSource.length === 0) {
       return {
         width: 800,
         points: [] as LaidOutEvent[],
         years: [] as Array<{ year: string; x: number }>,
+        timeTicks: [] as Array<{
+          key: string;
+          x: number;
+          kind: 'year' | 'month';
+          label: string;
+          iso: string;
+        }>,
+        pxPerMonth: 0,
         mood: [] as Array<{
           id: string;
           x: number;
@@ -191,6 +266,8 @@ export function HorizontalTimeline({
           sentiment: SentimentTag;
           carry?: boolean;
         }>,
+        activity: emptyActivity,
+        maxActivity: 1,
         minT: 0,
         maxT: 1,
         usable: 640,
@@ -209,14 +286,18 @@ export function HorizontalTimeline({
     const minT = Math.min(...spanTimes);
     const maxT = todayMs;
     const span = Math.max(maxT - minT, 1);
+    const yearSpan = span / (365.25 * 24 * 60 * 60 * 1000);
 
-    const proportional = 1100;
-    const byCount = PAD_X_LEFT + PAD_X_RIGHT + Math.max(events.length, moodWithTag.length, 1) * MIN_GAP_PX;
-    const width = Math.max(proportional, byCount, 800);
-    const usable = width - PAD_X_LEFT - PAD_X_RIGHT;
+    const padLeft = isChart ? 120 : PAD_X_LEFT;
+    const padRight = isChart ? 160 : PAD_X_RIGHT;
+    const byCount = isChart
+      ? padLeft + padRight + Math.max(yearSpan, 1) * 420
+      : padLeft + padRight + Math.max(events.length, moodWithTag.length, 1) * MIN_GAP_PX;
+    const width = Math.max(isChart ? 1400 : 1100, byCount, 800);
+    const usable = width - padLeft - padRight;
 
     const xForDate = (date: string) =>
-      PAD_X_LEFT + ((toMs(atPresent(date)) - minT) / span) * usable;
+      padLeft + ((toMs(atPresent(date)) - minT) / span) * usable;
 
     const raw = events.map((e) => ({
       ...e,
@@ -224,13 +305,14 @@ export function HorizontalTimeline({
     }));
 
     const sorted = [...raw].sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
+    const minGap = isChart ? CHART_MIN_GAP : MIN_GAP_PX * 0.55;
     for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].x - sorted[i - 1].x < MIN_GAP_PX * 0.55) {
-        sorted[i].x = sorted[i - 1].x + MIN_GAP_PX * 0.55;
+      if (sorted[i].x - sorted[i - 1].x < minGap) {
+        sorted[i].x = sorted[i - 1].x + minGap;
       }
     }
 
-    const lastPinX = sorted[sorted.length - 1]?.x ?? PAD_X_LEFT;
+    const lastPinX = sorted[sorted.length - 1]?.x ?? padLeft;
     const moodProportional = moodWithTag
       .map((e) => ({
         id: e.id,
@@ -249,18 +331,25 @@ export function HorizontalTimeline({
       score: number;
       sentiment: SentimentTag;
       carry?: boolean;
-    }> = moodProportional.map((m) => ({
-      ...m,
-      x: pinById.get(m.id) ?? m.x,
-    }));
+    }> = moodProportional
+      .map((m) => ({
+        ...m,
+        x: pinById.get(m.id) ?? m.x,
+      }))
+      .sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
 
-    const lastMoodX = mood[mood.length - 1]?.x ?? PAD_X_LEFT;
-    // Oggi is always the rightmost mark — after packed pins, not a frozen date slot
-    const todayX = Math.max(
-      xForDate(todayIso),
-      lastPinX + CARD_W / 2 + 36,
-      lastMoodX + 32,
-    );
+    for (let i = 1; i < mood.length; i++) {
+      if (mood[i].x <= mood[i - 1].x) mood[i].x = mood[i - 1].x + 8;
+    }
+
+    const lastMoodX = mood[mood.length - 1]?.x ?? padLeft;
+    const todayX = isChart
+      ? xForDate(todayIso)
+      : Math.max(
+          xForDate(todayIso),
+          lastPinX + CARD_W / 2 + 36,
+          lastMoodX + 32,
+        );
 
     if (mood.length > 0) {
       const last = mood[mood.length - 1];
@@ -276,8 +365,34 @@ export function HorizontalTimeline({
       }
     }
 
-    const finalWidth = Math.max(width, todayX + PAD_X_RIGHT);
-    const points = assignLanes(sorted);
+    const buckets = new Map<string, { count: number; scoreSum: number; x: number }>();
+    for (const e of events) {
+      if (!e.sentiment) continue;
+      const key = atPresent(e.date).slice(0, 7);
+      const current = buckets.get(key) ?? {
+        count: 0,
+        scoreSum: 0,
+        x: xForDate(`${key}-15`),
+      };
+      current.count += 1;
+      current.scoreSum += SENTIMENT_FEAR_SCORE[e.sentiment];
+      buckets.set(key, current);
+    }
+    const activity = [...buckets.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, b]) => ({
+        key,
+        x: b.x,
+        count: b.count,
+        score: b.scoreSum / b.count,
+        label: key,
+      }));
+    const maxActivity = Math.max(1, ...activity.map((b) => b.count));
+
+    const finalWidth = Math.max(width, todayX + padRight);
+    const points = isChart
+      ? sorted.map((e) => ({ ...e, lane: -1 as Lane }))
+      : assignLanes(sorted);
 
     const yearSet = [
       ...new Set([
@@ -286,27 +401,77 @@ export function HorizontalTimeline({
         todayIso.slice(0, 4),
       ]),
     ].sort();
-    const years = yearSet.map((year) => {
-      const t = toMs(`${year}-07-01`);
-      const clamped = Math.min(Math.max(t, minT), maxT);
-      return {
-        year,
-        x: PAD_X_LEFT + ((clamped - minT) / span) * usable,
-      };
-    });
+
+    const dayMs = 24 * 60 * 60 * 1000;
+    const pxPerMonth = usable / (span / (30.44 * dayMs));
+
+    type TimeTick = {
+      key: string;
+      x: number;
+      kind: 'year' | 'month';
+      label: string;
+      iso: string;
+    };
+
+    const timeTicks: TimeTick[] = [];
+    const startDate = new Date(minT);
+    const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endMs = maxT + dayMs;
+    while (cursor.getTime() <= endMs) {
+      const cy = cursor.getFullYear();
+      const cm = cursor.getMonth();
+      const iso = `${cy}-${String(cm + 1).padStart(2, '0')}-01`;
+      const t = toMs(iso);
+      if (t >= minT - dayMs && t <= maxT + dayMs) {
+        const x = padLeft + ((Math.min(Math.max(t, minT), maxT) - minT) / span) * usable;
+        if (cm === 0) {
+          timeTicks.push({
+            key: `y-${cy}`,
+            x,
+            kind: 'year',
+            label: String(cy),
+            iso,
+          });
+        } else if (isChart && pxPerMonth >= 36) {
+          timeTicks.push({ key: `m-${iso}`, x, kind: 'month', label: '', iso });
+        } else if (isChart && pxPerMonth >= 18 && [2, 5, 8].includes(cm)) {
+          timeTicks.push({ key: `m-${iso}`, x, kind: 'month', label: '', iso });
+        }
+      }
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    const years = timeTicks
+      .filter((tick) => tick.kind === 'year')
+      .map((tick) => ({ year: tick.label, x: tick.x }));
+
+    if (years.length === 0) {
+      for (const year of yearSet) {
+        const t = toMs(`${year}-01-01`);
+        const clamped = Math.min(Math.max(t, minT), maxT);
+        years.push({
+          year,
+          x: padLeft + ((clamped - minT) / span) * usable,
+        });
+      }
+    }
 
     return {
       width: finalWidth,
       points,
       years,
+      timeTicks,
+      pxPerMonth,
       mood,
+      activity,
+      maxActivity,
       todayX,
       todayIso,
       minT,
       maxT,
       usable,
     };
-  }, [events, moodEvents]);
+  }, [events, moodEvents, isChart]);
 
   const moodGeometry = useMemo(() => {
     if (stageHeight <= 0 || layout.mood.length === 0) {
@@ -319,18 +484,22 @@ export function HorizontalTimeline({
           sentiment: SentimentTag;
           carry?: boolean;
         }>,
+        amp: 0,
+        seriesMid: 0,
       };
     }
-    const amp = Math.min(stageHeight * 0.28, 120);
+    const amp = Math.min(stageHeight * (isChart ? 0.32 : 0.28), isChart ? 150 : 120);
+    const seriesMid = isChart ? stageHeight * 0.38 : stageHeight / 2;
+    // Enthusiasm up, fear down: optimism (−1) above mid, alarm (+1) below
     const pts = layout.mood.map((m) => ({
       id: m.id,
       x: m.x,
-      y: stageHeight / 2 - m.score * amp,
+      y: seriesMid + m.score * amp,
       sentiment: m.sentiment,
       carry: m.carry,
     }));
-    return { path: smoothPath(pts), points: pts };
-  }, [layout.mood, stageHeight]);
+    return { path: monotoneCubicPath(pts), points: pts, amp, seriesMid };
+  }, [layout.mood, stageHeight, isChart]);
 
   const scrollToId = useCallback(
     (id: string) => {
@@ -430,8 +599,28 @@ export function HorizontalTimeline({
   };
 
   const midY = stageHeight / 2;
+  const seriesMid = isChart ? stageHeight * 0.38 : midY;
+  const activityTop = stageHeight * 0.78;
+  const activityMaxH = Math.max(28, stageHeight * 0.14);
+  const timeAxisY = isChart
+    ? Math.min(activityTop - 28, seriesMid + (moodGeometry.amp || 0) + 28)
+    : midY + stageHeight * 0.38;
   const hasPins = layout.points.length > 0;
   const hasMood = layout.mood.length > 0;
+
+  const monthLabel = useCallback(
+    (iso: string) => {
+      const [y, m] = iso.split('-').map(Number);
+      try {
+        return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+          month: 'short',
+        }).format(new Date(y, (m || 1) - 1, 1));
+      } catch {
+        return iso.slice(5, 7);
+      }
+    },
+    [locale],
+  );
 
   if (!hasPins && !hasMood) {
     return (
@@ -441,8 +630,20 @@ export function HorizontalTimeline({
     );
   }
 
-  const strokeOpacity = 0.88;
-  const fillOpacity = 0.14;
+  const strokeOpacity = isChart ? 0.92 : 0.88;
+  const fillOpacity = isChart ? 0.16 : 0.14;
+  const railY = seriesMid;
+  const amp = moodGeometry.amp ?? Math.min(stageHeight * 0.28, 120);
+  const enthusiasmY = seriesMid - amp;
+  const fearY = seriesMid + amp;
+  const hovered =
+    hoveredId && !hoveredId.startsWith('act-')
+      ? moodGeometry.points.find((p) => p.id === hoveredId)
+      : undefined;
+  const hoveredEvent = hoveredId ? events.find((e) => e.id === hoveredId) : undefined;
+  const hoveredActivity = hoveredId?.startsWith('act-')
+    ? layout.activity.find((b) => `act-${b.key}` === hoveredId)
+    : undefined;
 
   return (
     <div ref={stageRef} className="relative h-full w-full min-h-0">
@@ -450,34 +651,48 @@ export function HorizontalTimeline({
         {dragHint}
       </p>
 
-      {moodLabels && hasMood && (
+      {/* Sticky Y-axis: reads with the chart, stays put while scrolling */}
+      {moodLabels && hasMood && stageHeight > 0 && (
         <div
-          className={`pointer-events-none absolute bottom-3 z-20 max-w-[11.5rem] rounded-xl border border-border/50 bg-background/85 px-3 py-2.5 shadow-lg backdrop-blur-xl sm:max-w-[13rem] ${
-            moodLegendClassName || 'right-3'
-          }`}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 sm:w-[4.75rem]"
         >
-          <p className="text-[10px] font-semibold tracking-tight text-foreground/90">
-            {moodLabels.title}
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <div
-              aria-hidden
-              className="h-10 w-1.5 shrink-0 rounded-full"
-              style={{
-                background:
-                  'linear-gradient(to bottom, #991b1b 0%, #64748b 50%, #047857 100%)',
-              }}
+          <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background via-background/85 to-transparent sm:w-16" />
+          <div
+            className="absolute left-2 flex -translate-y-1/2 items-center gap-1.5 sm:left-3"
+            style={{ top: enthusiasmY }}
+          >
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: '#047857' }}
             />
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="font-mono text-[9px] uppercase tracking-wider text-red-800/80 dark:text-red-300/80">
-                {moodLabels.fear}
-              </p>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-emerald-800/80 dark:text-emerald-300/80">
-                {moodLabels.enthusiasm}
+            <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-emerald-800/85 dark:text-emerald-300/85">
+              {moodLabels.enthusiasm}
+            </span>
+          </div>
+          <div
+            className="absolute left-2 flex -translate-y-1/2 items-center gap-1.5 sm:left-3"
+            style={{ top: fearY }}
+          >
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: '#991b1b' }}
+            />
+            <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-red-800/85 dark:text-red-300/85">
+              {moodLabels.fear}
+            </span>
+          </div>
+          {isChart && moodLabels.activity && (
+            <div
+              className="absolute left-2 sm:left-3"
+              style={{ top: activityTop + activityMaxH + 4 }}
+            >
+              <p className="font-mono text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {moodLabels.activity}
               </p>
             </div>
-          </div>
-          <p className="mt-2 text-[9px] leading-snug text-muted-foreground">
+          )}
+          <p className="absolute bottom-10 left-2 max-w-[4.5rem] text-[8px] leading-snug text-muted-foreground/70 sm:left-3 sm:max-w-[5rem] sm:text-[9px]">
             {moodLabels.hint}
           </p>
         </div>
@@ -501,21 +716,67 @@ export function HorizontalTimeline({
             height: stageHeight > 0 ? stageHeight : '100%',
           }}
         >
-          {layout.years.map((y) => (
+          {/* Time axis — chart: year/month rail; cards: year grids at the top */}
+          {isChart
+            ? (layout.timeTicks ?? []).map((tick) => {
+                const isYear = tick.kind === 'year';
+                const label = isYear ? tick.label : monthLabel(tick.iso);
+                return (
+                  <div key={tick.key} className="absolute z-[1]" style={{ left: tick.x }}>
+                    {isYear && (
+                      <div
+                        aria-hidden
+                        className="absolute w-px bg-foreground/[0.09]"
+                        style={{
+                          top: stageHeight * 0.08,
+                          height: Math.max(0, timeAxisY - stageHeight * 0.08),
+                        }}
+                      />
+                    )}
+                    <div
+                      aria-hidden
+                      className={`absolute w-px ${isYear ? 'bg-foreground/35' : 'bg-border/60'}`}
+                      style={{
+                        top: timeAxisY - (isYear ? 12 : 7),
+                        height: isYear ? 12 : 7,
+                      }}
+                    />
+                    <span
+                      className={`absolute whitespace-nowrap font-mono ${
+                        isYear
+                          ? '-translate-x-0 left-1 text-[11px] font-semibold tracking-tight text-foreground/85'
+                          : 'left-0.5 text-[9px] uppercase tracking-wider text-muted-foreground/75'
+                      }`}
+                      style={{ top: timeAxisY + 5 }}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                );
+              })
+            : layout.years.map((y) => (
+                <div
+                  key={y.year}
+                  className="absolute border-l border-dashed border-border/40"
+                  style={{
+                    left: y.x,
+                    top: midY - stageHeight * 0.4,
+                    height: stageHeight * 0.8,
+                  }}
+                >
+                  <span className="absolute -top-5 left-2 font-mono text-xs font-semibold text-mark/80">
+                    {y.year}
+                  </span>
+                </div>
+              ))}
+
+          {isChart && stageHeight > 0 && (
             <div
-              key={y.year}
-              className="absolute border-l border-dashed border-border/40"
-              style={{
-                left: y.x,
-                top: midY - stageHeight * 0.4,
-                height: stageHeight * 0.8,
-              }}
-            >
-              <span className="absolute -top-5 left-2 font-mono text-xs font-semibold text-mark/80">
-                {y.year}
-              </span>
-            </div>
-          ))}
+              aria-hidden
+              className="absolute left-0 right-0 z-[1] h-px bg-border/70"
+              style={{ top: timeAxisY }}
+            />
+          )}
 
           {stageHeight > 0 && layout.todayX != null && (
             <div
@@ -523,8 +784,8 @@ export function HorizontalTimeline({
               className="absolute z-[2] w-px bg-mark/70"
               style={{
                 left: layout.todayX,
-                top: midY - stageHeight * 0.42,
-                height: stageHeight * 0.84,
+                top: isChart ? stageHeight * 0.06 : midY - stageHeight * 0.42,
+                height: isChart ? stageHeight * 0.88 : stageHeight * 0.84,
               }}
             >
               <span className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-md border border-mark/25 bg-mark-muted px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-mark">
@@ -542,13 +803,27 @@ export function HorizontalTimeline({
               <div
                 aria-hidden
                 className="absolute left-0 right-0 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ink/35 to-transparent dark:via-mark/30"
-                style={{ top: midY }}
+                style={{ top: railY }}
               />
               <div
                 aria-hidden
                 className="absolute left-0 right-0 h-4 -translate-y-1/2 bg-gradient-to-r from-transparent via-mark-muted to-transparent"
-                style={{ top: midY }}
+                style={{ top: railY }}
               />
+              {hasMood && amp > 0 && (
+                <>
+                  <div
+                    aria-hidden
+                    className="absolute left-0 right-0 border-t border-dashed border-emerald-700/20 dark:border-emerald-400/20"
+                    style={{ top: enthusiasmY }}
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute left-0 right-0 border-t border-dashed border-red-800/20 dark:border-red-400/20"
+                    style={{ top: fearY }}
+                  />
+                </>
+              )}
             </>
           )}
 
@@ -562,18 +837,18 @@ export function HorizontalTimeline({
             >
               <defs>
                 <linearGradient id="mood-stroke" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#991b1b" stopOpacity="0.95" />
+                  <stop offset="0%" stopColor="#047857" stopOpacity="0.95" />
                   <stop offset="50%" stopColor="#64748b" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#047857" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#991b1b" stopOpacity="0.95" />
                 </linearGradient>
                 <linearGradient id="mood-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#991b1b" stopOpacity="0.25" />
+                  <stop offset="0%" stopColor="#047857" stopOpacity="0.2" />
                   <stop offset="50%" stopColor="#64748b" stopOpacity="0.05" />
-                  <stop offset="100%" stopColor="#047857" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#991b1b" stopOpacity="0.25" />
                 </linearGradient>
               </defs>
               <path
-                d={`${moodGeometry.path} L ${moodGeometry.points[moodGeometry.points.length - 1].x} ${midY} L ${moodGeometry.points[0].x} ${midY} Z`}
+                d={`${moodGeometry.path} L ${moodGeometry.points[moodGeometry.points.length - 1].x} ${railY} L ${moodGeometry.points[0].x} ${railY} Z`}
                 fill="url(#mood-fill)"
                 opacity={fillOpacity}
               />
@@ -581,27 +856,180 @@ export function HorizontalTimeline({
                 d={moodGeometry.path}
                 fill="none"
                 stroke="url(#mood-stroke)"
-                strokeWidth={2.5}
+                strokeWidth={isChart ? 3 : 2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 opacity={strokeOpacity}
               />
-              {moodGeometry.points
-                .filter((p) => !p.carry)
-                .map((p) => (
-                <circle
-                  key={p.id}
-                  cx={p.x}
-                  cy={p.y}
-                  r={4}
-                  fill={SENTIMENT_META[p.sentiment].dot}
-                  opacity={0.9}
-                />
-              ))}
+              {!isChart &&
+                moodGeometry.points
+                  .filter((p) => !p.carry)
+                  .map((p) => (
+                    <circle
+                      key={p.id}
+                      cx={p.x}
+                      cy={p.y}
+                      r={4}
+                      fill={SENTIMENT_META[p.sentiment].dot}
+                      opacity={0.9}
+                    />
+                  ))}
             </svg>
           )}
 
-          {stageHeight > 0 &&
+          {isChart && stageHeight > 0 && layout.activity.length > 0 && (
+            <svg
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[1]"
+              width={layout.width}
+              height={stageHeight}
+            >
+              {layout.activity.map((bar) => {
+                const h = (bar.count / layout.maxActivity) * activityMaxH;
+                const w = 10;
+                return (
+                  <rect
+                    key={bar.key}
+                    x={bar.x - w / 2}
+                    y={activityTop + activityMaxH - h}
+                    width={w}
+                    height={Math.max(h, 2)}
+                    rx={1.5}
+                    fill={scoreToRgb(bar.score)}
+                    opacity={0.72}
+                  />
+                );
+              })}
+            </svg>
+          )}
+
+          {isChart &&
+            hovered &&
+            stageHeight > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute z-[2] w-px bg-foreground/25"
+                style={{
+                  left: hovered.x,
+                  top: stageHeight * 0.08,
+                  height: stageHeight * 0.84,
+                }}
+              />
+            )}
+
+          {isChart &&
+            stageHeight > 0 &&
+            moodGeometry.points
+              .filter((p) => !p.carry)
+              .map((p) => {
+                const event = layout.points.find((e) => e.id === p.id);
+                if (!event) return null;
+                const isActive = activeId === event.id;
+                const isHot = hoveredId === event.id || isActive;
+                const dot = SENTIMENT_META[p.sentiment].dot;
+                return (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => onSelect(event.id)}
+                    onMouseEnter={() => setHoveredId(event.id)}
+                    onMouseLeave={() => setHoveredId((id) => (id === event.id ? null : id))}
+                    className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ left: p.x, top: p.y, width: 28, height: 28 }}
+                    aria-pressed={isActive}
+                    aria-label={event.title[locale]}
+                  >
+                    <span
+                      className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background transition-transform"
+                      style={{
+                        width: isHot ? 12 : 8,
+                        height: isHot ? 12 : 8,
+                        backgroundColor: dot,
+                        boxShadow: isActive ? `0 0 0 4px ${dot}33` : undefined,
+                      }}
+                    />
+                  </button>
+                );
+              })}
+
+          {isChart &&
+            stageHeight > 0 &&
+            layout.activity.map((bar) => (
+              <button
+                key={`act-${bar.key}`}
+                type="button"
+                className="absolute z-[2] -translate-x-1/2"
+                style={{
+                  left: bar.x,
+                  top: activityTop,
+                  width: 16,
+                  height: activityMaxH,
+                }}
+                aria-label={`${bar.label}: ${bar.count}`}
+                onMouseEnter={() => setHoveredId(`act-${bar.key}`)}
+                onMouseLeave={() =>
+                  setHoveredId((id) => (id === `act-${bar.key}` ? null : id))
+                }
+              />
+            ))}
+
+          {isChart && hoveredEvent && hovered && (
+            <div
+              className="pointer-events-none absolute z-30 w-48 -translate-x-1/2 rounded-lg border border-border/60 bg-background/95 px-2.5 py-2 shadow-lg backdrop-blur-xl"
+              style={{
+                left: hovered.x,
+                top: Math.max(8, hovered.y - 88),
+              }}
+            >
+              <p className="font-mono text-[10px] text-muted-foreground">
+                {formatEventDate(hoveredEvent.date, locale)}
+                {hoveredEvent.personId && people[hoveredEvent.personId]
+                  ? ` · ${people[hoveredEvent.personId].shortName}`
+                  : ''}
+              </p>
+              {hoveredEvent.sentiment && sentimentLabel && (
+                <p
+                  className={`mt-0.5 text-[10px] font-medium ${SENTIMENT_META[hoveredEvent.sentiment].color}`}
+                >
+                  {sentimentLabel(hoveredEvent.sentiment)}
+                </p>
+              )}
+              <p className="mt-1 line-clamp-2 text-xs font-semibold leading-snug">
+                {hoveredEvent.title[locale]}
+              </p>
+            </div>
+          )}
+
+          {isChart && hoveredActivity && (
+            <div
+              className="pointer-events-none absolute z-30 w-40 -translate-x-1/2 rounded-lg border border-border/60 bg-background/95 px-2.5 py-2 shadow-lg backdrop-blur-xl"
+              style={{
+                left: hoveredActivity.x,
+                top: activityTop - 52,
+              }}
+            >
+              <p className="font-mono text-[10px] text-muted-foreground">
+                {(() => {
+                  const [y, m] = hoveredActivity.label.split('-').map(Number);
+                  try {
+                    return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+                      month: 'short',
+                      year: 'numeric',
+                    }).format(new Date(y, (m || 1) - 1, 1));
+                  } catch {
+                    return hoveredActivity.label;
+                  }
+                })()}
+              </p>
+              <p className="mt-0.5 text-xs font-semibold">
+                {hoveredActivity.count}
+                {moodLabels?.activity ? ` · ${moodLabels.activity}` : ''}
+              </p>
+            </div>
+          )}
+
+          {!isChart &&
+            stageHeight > 0 &&
             layout.points.map((event) => {
               const meta = EVENT_META[event.type];
               const sentimentMeta = event.sentiment
