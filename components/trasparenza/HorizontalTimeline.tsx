@@ -626,8 +626,8 @@ export function HorizontalTimeline({
     const bottomPad = 6;
     const activityTop = Math.max(0, stageHeight - activityMaxH - bottomPad);
     const timeAxisY = Math.max(0, activityTop - contextLaneH);
-    // Clear floating header + filter row; keep a little air under the top edge
-    const plotTop = Math.max(72, Math.min(120, stageHeight * 0.125));
+    // Curve runs under the floating header; keep only a hairline inset
+    const plotTop = Math.max(6, Math.min(16, stageHeight * 0.012));
     // Year/month labels sit just above the axis
     const plotBottom = Math.max(plotTop + 80, timeAxisY - 28);
     const seriesMid = (plotTop + plotBottom) / 2;
@@ -1037,8 +1037,42 @@ export function HorizontalTimeline({
       ? Math.min(Math.max(scrubContentX - scrollLeft, 14), viewportWidth - 14)
       : null;
 
+  const moodBand =
+    isChart && hasMood && amp > 0 && stageHeight > 0
+      ? (() => {
+          const bandTop = chartBand.plotTop;
+          const bandH = Math.max(1, timeAxisY - bandTop);
+          const pct = (y: number) =>
+            `${Math.min(100, Math.max(0, ((y - bandTop) / bandH) * 100)).toFixed(1)}%`;
+          return {
+            top: bandTop,
+            height: bandH,
+            background: [
+              'linear-gradient(to bottom,',
+              'rgba(4, 120, 87, 0.08) 0%,',
+              `rgba(4, 120, 87, 0.045) ${pct(enthusiasmY)},`,
+              `rgba(4, 120, 87, 0.012) ${pct((enthusiasmY + railY) / 2)},`,
+              `transparent ${pct(railY - amp * 0.15)},`,
+              `transparent ${pct(railY + amp * 0.15)},`,
+              `rgba(153, 27, 27, 0.012) ${pct((railY + fearY) / 2)},`,
+              `rgba(153, 27, 27, 0.045) ${pct(fearY)},`,
+              'rgba(153, 27, 27, 0.085) 100%)',
+            ].join(' '),
+          };
+        })()
+      : null;
+
   return (
     <div ref={stageRef} className="relative h-full w-full min-h-0">
+      {/* Ambient mood field — soft vertical zones, fixed while panning */}
+      {moodBand && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 z-0"
+          style={moodBand}
+        />
+      )}
+
       {isChart &&
         scrubViewportX != null &&
         stageHeight > 0 &&
@@ -1071,7 +1105,8 @@ export function HorizontalTimeline({
             aria-hidden
             className="pointer-events-none absolute left-2.5 z-20 flex -translate-y-full items-center gap-1.5 rounded-md border border-border/40 bg-background/90 px-2 py-1 shadow-sm backdrop-blur-md sm:left-4"
             style={{
-              top: Math.max(isChart ? chartBand.plotTop : 20, enthusiasmY - 14),
+              // Keep below the floating nav pill
+              top: Math.max(isChart ? 58 : 20, enthusiasmY - 14),
             }}
           >
             <span
@@ -1297,12 +1332,12 @@ export function HorizontalTimeline({
             <>
               <div
                 aria-hidden
-                className="absolute left-0 right-0 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ink/25 to-transparent dark:via-mark/22"
+                className="absolute left-0 right-0 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ink/30 to-transparent dark:via-foreground/25"
                 style={{ top: railY }}
               />
               <div
                 aria-hidden
-                className="absolute left-0 right-0 h-3 -translate-y-1/2 bg-gradient-to-r from-transparent via-mark-muted to-transparent"
+                className="absolute left-0 right-0 h-3 -translate-y-1/2 bg-gradient-to-r from-transparent via-foreground/[0.06] to-transparent dark:via-foreground/[0.08]"
                 style={{ top: railY }}
               />
               {hasMood && amp > 0 && (
