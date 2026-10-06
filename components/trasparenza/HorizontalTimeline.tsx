@@ -126,6 +126,57 @@ function monotoneCubicPath(points: Point[]): string {
   return d;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Historical chart density: about 420px per year. */
+const HISTORY_PX_PER_DAY = 420 / 365.25;
+/** Recent chart density: consecutive days stay apart. */
+const RECENT_PX_PER_DAY = 16;
+const RECENT_WINDOW_DAYS = 90;
+/** Ease width centered on the window edge, so the scale does not corner. */
+const SCALE_BLEND_DAYS = 36;
+const SMOOTH_WINDOW_MS = 7 * DAY_MS;
+
+/**
+ * Pixels from a past instant to today.
+ * Last 90 days run at 16px/day; older time stays near 1px/day.
+ * smoothstep blends the two rates so the spline has no kink at the join.
+ */
+function pixelsBeforeToday(ageDays: number): number {
+  if (ageDays <= 0) return 0;
+  const blendStart = RECENT_WINDOW_DAYS - SCALE_BLEND_DAYS / 2;
+  const recentDays = Math.min(ageDays, blendStart);
+  let px = recentDays * RECENT_PX_PER_DAY;
+  if (ageDays <= blendStart) return px;
+
+  const blendEndAge = Math.min(ageDays, blendStart + SCALE_BLEND_DAYS);
+  const t = (blendEndAge - blendStart) / SCALE_BLEND_DAYS;
+  const smoothIntegral = t * t * t - 0.5 * t * t * t * t;
+  px +=
+    (blendEndAge - blendStart) * RECENT_PX_PER_DAY +
+    (HISTORY_PX_PER_DAY - RECENT_PX_PER_DAY) * SCALE_BLEND_DAYS * smoothIntegral;
+  if (ageDays <= blendStart + SCALE_BLEND_DAYS) return px;
+
+  px += (ageDays - blendStart - SCALE_BLEND_DAYS) * HISTORY_PX_PER_DAY;
+  return px;
+}
+
+/** Centered 7-day mean. A lone historical pin is unchanged. */
+function smoothScores<T extends { date: string; score: number }>(points: T[]): number[] {
+  const times = points.map((p) => toMs(p.date));
+  return points.map((p, i) => {
+    const t = times[i];
+    let sum = 0;
+    let n = 0;
+    for (let j = 0; j < points.length; j++) {
+      if (Math.abs(times[j] - t) <= SMOOTH_WINDOW_MS / 2) {
+        sum += points[j].score;
+        n += 1;
+      }
+    }
+    return n > 0 ? sum / n : p.score;
+  });
+}
+
 function fmt(n: number): string {
   return n.toFixed(2);
 }
@@ -301,18 +352,33 @@ export function HorizontalTimeline({
     const minT = Math.min(...spanTimes);
     const maxT = todayMs;
     const span = Math.max(maxT - minT, 1);
-    const yearSpan = span / (365.25 * 24 * 60 * 60 * 1000);
 
     const padLeft = isChart ? 120 : PAD_X_LEFT;
     const padRight = isChart ? 160 : PAD_X_RIGHT;
-    const byCount = isChart
-      ? padLeft + padRight + Math.max(yearSpan, 1) * 420
-      : padLeft + padRight + Math.max(events.length, moodWithTag.length, 1) * MIN_GAP_PX;
-    const width = Math.max(isChart ? 1400 : 1100, byCount, 800);
-    const usable = width - padLeft - padRight;
+    const dayMs = DAY_MS;
+    const ageDays = (ms: number) => (todayMs - ms) / dayMs;
 
-    const xForDate = (date: string) =>
-      padLeft + ((toMs(atPresent(date)) - minT) / span) * usable;
+    let width: number;
+    let usable: number;
+    let xForDate: (date: string) => number;
+
+    if (isChart) {
+      const spanPx = Math.max(pixelsBeforeToday(ageDays(minT)), 1);
+      width = Math.max(1400, padLeft + spanPx + padRight);
+      usable = width - padLeft - padRight;
+      const scale = usable / spanPx;
+      xForDate = (date: string) => {
+        const t = Math.min(Math.max(toMs(atPresent(date)), minT), todayMs);
+        return padLeft + (spanPx - pixelsBeforeToday(ageDays(t))) * scale;
+      };
+    } else {
+      const byCount =
+        padLeft + padRight + Math.max(events.length, moodWithTag.length, 1) * MIN_GAP_PX;
+      width = Math.max(1100, byCount, 800);
+      usable = width - padLeft - padRight;
+      xForDate = (date: string) =>
+        padLeft + ((toMs(atPresent(date)) - minT) / span) * usable;
+    }
 
     const raw = events.map((e) => ({
       ...e,
@@ -426,7 +492,6 @@ export function HorizontalTimeline({
       ]),
     ].sort();
 
-    const dayMs = 24 * 60 * 60 * 1000;
     const pxPerMonth = usable / (span / (30.44 * dayMs));
 
     type TimeTick = {
@@ -441,13 +506,15 @@ export function HorizontalTimeline({
     const startDate = new Date(minT);
     const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     const endMs = maxT + dayMs;
+    let lastTickX = -1e9;
     while (cursor.getTime() <= endMs) {
       const cy = cursor.getFullYear();
       const cm = cursor.getMonth();
       const iso = `${cy}-${String(cm + 1).padStart(2, '0')}-01`;
       const t = toMs(iso);
       if (t >= minT - dayMs && t <= maxT + dayMs) {
-        const x = padLeft + ((Math.min(Math.max(t, minT), maxT) - minT) / span) * usable;
+        const x = xForDate(iso);
+        const gap = x - lastTickX;
         if (cm === 0) {
           timeTicks.push({
             key: `y-${cy}`,
@@ -456,25 +523,21 @@ export function HorizontalTimeline({
             label: String(cy),
             iso,
           });
-        } else if (isChart && pxPerMonth >= 36) {
+          lastTickX = x;
+        } else if (isChart && gap >= 56) {
           timeTicks.push({ key: `m-${iso}`, x, kind: 'month', label: '', iso });
-        } else if (isChart && pxPerMonth >= 18 && [2, 5, 8].includes(cm)) {
-          timeTicks.push({ key: `m-${iso}`, x, kind: 'month', label: '', iso });
+          lastTickX = x;
         }
       }
       cursor.setMonth(cursor.getMonth() + 1);
     }
 
     const todayMonthIso = `${todayIso.slice(0, 7)}-01`;
-    if (
-      isChart &&
-      !timeTicks.some((tick) => tick.iso === todayMonthIso) &&
-      toMs(todayMonthIso) >= minT - dayMs
-    ) {
-      const t = toMs(todayMonthIso);
+    if (isChart && !timeTicks.some((tick) => tick.iso === todayMonthIso)) {
+      const x = xForDate(todayMonthIso);
       timeTicks.push({
         key: `m-${todayMonthIso}`,
-        x: padLeft + ((Math.min(Math.max(t, minT), maxT) - minT) / span) * usable,
+        x,
         kind: 'month',
         label: '',
         iso: todayMonthIso,
@@ -488,11 +551,9 @@ export function HorizontalTimeline({
 
     if (years.length === 0) {
       for (const year of yearSet) {
-        const t = toMs(`${year}-01-01`);
-        const clamped = Math.min(Math.max(t, minT), maxT);
         years.push({
           year,
-          x: padLeft + ((clamped - minT) / span) * usable,
+          x: xForDate(`${year}-01-01`),
         });
       }
     }
@@ -533,15 +594,50 @@ export function HorizontalTimeline({
     const amp = Math.min(stageHeight * (isChart ? 0.32 : 0.28), isChart ? 150 : 120);
     const seriesMid = isChart ? stageHeight * 0.38 : stageHeight / 2;
     // Enthusiasm up, fear down: optimism (−1) above mid, alarm (+1) below
-    const pts = layout.mood.map((m) => ({
+    const toPoint = (m: (typeof layout.mood)[number], score = m.score) => ({
       id: m.id,
       x: m.x,
-      y: seriesMid + m.score * amp,
+      y: seriesMid + score * amp,
       sentiment: m.sentiment,
       carry: m.carry,
-    }));
-    return { path: monotoneCubicPath(pts), points: pts, amp, seriesMid };
-  }, [layout.mood, stageHeight, isChart]);
+    });
+    const points = layout.mood.map((m) => toPoint(m));
+
+    let pathPoints = points;
+    if (isChart) {
+      const observed = layout.mood.filter((m) => !m.carry);
+      const daily: Array<{ date: string; x: number; scoreSum: number; n: number }> = [];
+      for (const point of observed) {
+        const prev = daily.find((d) => d.date === point.date);
+        if (!prev) {
+          daily.push({ date: point.date, x: point.x, scoreSum: point.score, n: 1 });
+        } else {
+          prev.scoreSum += point.score;
+          prev.n += 1;
+        }
+      }
+      const dailyMeans = daily.map((d) => ({
+        date: d.date,
+        x: d.x,
+        score: d.scoreSum / d.n,
+      }));
+      const smoothed = smoothScores(dailyMeans);
+      const stroke = dailyMeans.map((d, i) => ({ x: d.x, y: seriesMid + smoothed[i] * amp }));
+      const carry = layout.mood.find((m) => m.carry);
+      if (carry && smoothed.length > 0) {
+        stroke.push({ x: carry.x, y: seriesMid + smoothed[smoothed.length - 1] * amp });
+      }
+      pathPoints = stroke.map((p, i) => ({
+        id: `stroke-${i}`,
+        x: p.x,
+        y: p.y,
+        sentiment: 'caution' as SentimentTag,
+        carry: false,
+      }));
+    }
+
+    return { path: monotoneCubicPath(pathPoints), points, amp, seriesMid };
+  }, [layout, stageHeight, isChart]);
 
   const scrollToId = useCallback(
     (id: string, behavior: ScrollBehavior = 'smooth') => {
