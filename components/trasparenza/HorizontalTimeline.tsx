@@ -281,6 +281,8 @@ export function HorizontalTimeline({
         activity: emptyActivity,
         maxActivity: 1,
         contextMarks: [] as Array<{ id: string; x: number; type: TimelineEvent['type'] }>,
+        todayX: 0,
+        todayIso: localIsoDate(),
         minT: 0,
         maxT: 1,
         usable: 640,
@@ -346,18 +348,21 @@ export function HorizontalTimeline({
       }))
       .sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
 
-    for (let i = 1; i < mood.length; i++) {
-      if (mood[i].x <= mood[i - 1].x) mood[i].x = mood[i - 1].x + 8;
-    }
-
-    const lastMoodX = mood[mood.length - 1]?.x ?? padLeft;
     const todayX = isChart
       ? xForDate(todayIso)
       : Math.max(
           xForDate(todayIso),
           lastPinX + CARD_W / 2 + 36,
-          lastMoodX + 32,
+          (mood[mood.length - 1]?.x ?? padLeft) + 32,
         );
+
+    // Same-day points step sideways. On the chart they stop short of today,
+    // so a late-September cluster cannot sit on or past the "oggi" line.
+    const moodCeiling = isChart ? todayX - 10 : Number.POSITIVE_INFINITY;
+    for (let i = 1; i < mood.length; i++) {
+      if (mood[i].x <= mood[i - 1].x) mood[i].x = mood[i - 1].x + 8;
+      if (mood[i].x > moodCeiling) mood[i].x = moodCeiling;
+    }
 
     if (mood.length > 0) {
       const last = mood[mood.length - 1];
@@ -458,6 +463,23 @@ export function HorizontalTimeline({
         }
       }
       cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    const todayMonthIso = `${todayIso.slice(0, 7)}-01`;
+    if (
+      isChart &&
+      !timeTicks.some((tick) => tick.iso === todayMonthIso) &&
+      toMs(todayMonthIso) >= minT - dayMs
+    ) {
+      const t = toMs(todayMonthIso);
+      timeTicks.push({
+        key: `m-${todayMonthIso}`,
+        x: padLeft + ((Math.min(Math.max(t, minT), maxT) - minT) / span) * usable,
+        kind: 'month',
+        label: '',
+        iso: todayMonthIso,
+      });
+      timeTicks.sort((a, b) => a.x - b.x);
     }
 
     const years = timeTicks
@@ -749,6 +771,21 @@ export function HorizontalTimeline({
     [locale],
   );
 
+  const todayCaption = useMemo(() => {
+    if (!layout.todayIso) return todayLabel;
+    const [y, m, d] = layout.todayIso.split('-').map(Number);
+    if (!y || !m || !d) return todayLabel;
+    try {
+      const formatted = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+        day: 'numeric',
+        month: 'short',
+      }).format(new Date(y, m - 1, d));
+      return `${todayLabel} · ${formatted}`;
+    } catch {
+      return todayLabel;
+    }
+  }, [layout.todayIso, todayLabel, locale]);
+
   if (!hasPins && !hasMood) {
     return (
       <div ref={stageRef} className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -1016,7 +1053,7 @@ export function HorizontalTimeline({
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mark" />
                 </span>
-                {todayLabel}
+                {todayCaption}
               </span>
             </div>
           )}
