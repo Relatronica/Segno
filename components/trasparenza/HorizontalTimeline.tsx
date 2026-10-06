@@ -38,6 +38,8 @@ type MoodLabels = {
   hint: string;
   activity?: string;
   activityHint?: string;
+  activityBarCount?: string;
+  activityBarMore?: string;
 };
 
 type Props = {
@@ -315,6 +317,7 @@ export function HorizontalTimeline({
       count: number;
       score: number;
       label: string;
+      samples: Array<{ title: TimelineEvent['title']; personId?: string }>;
     }>;
 
     if (spanSource.length === 0) {
@@ -468,7 +471,12 @@ export function HorizontalTimeline({
       activityEvents ?? events.filter((e) => Boolean(e.sentiment));
     const buckets = new Map<
       string,
-      { count: number; scoreSum: number; xSum: number }
+      {
+        count: number;
+        scoreSum: number;
+        xSum: number;
+        samples: Array<{ title: TimelineEvent['title']; personId?: string }>;
+      }
     >();
     for (const e of activitySource) {
       if (!e.sentiment) continue;
@@ -476,15 +484,30 @@ export function HorizontalTimeline({
       // Cards: monthly, denser history.
       const present = atPresent(e.date);
       const key = isChart ? present : present.slice(0, 7);
+      const weight = e.activityWeight ?? 1;
       const current = buckets.get(key) ?? {
         count: 0,
         scoreSum: 0,
         xSum: 0,
+        samples: [],
       };
-      current.count += e.activityWeight ?? 1;
+      current.count += weight;
       current.scoreSum +=
-        (e.moodScore ?? SENTIMENT_FEAR_SCORE[e.sentiment]) * (e.activityWeight ?? 1);
-      current.xSum += xForDate(present) * (e.activityWeight ?? 1);
+        (e.moodScore ?? SENTIMENT_FEAR_SCORE[e.sentiment]) * weight;
+      current.xSum += xForDate(present) * weight;
+      if (e.id.startsWith('auto-day-') && e.summary) {
+        // Day rollup: expand the synthetic summary into hover lines
+        const partsIt = e.summary.it.split(' · ').filter(Boolean);
+        const partsEn = e.summary.en.split(' · ').filter(Boolean);
+        for (let i = 0; i < partsIt.length && current.samples.length < 12; i++) {
+          current.samples.push({
+            title: { it: partsIt[i], en: partsEn[i] ?? partsIt[i] },
+            personId: e.personId,
+          });
+        }
+      } else if (!e.id.startsWith('auto-day-') && current.samples.length < 12) {
+        current.samples.push({ title: e.title, personId: e.personId });
+      }
       buckets.set(key, current);
     }
     const activity = [...buckets.entries()]
@@ -495,6 +518,7 @@ export function HorizontalTimeline({
         count: b.count,
         score: b.scoreSum / b.count,
         label: key,
+        samples: b.samples,
       }));
     const maxActivity = Math.max(1, ...activity.map((b) => b.count));
 
@@ -948,19 +972,41 @@ export function HorizontalTimeline({
       ? moodGeometry.points.find((p) => p.id === hoveredId)
       : undefined;
   const hoveredContext =
-    hoveredId && !hoveredMood
+    hoveredId && !hoveredMood && !hoveredId?.startsWith('act-')
       ? layout.contextMarks.find((m) => m.id === hoveredId)
       : undefined;
+  const hoveredActivity =
+    hoveredId?.startsWith('act-')
+      ? layout.activity.find((b) => `act-${b.key}` === hoveredId)
+      : undefined;
   const hoveredEvent =
-    hoveredId && hoveredId !== activeId
+    hoveredId && hoveredId !== activeId && !hoveredId.startsWith('act-')
       ? events.find((e) => e.id === hoveredId)
       : undefined;
-  const hoverTipX = hoveredMood?.x ?? hoveredContext?.x;
+  const hoverTipX = hoveredMood?.x ?? hoveredContext?.x ?? hoveredActivity?.x;
   const hoverTipY = hoveredMood
     ? hoveredMood.y - 18
     : hoveredContext
       ? timeAxisY - 4
-      : null;
+      : hoveredActivity
+        ? activityTop - 6
+        : null;
+
+  const activityDateLabel = (key: string) => {
+    if (key.length >= 10) return formatEventDate(key.slice(0, 10), locale);
+    if (key.length >= 7) {
+      const [y, m] = key.split('-').map(Number);
+      try {
+        return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+          month: 'short',
+          year: 'numeric',
+        }).format(new Date(y, (m || 1) - 1, 1));
+      } catch {
+        return key;
+      }
+    }
+    return key;
+  };
 
   const activeMoodPoint =
     activeId != null
@@ -1336,6 +1382,7 @@ export function HorizontalTimeline({
               {layout.activity.map((bar) => {
                 const h = (bar.count / layout.maxActivity) * activityMaxH;
                 const w = 6;
+                const isHot = hoveredId === `act-${bar.key}`;
                 return (
                   <rect
                     key={bar.key}
@@ -1345,7 +1392,7 @@ export function HorizontalTimeline({
                     height={Math.max(h, 1.5)}
                     rx={1}
                     fill={scoreToRgb(bar.score)}
-                    opacity={0.5}
+                    opacity={isHot ? 0.85 : 0.5}
                   />
                 );
               })}
@@ -1390,6 +1437,60 @@ export function HorizontalTimeline({
                 <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug tracking-tight">
                   {hoveredEvent.title[locale]}
                 </p>
+              </div>
+            )}
+
+          {isChart &&
+            hoveredActivity &&
+            hoverTipX != null &&
+            hoverTipY != null &&
+            stageHeight > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute z-20 w-[16rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                style={{ left: hoverTipX, top: hoverTipY }}
+              >
+                <p className="font-mono text-[9px] text-muted-foreground">
+                  {activityDateLabel(hoveredActivity.key)}
+                  {' · '}
+                  {(moodLabels?.activityBarCount ?? '{count}').replace(
+                    '{count}',
+                    String(hoveredActivity.count),
+                  )}
+                </p>
+                {hoveredActivity.samples.length > 0 && (
+                  <ul className="mt-1.5 max-h-[min(40vh,14rem)] space-y-1 overflow-hidden">
+                    {hoveredActivity.samples.slice(0, 8).map((sample, i) => {
+                      const person = sample.personId
+                        ? people[sample.personId]
+                        : undefined;
+                      return (
+                        <li
+                          key={`${hoveredActivity.key}-${i}`}
+                          className="line-clamp-2 text-[11px] leading-snug text-foreground/90"
+                        >
+                          {person ? (
+                            <span className="font-medium">{person.shortName}</span>
+                          ) : null}
+                          {person ? ' · ' : ''}
+                          {sample.title[locale]}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {hoveredActivity.count > Math.min(8, hoveredActivity.samples.length) &&
+                  (moodLabels?.activityBarMore ? (
+                    <p className="mt-1 font-mono text-[9px] text-muted-foreground/80">
+                      {moodLabels.activityBarMore.replace(
+                        '{count}',
+                        String(
+                          hoveredActivity.count -
+                            Math.min(8, hoveredActivity.samples.length),
+                        ),
+                      )}
+                    </p>
+                  ) : null)}
               </div>
             )}
 
@@ -1488,11 +1589,14 @@ export function HorizontalTimeline({
                 style={{
                   left: bar.x,
                   top: activityTop,
-                  width: 12,
+                  width: 16,
                   height: activityMaxH,
                 }}
-                aria-label={`${bar.label}: ${bar.count}`}
-                title={`${bar.label}: ${bar.count}`}
+                aria-label={`${activityDateLabel(bar.key)}: ${bar.count}`}
+                onMouseEnter={() => setHoveredId(`act-${bar.key}`)}
+                onMouseLeave={() =>
+                  setHoveredId((id) => (id === `act-${bar.key}` ? null : id))
+                }
               />
             ))}
 

@@ -362,13 +362,31 @@ export default function TrasparenzaContent() {
     [filtered, dayRollups],
   );
 
-  const activityEvents = useMemo(
-    () => [
+  const activityEvents = useMemo(() => {
+    const samplesByDate = new Map<string, TimelineEvent[]>();
+    for (const event of autoFeed) {
+      const list = samplesByDate.get(event.date) ?? [];
+      if (list.length < 12) list.push(event);
+      samplesByDate.set(event.date, list);
+    }
+
+    const weightedAutos = dayRollups.map((rollup) => {
+      const samples = samplesByDate.get(rollup.date) ?? [];
+      if (samples.length === 0) return rollup;
+      return {
+        ...rollup,
+        summary: {
+          it: samples.map((s) => s.title.it).join(' · '),
+          en: samples.map((s) => s.title.en).join(' · '),
+        },
+      };
+    });
+
+    return [
       ...filtered.filter((e) => Boolean(e.sentiment) && e.origin !== 'auto'),
-      ...dayRollups,
-    ],
-    [filtered, dayRollups],
-  );
+      ...weightedAutos,
+    ];
+  }, [filtered, dayRollups, autoFeed]);
 
   const moodLabels = useMemo(
     () => ({
@@ -378,6 +396,8 @@ export default function TrasparenzaContent() {
       hint: t.trasparenza.moodHint,
       activity: t.trasparenza.activity,
       activityHint: t.trasparenza.activityHint,
+      activityBarCount: t.trasparenza.activityBarCount,
+      activityBarMore: t.trasparenza.activityBarMore,
     }),
     [t],
   );
