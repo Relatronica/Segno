@@ -423,7 +423,7 @@ export default function RedazioneContent() {
 
   if (authed === null) {
     return (
-      <div className="flex flex-1 items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex flex-1 items-center justify-center pb-24 pt-[calc(var(--nav-clearance)+4rem)] text-sm text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         {t.redazione.loading}
       </div>
@@ -432,7 +432,7 @@ export default function RedazioneContent() {
 
   if (!authed) {
     return (
-      <section className="mx-auto max-w-md px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-md px-4 pb-20 pt-[calc(var(--nav-clearance)+3rem)] sm:px-6">
         <h1 className="font-serif text-3xl font-bold tracking-tight">{t.redazione.title}</h1>
         <p className="mt-3 text-sm text-muted-foreground">{t.redazione.loginHint}</p>
         <form onSubmit={login} className="mt-8 space-y-4">
@@ -461,7 +461,7 @@ export default function RedazioneContent() {
   }
 
   return (
-    <div className={cn('mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
+    <div className={cn('mx-auto max-w-4xl px-4 pb-12 pt-[calc(var(--nav-clearance)+2rem)] sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-mark/80">

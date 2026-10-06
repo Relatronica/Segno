@@ -78,6 +78,11 @@ export type TimelineEvent = {
    * When set, the curve uses this instead of the tag lookup.
    */
   moodScore?: number;
+  /**
+   * How many headlines/statements this pin represents for the activity bars.
+   * Day rollups set this to the number of automatic sources that day.
+   */
+  activityWeight?: number;
   amountEur?: number;
   sourceLabel: LocaleText;
   /** Stable public URL — required for every event */

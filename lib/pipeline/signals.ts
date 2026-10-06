@@ -97,6 +97,7 @@ export function rollupAutoSignals(signals: AutoSignal[]): TimelineEvent[] {
         actorId,
         sentiment,
         moodScore: mean,
+        activityWeight: count,
         title: {
           it: `Tono automatico · ${count} ${count === 1 ? 'fonte' : 'fonti'}`,
           en: `Automatic tone · ${count} ${count === 1 ? 'source' : 'sources'}`,

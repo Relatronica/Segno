@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, ExternalLink, Users } from 'lucide-react';
+import { Check, ChevronDown, ExternalLink, Users, X } from 'lucide-react';
 import {
   formatAmount,
   formatEventDate,
@@ -47,6 +47,8 @@ type Props = {
   title: string;
   newestFirstLabel: string;
   emptyLabel: string;
+  closeLabel?: string;
+  onClose?: () => void;
   className?: string;
 };
 
@@ -88,6 +90,8 @@ export function TimelineFeed({
   title,
   newestFirstLabel,
   emptyLabel,
+  closeLabel = 'Close',
+  onClose,
   className = '',
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -173,11 +177,23 @@ export function TimelineFeed({
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
       <div className="shrink-0 border-b border-border/40 px-3 py-2.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-            {newestFirstLabel}
-          </p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              {newestFirstLabel}
+            </p>
+          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={closeLabel}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {hasFilters && (

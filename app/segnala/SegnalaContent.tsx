@@ -23,7 +23,7 @@ export default function SegnalaContent() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-[radial-gradient(ellipse_at_12%_0%,oklch(0.48_0.17_25/_0.08),transparent_50%),linear-gradient(to_bottom,oklch(0.972_0.006_250),transparent)]"
       />
 
-      <section className="relative mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <section className="relative mx-auto max-w-2xl px-4 pb-16 pt-[calc(var(--nav-clearance)+2.5rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--nav-clearance)+3.5rem)] lg:px-8">
         <motion.div initial="hidden" animate="visible">
           <motion.p
             custom={0}

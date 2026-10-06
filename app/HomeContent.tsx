@@ -140,7 +140,7 @@ export default function HomeContent() {
           className="pointer-events-none absolute inset-0 opacity-[0.45] dark:opacity-[0.22] [background-image:linear-gradient(to_right,color-mix(in_oklch,var(--ink)_11%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--ink)_9%,transparent)_1px,transparent_1px)] [background-size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_at_50%_28%,black,transparent_78%)]"
         />
 
-        <div className="relative mx-auto max-w-6xl px-4 pb-0 pt-20 sm:px-6 sm:pt-28 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 pb-0 pt-[calc(var(--nav-clearance)+3.5rem)] sm:px-6 sm:pt-[calc(var(--nav-clearance)+5rem)] lg:px-8">
           <motion.div initial="hidden" animate="visible" className="mx-auto max-w-3xl text-center">
             <motion.p
               custom={0}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, List, SlidersHorizontal, X } from 'lucide-react';
+import { Calendar, PanelRight, SlidersHorizontal } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
@@ -22,8 +22,9 @@ import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
 
-/** Navbar height (h-16) */
-const NAV_H = '4rem';
+/** Offset timeline chrome below the floating header */
+const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
+const FILTER_PANEL_TOP = 'calc(var(--nav-clearance) + 3.25rem)';
 
 /** Closing "today" pin on the AI Act track — date follows the calendar. */
 const PRESENT_PIN_ID = 'e-2026-09-today';
@@ -114,18 +115,6 @@ export default function TrasparenzaContent() {
   const [scrubId, setScrubId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feedOpen, setFeedOpen] = useState(false);
-
-  const todayLabel = useMemo(() => {
-    try {
-      return new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }).format(new Date());
-    } catch {
-      return new Date().toISOString().slice(0, 10);
-    }
-  }, [locale]);
 
   useEffect(() => {
     setSelectedYears((prev) => {
@@ -373,6 +362,14 @@ export default function TrasparenzaContent() {
     [filtered, dayRollups],
   );
 
+  const activityEvents = useMemo(
+    () => [
+      ...filtered.filter((e) => Boolean(e.sentiment) && e.origin !== 'auto'),
+      ...dayRollups,
+    ],
+    [filtered, dayRollups],
+  );
+
   const moodLabels = useMemo(
     () => ({
       title: t.trasparenza.moodTitle,
@@ -385,7 +382,11 @@ export default function TrasparenzaContent() {
     [t],
   );
 
-  const renderFeed = (opts?: { onPick?: (id: string) => void; className?: string }) => (
+  const renderFeed = (opts?: {
+    onPick?: (id: string) => void;
+    onClose?: () => void;
+    className?: string;
+  }) => (
     <TimelineFeed
       events={feedEvents}
       locale={locale}
@@ -414,15 +415,14 @@ export default function TrasparenzaContent() {
       title={t.trasparenza.feedTitle}
       newestFirstLabel={t.trasparenza.feedNewest}
       emptyLabel={t.trasparenza.empty}
+      closeLabel={t.trasparenza.close}
+      onClose={opts?.onClose}
       className={opts?.className ?? 'min-h-0 flex-1'}
     />
   );
 
   return (
-    <div
-      className="relative flex overflow-hidden bg-background"
-      style={{ height: `calc(100dvh - ${NAV_H})` }}
-    >
+    <div className="relative flex h-dvh overflow-hidden bg-background">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_12%_0%,oklch(0.48_0.17_25/_0.07),transparent_48%),radial-gradient(ellipse_at_88%_15%,oklch(0.32_0.04_255/_0.05),transparent_42%)]"
@@ -434,6 +434,7 @@ export default function TrasparenzaContent() {
             events={chartEvents}
             mode="chart"
             moodEvents={moodEvents}
+            activityEvents={activityEvents}
             moodLabels={moodLabels}
             actors={actorMap}
             people={personMap}
@@ -451,15 +452,18 @@ export default function TrasparenzaContent() {
             focusEventToken={focusEventToken}
           />
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 p-2.5 sm:p-4 lg:pr-4">
-            <div className="pointer-events-auto flex items-center gap-2">
+          <div
+            className="pointer-events-none absolute inset-x-0 z-30 px-2.5 sm:px-4"
+            style={{ top: CHROME_TOP }}
+          >
+            <div className="pointer-events-auto flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setFiltersOpen((o) => !o)}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors ${
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium backdrop-blur-md transition-colors ${
                   filtersOpen
                     ? 'border-foreground/15 bg-foreground text-background'
-                    : 'border-border/60 bg-background/90 text-foreground hover:bg-background'
+                    : 'border-border/50 bg-background/80 text-foreground hover:bg-background'
                 }`}
                 aria-expanded={filtersOpen}
                 aria-label={t.trasparenza.filterBy}
@@ -471,54 +475,44 @@ export default function TrasparenzaContent() {
                 )}
               </button>
 
-              <span className="inline-flex min-w-0 max-w-[45%] flex-1 items-center gap-1.5 truncate rounded-md border border-border/60 bg-background/90 px-2.5 py-2 font-mono text-[11px] shadow-lg backdrop-blur-xl sm:max-w-none sm:flex-none sm:gap-2 sm:px-3 sm:text-xs">
-                <span className="inline-flex shrink-0 items-center gap-1 text-mark">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-55" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mark" />
-                  </span>
-                  {t.trasparenza.liveBadge}
-                </span>
-                <span className="shrink-0 text-border">·</span>
-                <span className="truncate text-foreground/85">{track.shortName}</span>
-                <span className="hidden text-border sm:inline">·</span>
-                <span className="hidden truncate text-muted-foreground sm:inline">{todayLabel}</span>
-              </span>
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveId(null);
+                    setScrubId(null);
+                    setPresentFocusToken((n) => n + 1);
+                  }}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground/80 transition-colors hover:bg-background/70 hover:text-foreground"
+                  aria-label={t.trasparenza.jumpToToday}
+                  title={t.trasparenza.jumpToToday}
+                >
+                  <Calendar className="h-4 w-4" />
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveId(null);
-                  setScrubId(null);
-                  setPresentFocusToken((n) => n + 1);
-                }}
-                className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/90 px-2.5 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-xl transition-colors hover:bg-background hover:text-foreground sm:px-3"
-                aria-label={t.trasparenza.jumpToToday}
-              >
-                <Calendar className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">{t.trasparenza.jumpToToday}</span>
-                <span className="sm:hidden">{t.trasparenza.todayLabel}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFeedOpen(true)}
-                className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-background/90 px-2.5 text-xs font-medium text-muted-foreground shadow-lg backdrop-blur-xl transition-colors hover:bg-background hover:text-foreground lg:hidden"
-                aria-label={t.trasparenza.feedOpen}
-              >
-                <List className="h-4 w-4" />
-                <span className="hidden sm:inline">{t.trasparenza.feedOpen}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedOpen((o) => !o)}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
+                    feedOpen
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground/80 hover:bg-background/70 hover:text-foreground'
+                  }`}
+                  aria-expanded={feedOpen}
+                  aria-label={t.trasparenza.feedOpen}
+                  title={t.trasparenza.feedOpen}
+                >
+                  <PanelRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <p className="mt-2 max-w-xl rounded-md border border-border/40 bg-background/75 px-2.5 py-1.5 font-mono text-[10px] leading-snug text-muted-foreground shadow-sm backdrop-blur-xl sm:text-[11px]">
-              {t.trasparenza.moodHint}
-            </p>
           </div>
 
           <AnimatePresence>
             {filtersOpen && (
               <motion.div
-                className="absolute inset-x-0 bottom-0 z-40 top-24 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:top-[6.5rem] sm:w-[min(100%-1.5rem,300px)]"
+                className="absolute inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:w-[min(100%-1.5rem,300px)]"
+                style={{ top: FILTER_PANEL_TOP }}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 16 }}
@@ -564,33 +558,36 @@ export default function TrasparenzaContent() {
 
       </section>
 
-      {/* Desktop feed */}
-      <aside className="relative z-20 hidden w-[min(100%,360px)] shrink-0 flex-col border-l border-border/50 bg-background/95 backdrop-blur-xl lg:flex xl:w-[380px]">
-        {renderFeed()}
-      </aside>
+      {/* Desktop feed — docked, collapsible */}
+      <AnimatePresence initial={false}>
+        {feedOpen && (
+          <motion.aside
+            key="desktop-feed"
+            className="relative z-20 hidden h-full shrink-0 overflow-hidden border-l border-border/50 bg-background/95 backdrop-blur-xl lg:flex"
+            initial={{ width: 0, opacity: 0.6 }}
+            animate={{ width: 380, opacity: 1 }}
+            exit={{ width: 0, opacity: 0.6 }}
+            transition={{ type: 'spring', bounce: 0.05, duration: 0.38 }}
+          >
+            <div className="flex h-full w-[min(100vw,380px)] min-w-[min(100vw,380px)] flex-col">
+              {renderFeed({ onClose: () => setFeedOpen(false) })}
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       {/* Mobile feed drawer */}
       <AnimatePresence>
         {feedOpen && (
           <motion.div
-            className="absolute inset-0 z-50 flex flex-col bg-background lg:hidden"
+            key="mobile-feed"
+            className="absolute inset-0 z-[60] flex flex-col bg-background lg:hidden"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', bounce: 0.08, duration: 0.35 }}
           >
-            <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5">
-              <p className="text-sm font-semibold">{t.trasparenza.feedTitle}</p>
-              <button
-                type="button"
-                onClick={() => setFeedOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label={t.trasparenza.close}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1">{renderFeed()}</div>
+            {renderFeed({ onClose: () => setFeedOpen(false) })}
           </motion.div>
         )}
       </AnimatePresence>
