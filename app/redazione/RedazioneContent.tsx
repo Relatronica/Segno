@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   ExternalLink,
   Eye,
@@ -38,7 +39,11 @@ type Counts = {
   approved: number;
   published: number;
   rejected: number;
+  signals?: number;
+  voting?: number;
 };
+
+type Desk = 'queue' | 'auto' | 'live' | 'rejected';
 
 type CuratedDraft = {
   date?: string;
@@ -97,9 +102,8 @@ export default function RedazioneContent() {
   const [signals, setSignals] = useState<AutoSignal[]>([]);
   const [curated, setCurated] = useState<CuratedPin[]>([]);
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [filter, setFilter] = useState<'pending' | 'published' | 'rejected' | 'all'>(
-    'pending',
-  );
+  const [filter, setFilter] = useState<Desk>('queue');
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Partial<SentimentCandidate>>>({});
   const [curatedDrafts, setCuratedDrafts] = useState<Record<string, CuratedDraft>>({});
@@ -322,8 +326,13 @@ export default function RedazioneContent() {
   };
 
   const visible = useMemo(() => {
-    if (filter === 'all') return candidates;
-    return candidates.filter((c) => c.status === filter);
+    if (filter === 'queue') {
+      return candidates.filter((c) => c.status === 'pending' || c.status === 'approved');
+    }
+    if (filter === 'rejected') {
+      return candidates.filter((c) => c.status === 'rejected');
+    }
+    return [];
   }, [candidates, filter]);
 
   const timelineRows = useMemo((): TimelineRow[] => {
@@ -345,7 +354,8 @@ export default function RedazioneContent() {
   }, [candidates, curated, drafts, curatedDrafts]);
 
   const rows: TimelineRow[] = useMemo(() => {
-    if (filter === 'published') return timelineRows;
+    if (filter === 'live') return timelineRows;
+    if (filter === 'auto') return [];
     return visible.map((candidate) => ({
       kind: 'pipeline' as const,
       id: candidate.id,
@@ -355,6 +365,15 @@ export default function RedazioneContent() {
   }, [filter, timelineRows, visible, drafts]);
 
   const grouped = useMemo(() => groupByDay(rows), [rows]);
+
+  const dayIsOpen = (date: string) => {
+    if (openDays[date] !== undefined) return openDays[date];
+    return date === today || date === yesterday;
+  };
+
+  const toggleDayOpen = (date: string) => {
+    setOpenDays((prev) => ({ ...prev, [date]: !dayIsOpen(date) }));
+  };
 
   const dayLabel = (date: string) => {
     if (date === today) return t.redazione.today;
@@ -385,12 +404,22 @@ export default function RedazioneContent() {
     });
   };
 
-  const setFilterAndClear = (key: typeof filter) => {
+  const setFilterAndClear = (key: Desk) => {
     setFilter(key);
     setSelected([]);
     setConfirmDelete(false);
     setExpandedId(null);
+    setOpenDays({});
   };
+
+  const queueCount = counts
+    ? counts.pending + counts.approved
+    : candidates.filter((c) => c.status === 'pending' || c.status === 'approved').length;
+  const liveCount = counts
+    ? counts.published + curated.length
+    : candidates.filter((c) => c.status === 'published').length + curated.length;
+  const rejectedCount = counts?.rejected ?? candidates.filter((c) => c.status === 'rejected').length;
+  const signalsCount = counts?.signals ?? signals.length;
 
   if (authed === null) {
     return (
@@ -457,71 +486,41 @@ export default function RedazioneContent() {
         </div>
       </div>
 
-      <SignalDesk
-        signals={signals}
-        locale={locale}
-        labels={{
-          title: t.redazione.signalsTitle,
-          hint: t.redazione.signalsHint,
-          empty: t.redazione.signalsEmpty,
-          voting: t.redazione.signalsVoting,
-          held: t.redazione.signalsHeld,
-          hidden: t.redazione.hidden,
-          hide: t.redazione.hide,
-          unhide: t.redazione.unhide,
-          promote: t.redazione.signalPromote,
-          promoted: t.redazione.signalPromoted,
-          tag: t.redazione.sentiment,
-          clear: t.redazione.sentimentNone,
-          open: t.redazione.openSource,
-          error: t.redazione.saveError,
-        }}
-        sentimentLabels={t.trasparenza.sentiments}
-        onChanged={() => void load()}
-      />
-
-      {counts && (
-        <div className="mt-8 flex flex-wrap gap-3 font-mono text-xs text-muted-foreground">
-          <span>{t.redazione.pending}: {counts.pending}</span>
-          <span>·</span>
-          <span>{t.redazione.published}: {counts.published}</span>
-          <span>·</span>
-          <span>{t.redazione.rejected}: {counts.rejected}</span>
-        </div>
-      )}
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(['pending', 'published', 'rejected', 'all'] as const).map((key) => (
+      <nav
+        className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
+        aria-label={t.redazione.desksLabel}
+      >
+        {(
+          [
+            { key: 'queue' as const, label: t.redazione.desks.queue, count: queueCount },
+            { key: 'auto' as const, label: t.redazione.desks.auto, count: signalsCount },
+            { key: 'live' as const, label: t.redazione.desks.live, count: liveCount },
+            { key: 'rejected' as const, label: t.redazione.desks.rejected, count: rejectedCount },
+          ] as const
+        ).map((desk) => (
           <button
-            key={key}
+            key={desk.key}
             type="button"
-            onClick={() => setFilterAndClear(key)}
+            onClick={() => setFilterAndClear(desk.key)}
             className={cn(
-              'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
-              filter === key
+              'rounded-md border px-3 py-3 text-left transition-colors',
+              filter === desk.key
                 ? 'border-foreground bg-foreground text-background'
-                : 'border-border text-muted-foreground hover:text-foreground',
+                : 'border-border/70 bg-card/40 text-foreground hover:border-foreground/30',
             )}
           >
-            {t.redazione.filters[key]}
+            <span className="block text-sm font-medium">{desk.label}</span>
+            <span
+              className={cn(
+                'mt-1 block font-mono text-[11px]',
+                filter === desk.key ? 'text-background/70' : 'text-muted-foreground',
+              )}
+            >
+              {desk.count}
+            </span>
           </button>
         ))}
-      </div>
-
-      {grouped.length > 1 && (
-        <nav className="mt-6 flex flex-wrap gap-2" aria-label={t.redazione.jumpTo}>
-          {grouped.map((group) => (
-            <a
-              key={group.date}
-              href={`#day-${group.date}`}
-              className="rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              {dayLabel(group.date)}
-              <span className="ml-1 opacity-70">{group.items.length}</span>
-            </a>
-          ))}
-        </nav>
-      )}
+      </nav>
 
       {message && (
         <p className="mt-4 text-sm text-muted-foreground" role="status">
@@ -529,93 +528,136 @@ export default function RedazioneContent() {
         </p>
       )}
 
-      <div className="mt-8 space-y-10">
-        {loading && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t.redazione.loading}
-          </p>
+      <div className="mt-8">
+        {filter === 'auto' ? (
+          <SignalDesk
+            signals={signals}
+            locale={locale}
+            labels={{
+              hint: t.redazione.signalsHint,
+              empty: t.redazione.signalsEmpty,
+              voting: t.redazione.signalsVoting,
+              held: t.redazione.signalsHeld,
+              hidden: t.redazione.hidden,
+              hide: t.redazione.hide,
+              unhide: t.redazione.unhide,
+              promote: t.redazione.signalPromote,
+              promoted: t.redazione.signalPromoted,
+              tag: t.redazione.sentiment,
+              clear: t.redazione.sentimentNone,
+              open: t.redazione.openSource,
+              error: t.redazione.saveError,
+              today: t.redazione.today,
+              yesterday: t.redazione.yesterday,
+              itemsCount: t.redazione.itemsCount,
+            }}
+            sentimentLabels={t.trasparenza.sentiments}
+            onChanged={() => void load()}
+          />
+        ) : (
+          <>
+            {loading && (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t.redazione.loading}
+              </p>
+            )}
+
+            {!loading && grouped.length === 0 && (
+              <p className="border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
+                {t.redazione.empty}
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {grouped.map((group) => {
+                const pipelineIds = group.items
+                  .filter((row): row is QueueRow => row.kind === 'pipeline')
+                  .map((row) => row.id);
+                const allDayOn =
+                  pipelineIds.length > 0 && pipelineIds.every((id) => selected.includes(id));
+                const open = dayIsOpen(group.date);
+
+                return (
+                  <section key={group.date} className="border border-border/60 bg-card/30">
+                    <header className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+                      {pipelineIds.length > 0 && (
+                        <input
+                          type="checkbox"
+                          checked={allDayOn}
+                          onChange={() => toggleDay(pipelineIds)}
+                          className="size-4 accent-foreground"
+                          aria-label={t.redazione.selectDay}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleDayOpen(group.date)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        {open ? (
+                          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <h2 className="font-serif text-lg font-semibold tracking-tight">
+                          {dayLabel(group.date)}
+                        </h2>
+                        <span className="ml-auto font-mono text-[11px] text-muted-foreground">
+                          {t.redazione.itemsCount.replace('{n}', String(group.items.length))}
+                        </span>
+                      </button>
+                    </header>
+
+                    {open && (
+                      <div className="space-y-3 border-t border-border/50 px-3 py-3">
+                        {group.items.map((row) =>
+                          row.kind === 'pipeline' ? (
+                            <CandidateCard
+                              key={row.id}
+                              c={row.candidate}
+                              draft={drafts[row.id] || {}}
+                              saving={savingId === row.id}
+                              selected={selected.includes(row.id)}
+                              expanded={expandedId === row.id}
+                              onToggleSelect={() => toggleSelected(row.id)}
+                              onToggleExpand={() =>
+                                setExpandedId((current) => (current === row.id ? null : row.id))
+                              }
+                              onDraft={(next) =>
+                                setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
+                              }
+                              onPatch={patch}
+                            />
+                          ) : (
+                            <CuratedCard
+                              key={row.id}
+                              pin={row.pin}
+                              draft={curatedDrafts[row.id] || {}}
+                              locale={locale}
+                              saving={savingId === row.id}
+                              expanded={expandedId === row.id}
+                              onToggleExpand={() =>
+                                setExpandedId((current) => (current === row.id ? null : row.id))
+                              }
+                              onDraft={(next) =>
+                                setCuratedDrafts((d) => ({
+                                  ...d,
+                                  [row.id]: { ...d[row.id], ...next },
+                                }))
+                              }
+                              onSave={saveCurated}
+                            />
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </>
         )}
-
-        {!loading && grouped.length === 0 && (
-          <p className="border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
-            {t.redazione.empty}
-          </p>
-        )}
-
-        {grouped.map((group) => {
-          const pipelineIds = group.items
-            .filter((row): row is QueueRow => row.kind === 'pipeline')
-            .map((row) => row.id);
-          const allDayOn =
-            pipelineIds.length > 0 && pipelineIds.every((id) => selected.includes(id));
-
-          return (
-            <section key={group.date} id={`day-${group.date}`} className="scroll-mt-24">
-              <header className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
-                <div className="flex items-center gap-2">
-                  {pipelineIds.length > 0 && (
-                    <input
-                      type="checkbox"
-                      checked={allDayOn}
-                      onChange={() => toggleDay(pipelineIds)}
-                      className="size-4 accent-foreground"
-                      aria-label={t.redazione.selectDay}
-                    />
-                  )}
-                  <h2 className="font-serif text-xl font-semibold tracking-tight">
-                    {dayLabel(group.date)}
-                  </h2>
-                </div>
-                <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {t.redazione.itemsCount.replace('{n}', String(group.items.length))}
-                </p>
-              </header>
-
-              <div className="space-y-3">
-                {group.items.map((row) =>
-                  row.kind === 'pipeline' ? (
-                    <CandidateCard
-                      key={row.id}
-                      c={row.candidate}
-                      draft={drafts[row.id] || {}}
-                      saving={savingId === row.id}
-                      selected={selected.includes(row.id)}
-                      expanded={expandedId === row.id}
-                      onToggleSelect={() => toggleSelected(row.id)}
-                      onToggleExpand={() =>
-                        setExpandedId((current) => (current === row.id ? null : row.id))
-                      }
-                      onDraft={(next) =>
-                        setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
-                      }
-                      onPatch={patch}
-                    />
-                  ) : (
-                    <CuratedCard
-                      key={row.id}
-                      pin={row.pin}
-                      draft={curatedDrafts[row.id] || {}}
-                      locale={locale}
-                      saving={savingId === row.id}
-                      expanded={expandedId === row.id}
-                      onToggleExpand={() =>
-                        setExpandedId((current) => (current === row.id ? null : row.id))
-                      }
-                      onDraft={(next) =>
-                        setCuratedDrafts((d) => ({
-                          ...d,
-                          [row.id]: { ...d[row.id], ...next },
-                        }))
-                      }
-                      onSave={saveCurated}
-                    />
-                  ),
-                )}
-              </div>
-            </section>
-          );
-        })}
       </div>
 
       <p className="mt-12 text-center text-sm text-muted-foreground">
