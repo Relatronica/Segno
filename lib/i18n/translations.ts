@@ -11,7 +11,7 @@ const translations = {
     hero: {
       title: 'Entusiasmo e timore sull’IA, misurati nelle parole pubbliche.',
       subtitle:
-        'Segno segue come cambiano i messaggi di Altman, Amodei, Musk, Huang e altri — su una curva chiara, con citazione e fonte. Le regole europee e il lobbying restano sulla stessa mappa, come seconda lente.',
+        'Segno segue come cambiano i messaggi di Altman, Amodei, Musk, Huang e altri — su una curva che unisce citazioni e tono automatico dei titoli. Le regole europee restano sulla stessa mappa.',
       cta: 'Apri il Sentiment',
       ctaSecondary: 'Perché conta',
       statsEvents: 'Punti in timeline',
@@ -31,22 +31,22 @@ const translations = {
         'Gli stessi leader passano da “rischio di estinzione” a “AGI è vicina”. Serve uno strumento che mostri l’oscillazione, non solo l’ultimo pezzo.',
       problem3Title: 'Fonti, non vibes',
       problem3Text:
-        'Il tag di lettura è editoriale. La prova resta la citazione e il link. Così cittadini e redazioni possono verificare, non solo “avere un’opinione”.',
+        'Il tag è una lettura. Sulle citazioni la prova è la frase; sul tono automatico la prova è il titolo e il link. Si può verificare, non solo “avere un’opinione”.',
       solutionTitle: 'Un grafico del tono — e una timeline da aprire',
       solutionText:
-        'La lente Sentiment mette le dichiarazioni pubbliche sull’asse del tempo: curva entusiasmo↔timore, attività per mese, filtri per persona. Clicchi un punto e leggi citazione e fonte. Quando serve, passi alle regole sull’IA: incontri, spese, voti.',
+        'La lente Sentiment mette il tono sull’asse del tempo: curva entusiasmo↔timore, attività per mese, filtri per persona. Clicchi un punto e apri la fonte — la citazione, se è un pin editoriale. Quando serve, passi alle regole sull’IA: incontri, spese, voti.',
       solutionCta: 'Vedi il Sentiment',
       solutionAsideLabel: 'La regola del progetto',
       solutionAside:
-        'Ogni punto ha una fonte. Le dichiarazioni riportano una citazione. Il tag di tono è una lettura, non un punteggio scientifico. La vicinanza nel tempo aiuta a capire — non dimostra causalità.',
+        'Ogni punto ha una fonte. Le citazioni editoriali riportano la frase. Il tono automatico legge i titoli del giorno, senza citazione. Il tag non è un punteggio scientifico.',
       themesTitle: 'Una timeline, due letture',
       themesSubtitle:
-        'Sullo stesso asse: il tono pubblico dei leader e i passaggi delle regole europee. La curva parla dalle dichiarazioni; il resto è contesto verificabile.',
+        'Sullo stesso asse: il tono pubblico dei leader e i passaggi delle regole europee. La curva unisce citazioni e titoli; il resto è contesto verificabile.',
       themePrimary: 'Curva',
       themeSecondary: 'Contesto',
       themeSentimentTitle: 'Sentiment IA',
       themeSentimentText:
-        'Pallini e curva entusiasmo↔timore dalle dichiarazioni. Filtri per persona, citazione e fonte a un click.',
+        'Pallini e curva entusiasmo↔timore: citazioni curate e, ogni giorno, il tono dei titoli. Filtri per persona e fonte a un click.',
       themeAiTitle: 'Regole e lobbying UE',
       themeAiText:
         'Incontri, spese, voti e sanzioni sulla stessa linea del tempo — marker sull’asse, dettaglio nella colonna destra.',
@@ -91,6 +91,9 @@ const translations = {
       sentimentLabel: 'Sentiment',
       sentimentNote:
         'Lettura editoriale della citazione — non un punteggio oggettivo. La fonte resta il testo.',
+      autoNote:
+        'Tono automatico del titolo, senza citazione verificata. Il link è la fonte.',
+      autoLabel: 'Auto',
       resetFilters: 'Reset',
       eventsCount: '{count} eventi',
       dragHint: 'Trascina o scorri · frecce ← → per navigare',
@@ -108,13 +111,13 @@ const translations = {
       moodTitle: 'Entusiasmo ↔ timore',
       moodFear: 'Timore',
       moodEnthusiasm: 'Entusiasmo',
-      moodHint: 'Curva dalle dichiarazioni · marker sull’asse = contesto UE',
+      moodHint: 'Curva: citazioni e tono automatico dei titoli · marker = contesto UE',
       liveBadge: 'Live',
       todayLabel: 'Oggi',
       jumpToToday: 'Vai a oggi',
       activity: 'Attività',
-      activityHint: 'Dichiarazioni in quel mese — non un volume di mercato.',
-      inspectHint: 'Clicca un punto per aprire citazione e fonte.',
+      activityHint: 'Citazioni e giorni con tono automatico — non un volume di mercato.',
+      inspectHint: 'Clicca un punto per aprire la fonte.',
       feedTitle: 'Cronologia',
       feedNewest: 'Dal più recente',
       feedOpen: 'Lista',
@@ -138,7 +141,7 @@ const translations = {
       eyebrow: 'Pipeline',
       title: 'Redazione',
       subtitle:
-        'Coda quotidiana e pin già in timeline. Verifica la fonte, pubblica i nuovi, correggi o nascondi quelli live.',
+        'Il tono dei titoli entra in curva da solo. La coda serve a promuovere una citazione, correggere o nascondere.',
       loginHint: 'Accesso riservato. Usa il secret di pipeline configurato sull’hosting.',
       password: 'Password',
       enter: 'Entra',
@@ -147,7 +150,15 @@ const translations = {
       loading: 'Caricamento…',
       loadError: 'Impossibile caricare i candidati.',
       runDiscover: 'Cerca novità',
-      discoverDone: 'Aggiunti {n} nuovi candidati.',
+      discoverDone: 'Aggiunti {n} candidati in coda e {s} segnali automatici.',
+      signalsTitle: 'Tono automatico',
+      signalsHint:
+        'Questi titoli muovono la curva del giorno, senza citazione. Correggi il tag, nascondi il pezzo, oppure promuovilo in coda per aggiungere una frase.',
+      signalsEmpty: 'Nessun segnale. Avvia una scansione: i titoli sopra soglia entrano in curva.',
+      signalsVoting: 'In curva',
+      signalsHeld: 'Sotto soglia',
+      signalPromote: 'Promuovi in coda',
+      signalPromoted: 'Messo in coda. Aggiungi una citazione per pubblicarlo come pin editoriale.',
       discoverError: 'Scansione non riuscita. Riprova.',
       pending: 'In coda',
       published: 'Pubblicati',
@@ -253,7 +264,7 @@ const translations = {
     hero: {
       title: 'Enthusiasm and fear around AI, measured in public words.',
       subtitle:
-        'Segno tracks how the messages of Altman, Amodei, Musk, Huang and others shift — on a clear curve, with quotes and sources. Europe’s AI rules and lobbying stay on the same map, as a second lens.',
+        'Segno tracks how the messages of Altman, Amodei, Musk, Huang and others shift — on a curve that joins quotes and the automatic tone of headlines. Europe’s rules stay on the same map.',
       cta: 'Open Sentiment',
       ctaSecondary: 'Why it matters',
       statsEvents: 'Timeline points',
@@ -273,22 +284,22 @@ const translations = {
         'The same leaders move from “extinction risk” to “AGI is near”. You need a tool that shows the swing, not just the latest piece.',
       problem3Title: 'Sources, not vibes',
       problem3Text:
-        'The reading tag is editorial. The proof remains the quote and the link. Citizens and newsrooms can verify — not just “have a feeling”.',
+        'The tag is a reading. On quotes the proof is the sentence; on automatic tone the proof is the headline and the link. You can check it, not just “have a feeling”.',
       solutionTitle: 'A chart of tone — and a timeline you can open',
       solutionText:
-        'The Sentiment lens places public statements on the time axis: an enthusiasm↔fear curve, monthly activity, filters by person. Click a point to read the quote and source. When you need it, switch to AI rules: meetings, spend, votes.',
+        'The Sentiment lens places tone on the time axis: an enthusiasm↔fear curve, monthly activity, filters by person. Click a point and open the source — the quote, when the pin is editorial. When you need it, switch to AI rules: meetings, spend, votes.',
       solutionCta: 'See Sentiment',
       solutionAsideLabel: 'The project rule',
       solutionAside:
-        'Every pin has a source. Statements carry a quote. Tone tags are a reading, not a scientific score. Temporal proximity helps you understand — it does not prove causation.',
+        'Every pin has a source. Editorial quotes carry the sentence. Automatic tone reads that day’s headlines, with no quote. The tag is not a scientific score.',
       themesTitle: 'One timeline, two readings',
       themesSubtitle:
-        'On the same axis: leaders’ public tone and Europe’s rule-making steps. The curve speaks through statements; the rest is verifiable context.',
+        'On the same axis: leaders’ public tone and Europe’s rule-making steps. The curve joins quotes and headlines; the rest is verifiable context.',
       themePrimary: 'Curve',
       themeSecondary: 'Context',
       themeSentimentTitle: 'AI Sentiment',
       themeSentimentText:
-        'Dots and an enthusiasm↔fear curve from statements. Filters by person, quote and source in one click.',
+        'Dots and an enthusiasm↔fear curve: curated quotes and, each day, the tone of the headlines. Filters by person, source in one click.',
       themeAiTitle: 'EU rules & lobbying',
       themeAiText:
         'Meetings, spend, votes and sanctions on the same time axis — markers on the rail, detail in the right column.',
@@ -333,6 +344,8 @@ const translations = {
       sentimentLabel: 'Sentiment',
       sentimentNote:
         'Editorial reading of the quote — not an objective score. The source remains the text.',
+      autoNote: 'Automatic tone of the headline, no verified quote. The link is the source.',
+      autoLabel: 'Auto',
       resetFilters: 'Reset',
       eventsCount: '{count} events',
       dragHint: 'Drag or scroll · ← → arrows to navigate',
@@ -349,13 +362,13 @@ const translations = {
       moodTitle: 'Enthusiasm ↔ fear',
       moodFear: 'Fear',
       moodEnthusiasm: 'Enthusiasm',
-      moodHint: 'Curve from statements · axis markers = EU context',
+      moodHint: 'Curve: quotes and automatic headline tone · markers = EU context',
       liveBadge: 'Live',
       todayLabel: 'Today',
       jumpToToday: 'Jump to today',
       activity: 'Activity',
-      activityHint: 'Statements in that month — not market volume.',
-      inspectHint: 'Click a point to open the quote and source.',
+      activityHint: 'Quotes and days with automatic tone — not market volume.',
+      inspectHint: 'Click a point to open the source.',
       feedTitle: 'Feed',
       feedNewest: 'Newest first',
       feedOpen: 'List',
@@ -379,7 +392,7 @@ const translations = {
       eyebrow: 'Pipeline',
       title: 'Newsroom',
       subtitle:
-        'Daily queue and pins already on the timeline. Check the source, publish new items, or correct and hide live ones.',
+        'Headline tone lands on the curve by itself. The queue is for promoting a quote, correcting, or hiding.',
       loginHint: 'Restricted access. Use the pipeline secret configured on the host.',
       password: 'Password',
       enter: 'Enter',
@@ -388,7 +401,15 @@ const translations = {
       loading: 'Loading…',
       loadError: 'Could not load candidates.',
       runDiscover: 'Scan for updates',
-      discoverDone: 'Added {n} new candidates.',
+      discoverDone: 'Added {n} queue candidates and {s} automatic signals.',
+      signalsTitle: 'Automatic tone',
+      signalsHint:
+        'These headlines move that day’s curve, without a quote. Correct the tag, hide the item, or promote it into the queue to add a sentence.',
+      signalsEmpty: 'No signals yet. Run a scan: headlines above the threshold join the curve.',
+      signalsVoting: 'On the curve',
+      signalsHeld: 'Below threshold',
+      signalPromote: 'Promote to queue',
+      signalPromoted: 'Queued. Add a quote to publish it as an editorial pin.',
       discoverError: 'Scan failed. Try again.',
       pending: 'Pending',
       published: 'Published',

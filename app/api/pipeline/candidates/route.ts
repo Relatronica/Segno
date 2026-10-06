@@ -6,6 +6,7 @@ import {
   unauthorized,
 } from '@/lib/pipeline/auth';
 import { listCuratedPins } from '@/lib/pipeline/edits';
+import { effectiveSentiment } from '@/lib/pipeline/signals';
 import {
   deleteCandidates,
   loadPipelineStore,
@@ -37,15 +38,22 @@ export async function GET(request: Request) {
     ? store.candidates.filter((c) => c.status === status)
     : store.candidates;
 
+  const signals = [...(store.signals ?? [])].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.discoveredAt.localeCompare(a.discoveredAt),
+  );
+
   return NextResponse.json({
     updatedAt: store.updatedAt,
     candidates,
+    signals,
     curated: listCuratedPins(store),
     counts: {
       pending: store.candidates.filter((c) => c.status === 'pending').length,
       approved: store.candidates.filter((c) => c.status === 'approved').length,
       published: store.candidates.filter((c) => c.status === 'published').length,
       rejected: store.candidates.filter((c) => c.status === 'rejected').length,
+      signals: signals.length,
+      voting: signals.filter((s) => effectiveSentiment(s)).length,
     },
   });
 }

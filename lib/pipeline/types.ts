@@ -57,9 +57,41 @@ export type CuratedPin = {
   event: TimelineEvent;
 };
 
+/**
+ * Automatic headline signal. Moves the daily curve sample when `votes` is true.
+ * No quote: the source link is the evidence.
+ */
+export type AutoSignal = {
+  id: string;
+  discoveredAt: string;
+  date: string;
+  sourceUrl: string;
+  sourceLabel: { it: string; en: string };
+  title: { it: string; en: string };
+  summary: { it: string; en: string };
+  personId: string;
+  actorId?: string;
+  /** Classifier suggestion. Public curve uses it only when `votes` is true. */
+  sentiment?: SentimentTag;
+  confidence: number;
+  /** Below the confidence floor the item stays in the diary and does not vote. */
+  votes: boolean;
+  rawTitle: string;
+  rawSnippet?: string;
+  feedSource: string;
+  sourceTier?: 'primary' | 'secondary';
+  sourceHost?: string;
+  imageUrl?: string;
+  hidden?: boolean;
+  /** Editorial correction. `null` clears the tag so the item stops voting. */
+  sentimentOverride?: SentimentTag | null;
+};
+
 export type PipelineStore = {
   updatedAt: string;
   candidates: SentimentCandidate[];
+  /** Daily automatic tone. Separate from the editorial queue. */
+  signals?: AutoSignal[];
   edits?: Record<string, TimelineEventEdit>;
   hiddenIds?: string[];
 };

@@ -29,7 +29,8 @@ import {
   type LocaleText,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
-import type { CuratedPin, SentimentCandidate } from '@/lib/pipeline/types';
+import type { AutoSignal, CuratedPin, SentimentCandidate } from '@/lib/pipeline/types';
+import { SignalDesk } from '@/app/redazione/SignalDesk';
 import { cn } from '@/lib/utils';
 
 type Counts = {
@@ -93,6 +94,7 @@ export default function RedazioneContent() {
   const [discovering, setDiscovering] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<SentimentCandidate[]>([]);
+  const [signals, setSignals] = useState<AutoSignal[]>([]);
   const [curated, setCurated] = useState<CuratedPin[]>([]);
   const [counts, setCounts] = useState<Counts | null>(null);
   const [filter, setFilter] = useState<'pending' | 'published' | 'rejected' | 'all'>(
@@ -121,10 +123,12 @@ export default function RedazioneContent() {
       if (!res.ok) throw new Error('load_failed');
       const data = (await res.json()) as {
         candidates: SentimentCandidate[];
+        signals?: AutoSignal[];
         curated?: CuratedPin[];
         counts: Counts;
       };
       setCandidates(data.candidates);
+      setSignals(data.signals ?? []);
       setCurated(data.curated ?? []);
       setCounts(data.counts);
       setAuthed(true);
@@ -160,6 +164,7 @@ export default function RedazioneContent() {
     await fetch('/api/pipeline/auth', { method: 'DELETE' });
     setAuthed(false);
     setCandidates([]);
+    setSignals([]);
     setCurated([]);
     setSelected([]);
   };
@@ -170,8 +175,12 @@ export default function RedazioneContent() {
     try {
       const res = await fetch('/api/pipeline/discover', { method: 'POST' });
       if (!res.ok) throw new Error('discover_failed');
-      const data = (await res.json()) as { added: number; pending: number };
-      setMessage(t.redazione.discoverDone.replace('{n}', String(data.added)));
+      const data = (await res.json()) as { added: number; signalsAdded?: number };
+      setMessage(
+        t.redazione.discoverDone
+          .replace('{n}', String(data.added))
+          .replace('{s}', String(data.signalsAdded ?? 0)),
+      );
       await load();
     } catch {
       setMessage(t.redazione.discoverError);
@@ -447,6 +456,29 @@ export default function RedazioneContent() {
           </Button>
         </div>
       </div>
+
+      <SignalDesk
+        signals={signals}
+        locale={locale}
+        labels={{
+          title: t.redazione.signalsTitle,
+          hint: t.redazione.signalsHint,
+          empty: t.redazione.signalsEmpty,
+          voting: t.redazione.signalsVoting,
+          held: t.redazione.signalsHeld,
+          hidden: t.redazione.hidden,
+          hide: t.redazione.hide,
+          unhide: t.redazione.unhide,
+          promote: t.redazione.signalPromote,
+          promoted: t.redazione.signalPromoted,
+          tag: t.redazione.sentiment,
+          clear: t.redazione.sentimentNone,
+          open: t.redazione.openSource,
+          error: t.redazione.saveError,
+        }}
+        sentimentLabels={t.trasparenza.sentiments}
+        onChanged={() => void load()}
+      />
 
       {counts && (
         <div className="mt-8 flex flex-wrap gap-3 font-mono text-xs text-muted-foreground">

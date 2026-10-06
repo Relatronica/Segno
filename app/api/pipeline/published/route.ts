@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { loadPipelineStore } from '@/lib/pipeline/store';
+import { signalsForPublic } from '@/lib/pipeline/signals';
 import { candidateToTimelineEvent } from '@/lib/pipeline/types';
 
 export const runtime = 'nodejs';
@@ -16,6 +17,7 @@ export async function GET() {
   return NextResponse.json(
     {
       events,
+      signals: signalsForPublic(store),
       edits: store.edits ?? {},
       hiddenIds: store.hiddenIds ?? [],
       updatedAt: store.updatedAt,

@@ -341,7 +341,7 @@ export function HorizontalTimeline({
         id: e.id,
         date: e.date,
         x: xForDate(e.date),
-        score: SENTIMENT_FEAR_SCORE[e.sentiment!],
+        score: e.moodScore ?? SENTIMENT_FEAR_SCORE[e.sentiment!],
         sentiment: e.sentiment!,
       }))
       .sort((a, b) => a.x - b.x || a.date.localeCompare(b.date));
@@ -394,7 +394,7 @@ export function HorizontalTimeline({
         x: xForDate(`${key}-15`),
       };
       current.count += 1;
-      current.scoreSum += SENTIMENT_FEAR_SCORE[e.sentiment];
+      current.scoreSum += e.moodScore ?? SENTIMENT_FEAR_SCORE[e.sentiment];
       buckets.set(key, current);
     }
     const activity = [...buckets.entries()]

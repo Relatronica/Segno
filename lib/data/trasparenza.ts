@@ -42,6 +42,18 @@ export const ALL_SENTIMENT_TAGS: SentimentTag[] = [
   "open_source",
 ];
 
+/**
+ * Fear↔enthusiasm axis. Chart Y: enthusiasm up, fear down
+ * (`y = mid + score * amp`), so alarm sits below the rail.
+ */
+export const SENTIMENT_FEAR_SCORE: Record<SentimentTag, number> = {
+  alarm: 1,
+  caution: 0.55,
+  deregulation: 0.1,
+  open_source: -0.45,
+  optimism: -1,
+};
+
 export type TimelineEvent = {
   id: string;
   date: string; // ISO YYYY-MM-DD
@@ -52,10 +64,20 @@ export type TimelineEvent = {
   title: LocaleText;
   summary: LocaleText;
   detail?: LocaleText;
-  /** Verbatim or closely paraphrased public quote (required for statements) */
+  /**
+   * Verbatim quote. Required for editorial statements.
+   * Automatic daily signals move the curve without one.
+   */
   quote?: LocaleText;
   /** Sentiment lens tag (statements in the sentiment theme) */
   sentiment?: SentimentTag;
+  /** editorial = curated or accepted quote. auto = headline signal, no verified quote. */
+  origin?: "editorial" | "auto";
+  /**
+   * Blended fear↔enthusiasm score (−1 enthusiasm … +1 fear).
+   * When set, the curve uses this instead of the tag lookup.
+   */
+  moodScore?: number;
   amountEur?: number;
   sourceLabel: LocaleText;
   /** Stable public URL — required for every event */
@@ -937,12 +959,12 @@ export const sentimentTheme: TimelineTheme = {
     en: "2021 — today",
   },
   intro: {
-    it: "Tono pubblico dei leader sull’IA e, sullo stesso asse, incontri, spese e passaggi delle regole europee — curva solo sulle dichiarazioni, contesto nel dettaglio.",
-    en: "Public tone from AI leaders and, on the same axis, meetings, spend and EU rule-making steps — curve from statements only, context in the detail.",
+    it: "Tono pubblico dei leader sull’IA e, sullo stesso asse, incontri, spese e passaggi delle regole europee. La curva unisce le citazioni curate e il tono automatico dei titoli del giorno.",
+    en: "Public tone from AI leaders and, on the same axis, meetings, spend and EU rule-making steps. The curve joins curated quotes and the automatic tone of each day’s headlines.",
   },
   disclaimer: {
-    it: "Il tag di sentiment è una lettura editoriale della citazione, non un punteggio oggettivo. Gli altri pin (incontri, spese, voti) sono contesto verificabile: la vicinanza nel tempo non dimostra causalità.",
-    en: "The sentiment tag is an editorial reading of the quote, not an objective score. Other pins (meetings, spend, votes) are verifiable context: temporal proximity does not prove causation.",
+    it: "Due letture sulla stessa curva. I pin con citazione sono una lettura editoriale della frase. I punti senza citazione sono il tono automatico dei titoli di quel giorno, con link alla fonte: non sono un punteggio oggettivo. Gli altri pin (incontri, spese, voti) sono contesto verificabile: la vicinanza nel tempo non dimostra causalità.",
+    en: "Two readings on one curve. Pins with a quote are an editorial reading of that sentence. Pins without a quote are the automatic tone of that day’s headlines, with a link to the source: not an objective score. Other pins (meetings, spend, votes) are verifiable context: temporal proximity does not prove causation.",
   },
   filterTypes: [
     "statement",

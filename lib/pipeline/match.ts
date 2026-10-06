@@ -35,6 +35,37 @@ export function matchPerson(text: string): PersonMatch | null {
   return best;
 }
 
+/**
+ * Name match for automatic signals.
+ * Short surnames (Musk, Altman, Huang) count only inside the full name.
+ */
+const STRICT_PATTERNS: Record<string, RegExp> = {
+  altman: /\bsam altman\b/i,
+  amodei: /\b(?:dario amodei|amodei)\b/i,
+  musk: /\belon musk\b/i,
+  huang: /\bjensen huang\b/i,
+  hassabis: /\b(?:demis hassabis|hassabis)\b/i,
+  zuckerberg: /\b(?:mark zuckerberg|zuckerberg)\b/i,
+  nadella: /\b(?:satya nadella|nadella)\b/i,
+  pichai: /\b(?:sundar pichai|pichai)\b/i,
+};
+
+export function matchPersonStrict(text: string): PersonMatch | null {
+  let best: PersonMatch | null = null;
+
+  for (const [personId, pattern] of Object.entries(STRICT_PATTERNS)) {
+    const found = text.match(pattern);
+    if (!found) continue;
+    const score = found[0].length;
+    if (!best || score > best.score) {
+      const person = lobbyPeople.find((p) => p.id === personId);
+      best = { personId, actorId: person?.orgId, score };
+    }
+  }
+
+  return best;
+}
+
 /** Lightweight editorial hint — not a score. Reviewer must confirm. */
 export function hintSentiment(text: string): SentimentTag | undefined {
   const t = text.toLowerCase();

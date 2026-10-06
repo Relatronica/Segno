@@ -16,7 +16,8 @@ import {
 } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
-import type { TimelineEventEdit } from '@/lib/pipeline/types';
+import { effectiveSentiment, rollupAutoSignals, signalToTimelineEvent } from '@/lib/pipeline/signals';
+import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
@@ -33,6 +34,7 @@ export default function TrasparenzaContent() {
 
   const [themeId] = useState(unifiedTheme.id);
   const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
+  const [autoSignals, setAutoSignals] = useState<AutoSignal[]>([]);
   const [edits, setEdits] = useState<Record<string, TimelineEventEdit>>({});
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [presentFocusToken, setPresentFocusToken] = useState(0);
@@ -47,12 +49,14 @@ export default function TrasparenzaContent() {
           (
             data: {
               events?: TimelineEvent[];
+              signals?: AutoSignal[];
               edits?: Record<string, TimelineEventEdit>;
               hiddenIds?: string[];
             } | null,
           ) => {
             if (cancelled || !data) return;
             setPipelineEvents(data.events ?? []);
+            setAutoSignals(data.signals ?? []);
             setEdits(data.edits ?? {});
             setHiddenIds(data.hiddenIds ?? []);
           },
@@ -91,8 +95,12 @@ export default function TrasparenzaContent() {
   }, [themeId, pipelineEvents, edits, hiddenIds]);
 
   const allYears = useMemo(() => {
-    return [...new Set(track.events.map((e) => e.date.slice(0, 4)))].sort();
-  }, [track.events]);
+    const years = [
+      ...track.events.map((e) => e.date.slice(0, 4)),
+      ...autoSignals.map((s) => s.date.slice(0, 4)),
+    ];
+    return [...new Set(years)].sort();
+  }, [track.events, autoSignals]);
 
   const [selectedActor, setSelectedActor] = useState<string | 'all'>('all');
   const [selectedPerson, setSelectedPerson] = useState<string | 'all'>('all');
@@ -102,6 +110,7 @@ export default function TrasparenzaContent() {
     ...ALL_SENTIMENT_TAGS,
   ]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [chartActiveId, setChartActiveId] = useState<string | null>(null);
   const [scrubId, setScrubId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feedOpen, setFeedOpen] = useState(false);
@@ -169,26 +178,52 @@ export default function TrasparenzaContent() {
     selectedSentiments,
   ]);
 
+  const filteredSignals = useMemo(() => {
+    if (!selectedTypes.includes('statement')) return [];
+    return autoSignals.filter((signal) => {
+      const tag = effectiveSentiment(signal);
+      if (!tag || !selectedSentiments.includes(tag)) return false;
+      if (!selectedYears.includes(signal.date.slice(0, 4))) return false;
+      if (selectedActor !== 'all' && signal.actorId !== selectedActor) return false;
+      if (selectedPerson !== 'all' && signal.personId !== selectedPerson) return false;
+      return true;
+    });
+  }, [autoSignals, selectedActor, selectedPerson, selectedTypes, selectedYears, selectedSentiments]);
+
+  const autoFeed = useMemo(
+    () =>
+      filteredSignals
+        .map(signalToTimelineEvent)
+        .filter((event): event is TimelineEvent => event !== null),
+    [filteredSignals],
+  );
+
+  const dayRollups = useMemo(() => rollupAutoSignals(filteredSignals), [filteredSignals]);
+
+  const chartEvents = useMemo(
+    () => [...filtered, ...dayRollups],
+    [filtered, dayRollups],
+  );
+
   const feedEvents = useMemo(
-    () => [...filtered].sort((a, b) => b.date.localeCompare(a.date)),
-    [filtered],
+    () => [...filtered, ...autoFeed].sort((a, b) => b.date.localeCompare(a.date)),
+    [filtered, autoFeed],
   );
 
   useEffect(() => {
-    if (filtered.length === 0) {
+    if (feedEvents.length === 0) {
       setActiveId(null);
+      setChartActiveId(null);
       setScrubId(null);
       return;
     }
-    if (activeId && !filtered.some((e) => e.id === activeId)) {
+    if (activeId && !feedEvents.some((e) => e.id === activeId)) {
       setActiveId(null);
+      setChartActiveId(null);
     }
-    if (scrubId && !filtered.some((e) => e.id === scrubId)) {
-      setScrubId(null);
-    }
-  }, [filtered, activeId, scrubId]);
+  }, [feedEvents, activeId]);
 
-  const activeIndex = filtered.findIndex((e) => e.id === activeId);
+  const activeIndex = feedEvents.findIndex((e) => e.id === activeId);
 
   const toggleType = (type: EventType) => {
     setSelectedTypes((prev) => {
@@ -231,18 +266,24 @@ export default function TrasparenzaContent() {
   const typeLabel = (type: EventType) => t.trasparenza.types[type];
   const sentimentTagLabel = (tag: SentimentTag) => t.trasparenza.sentiments[tag];
 
+  const chartIdFor = (id: string) => {
+    const event = feedEvents.find((e) => e.id === id);
+    return event?.origin === 'auto' ? `auto-day-${event.date}` : id;
+  };
+
   const centerOnEvent = (id: string) => {
     setActiveId(id);
+    setChartActiveId(chartIdFor(id));
     setScrubId(null);
     setFocusEventToken((n) => n + 1);
   };
 
   const goPrev = () => {
-    if (activeIndex > 0) centerOnEvent(filtered[activeIndex - 1].id);
+    if (activeIndex > 0) centerOnEvent(feedEvents[activeIndex - 1].id);
   };
   const goNext = () => {
-    if (activeIndex >= 0 && activeIndex < filtered.length - 1) {
-      centerOnEvent(filtered[activeIndex + 1].id);
+    if (activeIndex >= 0 && activeIndex < feedEvents.length - 1) {
+      centerOnEvent(feedEvents[activeIndex + 1].id);
     }
   };
 
@@ -285,8 +326,25 @@ export default function TrasparenzaContent() {
   };
 
   const selectEvent = (id: string) => {
+    if (id.startsWith('auto-day-')) {
+      if (chartActiveId === id) {
+        setActiveId(null);
+        setChartActiveId(null);
+        return;
+      }
+      const date = id.slice('auto-day-'.length);
+      const first = autoFeed.find((event) => event.date === date);
+      setActiveId(first?.id ?? id);
+      setChartActiveId(id);
+      setScrubId(null);
+      setFocusEventToken((n) => n + 1);
+      setFiltersOpen(false);
+      setFeedOpen(true);
+      return;
+    }
     if (activeId === id) {
       setActiveId(null);
+      setChartActiveId(null);
       return;
     }
     centerOnEvent(id);
@@ -295,7 +353,12 @@ export default function TrasparenzaContent() {
   };
 
   const onFeedScrub = (id: string | null) => {
-    setScrubId(id);
+    if (!id) {
+      setScrubId(null);
+      return;
+    }
+    const event = feedEvents.find((item) => item.id === id);
+    setScrubId(event?.origin === 'auto' ? `auto-day-${event.date}` : id);
   };
 
   const activeFilters =
@@ -306,8 +369,8 @@ export default function TrasparenzaContent() {
     selectedSentiments.length < ALL_SENTIMENT_TAGS.length;
 
   const moodEvents = useMemo(
-    () => filtered.filter((e) => Boolean(e.sentiment)),
-    [filtered],
+    () => [...filtered.filter((e) => Boolean(e.sentiment)), ...dayRollups],
+    [filtered, dayRollups],
   );
 
   const moodLabels = useMemo(
@@ -345,6 +408,8 @@ export default function TrasparenzaContent() {
       sentimentLabel={sentimentTagLabel}
       typeLabel={typeLabel}
       sentimentNote={t.trasparenza.sentimentNote}
+      autoNote={t.trasparenza.autoNote}
+      autoLabel={t.trasparenza.autoLabel}
       sourceLabel={t.trasparenza.source}
       title={t.trasparenza.feedTitle}
       newestFirstLabel={t.trasparenza.feedNewest}
@@ -366,14 +431,14 @@ export default function TrasparenzaContent() {
       <section id="timeline" className="relative min-h-0 min-w-0 flex-1">
         <div className="absolute inset-0">
           <HorizontalTimeline
-            events={filtered}
+            events={chartEvents}
             mode="chart"
             moodEvents={moodEvents}
             moodLabels={moodLabels}
             actors={actorMap}
             people={personMap}
             locale={locale}
-            activeId={activeId}
+            activeId={chartActiveId}
             onSelect={selectEvent}
             scrubId={scrubId}
             emptyLabel={t.trasparenza.empty}
@@ -479,7 +544,7 @@ export default function TrasparenzaContent() {
                     selectedYears={selectedYears}
                     selectedSentiments={selectedSentiments}
                     allSentimentTags={ALL_SENTIMENT_TAGS}
-                    eventCount={filtered.length}
+                    eventCount={feedEvents.length}
                     disclaimer={track.disclaimer[locale]}
                     labels={filterLabels}
                     onActorChange={setSelectedActor}

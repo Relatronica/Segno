@@ -10,7 +10,7 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger pipeline discover
+      - name: Discover candidates and automatic signals
         env:
           PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET }}
           SITE_URL: ${{ vars.SITE_URL }}
@@ -20,6 +20,6 @@ jobs:
             exit 0
           fi
           BASE_URL="${SITE_URL:-https://segno.app}"
-          curl -fsS -X POST "$BASE_URL/api/pipeline/discover" \
+          curl -fsS --max-time 120 -X POST "$BASE_URL/api/pipeline/discover" \
             -H "Authorization: Bearer $PIPELINE_SECRET" \
             -H "Content-Type: application/json"

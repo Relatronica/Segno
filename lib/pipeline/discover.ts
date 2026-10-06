@@ -1,10 +1,11 @@
 import Parser from 'rss-parser';
 import { lobbyPeople } from '@/lib/data/trasparenza';
+import { classifyMany, VOTE_THRESHOLD } from '@/lib/pipeline/classify';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
-import { hintSentiment, matchPerson } from '@/lib/pipeline/match';
+import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
-import { candidateIdFromUrl } from '@/lib/pipeline/store';
-import type { SentimentCandidate } from '@/lib/pipeline/types';
+import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/store';
+import type { AutoSignal, SentimentCandidate } from '@/lib/pipeline/types';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
 
 function toDate(value?: string): string {
@@ -22,6 +23,17 @@ function buildTitle(raw: string): { it: string; en: string } {
   const cleaned = raw.replace(/\s[-–—]\s[^-–—]+$/, '').trim() || raw;
   const en = cleaned.length > 120 ? `${cleaned.slice(0, 117)}…` : cleaned;
   return { it: en, en };
+}
+
+function signalSummary(snippet: string): { it: string; en: string } {
+  const base = snippet.length > 280 ? `${snippet.slice(0, 277)}…` : snippet;
+  if (!base) {
+    return {
+      it: 'Segnale automatico dal titolo. Nessuna citazione verificata.',
+      en: 'Automatic signal from the headline. No verified quote.',
+    };
+  }
+  return { it: base, en: base };
 }
 
 function buildSummary(snippet: string, personName?: string): { it: string; en: string } {
@@ -111,8 +123,13 @@ function extractImage(
   return undefined;
 }
 
+type SignalDraft = Omit<AutoSignal, 'sentiment' | 'confidence' | 'votes'> & {
+  blob: string;
+};
+
 export async function discoverSentimentCandidates(): Promise<{
   candidates: SentimentCandidate[];
+  signals: AutoSignal[];
   scannedFeeds: number;
   matchedItems: number;
   rejectedBySource: number;
@@ -127,6 +144,7 @@ export async function discoverSentimentCandidates(): Promise<{
     },
   });
   const found: SentimentCandidate[] = [];
+  const drafts: SignalDraft[] = [];
   const seen = new Set<string>();
   let matchedItems = 0;
   let rejectedBySource = 0;
@@ -198,14 +216,76 @@ export async function discoverSentimentCandidates(): Promise<{
           xStatusUrl: classification.xStatusUrl,
           ...(imageUrl ? { imageUrl } : {}),
         });
+
+        const fromHandle = classification.xHandle
+          ? OFFICIAL_X_HANDLES[classification.xHandle]
+          : undefined;
+        const strict = matchPersonStrict(blob);
+        const signalPersonId = fromHandle ?? strict?.personId;
+        if (!signalPersonId) continue;
+
+        const signalActorId = fromHandle
+          ? (lobbyPeople.find((p) => p.id === fromHandle)?.orgId ?? actorId)
+          : (strict?.actorId ?? actorId);
+
+        drafts.push({
+          id: signalIdFromUrl(canonicalUrl),
+          discoveredAt: new Date().toISOString(),
+          date: toDate(item.isoDate || item.pubDate),
+          sourceUrl: canonicalUrl,
+          sourceLabel: sourceLabelFor(
+            feed.label,
+            classification.host,
+            classification.publisher,
+            classification.xQuoted,
+          ),
+          title: buildTitle(title || 'Untitled'),
+          summary: signalSummary(snippet),
+          personId: signalPersonId,
+          actorId: signalActorId,
+          rawTitle: title,
+          rawSnippet: snippet || undefined,
+          feedSource: feed.id,
+          sourceTier: classification.tier,
+          sourceHost: classification.host,
+          ...(imageUrl ? { imageUrl } : {}),
+          blob,
+        });
       }
     } catch (err) {
       console.error('[pipeline] feed failed', feed.id, err);
     }
   }
 
+  const guesses = await classifyMany(drafts.map((draft) => draft.blob));
+  const signals: AutoSignal[] = drafts.map((draft, index) => {
+    const guess = guesses[index] ?? { confidence: 0 };
+    const votes = Boolean(guess.tag) && guess.confidence >= VOTE_THRESHOLD;
+    return {
+      id: draft.id,
+      discoveredAt: draft.discoveredAt,
+      date: draft.date,
+      sourceUrl: draft.sourceUrl,
+      sourceLabel: draft.sourceLabel,
+      title: draft.title,
+      summary: draft.summary,
+      personId: draft.personId,
+      actorId: draft.actorId,
+      rawTitle: draft.rawTitle,
+      rawSnippet: draft.rawSnippet,
+      feedSource: draft.feedSource,
+      sourceTier: draft.sourceTier,
+      sourceHost: draft.sourceHost,
+      ...(draft.imageUrl ? { imageUrl: draft.imageUrl } : {}),
+      sentiment: guess.tag,
+      confidence: guess.confidence,
+      votes,
+    };
+  });
+
   return {
     candidates: found,
+    signals,
     scannedFeeds: SENTIMENT_FEEDS.length,
     matchedItems,
     rejectedBySource,

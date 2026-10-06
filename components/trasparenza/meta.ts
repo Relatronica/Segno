@@ -106,18 +106,7 @@ export const SENTIMENT_META: Record<
   },
 };
 
-/**
- * Editorial fear↔enthusiasm axis for the ambient mood curve.
- * Chart Y: enthusiasm up, fear down — so +1 alarm maps below the rail,
- * −1 optimism above it (`y = mid + score * amp`).
- */
-export const SENTIMENT_FEAR_SCORE: Record<SentimentTag, number> = {
-  alarm: 1,
-  caution: 0.55,
-  deregulation: 0.1,
-  open_source: -0.45,
-  optimism: -1,
-};
+export { SENTIMENT_FEAR_SCORE } from '@/lib/data/trasparenza';
 
 export function toMs(date: string): number {
   return toMsDate(date);

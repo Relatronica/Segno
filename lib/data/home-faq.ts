@@ -12,8 +12,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Uno strumento per seguire il tono pubblico sull’IA — e sullo stesso asse le regole europee e il lobbying. La curva nasce dalle dichiarazioni; incontri, spese e voti restano contesto con fonte.',
-      en: 'A tool to follow the public tone on AI — and, on the same axis, Europe’s rules and lobbying. The curve comes from statements; meetings, spend and votes stay as sourced context.',
+      it: 'Uno strumento per seguire il tono pubblico sull’IA — e sullo stesso asse le regole europee e il lobbying. La curva unisce citazioni curate e tono automatico dei titoli; incontri, spese e voti restano contesto con fonte.',
+      en: 'A tool to follow the public tone on AI — and, on the same axis, Europe’s rules and lobbying. The curve joins curated quotes and the automatic tone of headlines; meetings, spend and votes stay as sourced context.',
     },
   },
   {
@@ -23,8 +23,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'La curva Sentiment usa solo le dichiarazioni con tag di tono. Nella cronologia trovi anche incontri, spese e passaggi legislativi: marker sull’asse del tempo, dettaglio a destra. Filtri per tipo e persona nella sidebar.',
-      en: 'The Sentiment curve uses only statements with a tone tag. The feed also lists meetings, spend and legislative steps: markers on the time axis, detail on the right. Filter by type and person in the sidebar.',
+      it: 'La curva usa le citazioni con tag di tono e, per i giorni recenti, un punto automatico ricavato dai titoli. Nella cronologia trovi anche incontri, spese e passaggi legislativi. Filtri per tipo e persona nella sidebar.',
+      en: 'The curve uses tagged quotes and, for recent days, one automatic point drawn from headlines. The feed also lists meetings, spend and legislative steps. Filter by type and person in the sidebar.',
     },
   },
   {
@@ -34,8 +34,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'Is “sentiment” an objective score?',
     },
     answer: {
-      it: 'No. È una lettura editoriale della citazione — allarme, cautela, ottimismo e così via. La prova resta il testo e il link alla fonte. La curva aiuta a vedere l’oscillazione nel tempo; non è una misura scientifica.',
-      en: 'No. It is an editorial reading of the quote — alarm, caution, optimism, and so on. The proof remains the text and the source link. The curve helps you see the swing over time; it is not a scientific measure.',
+      it: 'No. Sulle citazioni è una lettura editoriale della frase. Sui titoli recenti è una lettura automatica della copertura, con link e senza citazione. In entrambi i casi la curva mostra l’oscillazione, non una misura scientifica.',
+      en: 'No. On quotes it is an editorial reading of the sentence. On recent headlines it is an automatic reading of the coverage, with a link and no quote. Either way the curve shows the swing, not a scientific measure.',
     },
   },
   {

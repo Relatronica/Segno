@@ -40,6 +40,9 @@ type Props = {
   sentimentLabel?: (tag: SentimentTag) => string;
   typeLabel?: (type: EventType) => string;
   sentimentNote?: string;
+  /** Shown instead of sentimentNote on automatic headline pins */
+  autoNote?: string;
+  autoLabel?: string;
   sourceLabel: string;
   title: string;
   newestFirstLabel: string;
@@ -79,6 +82,8 @@ export function TimelineFeed({
   sentimentLabel,
   typeLabel,
   sentimentNote,
+  autoNote,
+  autoLabel,
   sourceLabel,
   title,
   newestFirstLabel,
@@ -328,6 +333,7 @@ export function TimelineFeed({
               const typeMeta = EVENT_META[event.type];
               const TypeIcon = typeMeta.icon;
               const onCurve = Boolean(event.sentiment);
+              const note = event.origin === 'auto' ? autoNote : sentimentNote;
               const body = event.detail?.[locale] ?? event.summary[locale];
 
               return (
@@ -391,14 +397,21 @@ export function TimelineFeed({
                           </span>
                         )}
                         {event.sentiment && sentimentLabel && (
-                          <span
-                            className={cn(
-                              'ml-auto shrink-0 rounded px-1.5 py-px font-mono text-[10px] font-medium',
-                              sentimentMeta?.bg,
-                              sentimentMeta?.color,
+                          <span className="ml-auto inline-flex shrink-0 items-center gap-1">
+                            {event.origin === 'auto' && autoLabel && (
+                              <span className="rounded px-1.5 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                {autoLabel}
+                              </span>
                             )}
-                          >
-                            {sentimentLabel(event.sentiment)}
+                            <span
+                              className={cn(
+                                'rounded px-1.5 py-px font-mono text-[10px] font-medium',
+                                sentimentMeta?.bg,
+                                sentimentMeta?.color,
+                              )}
+                            >
+                              {sentimentLabel(event.sentiment)}
+                            </span>
                           </span>
                         )}
                         {!event.sentiment && typeLabel && (
@@ -447,9 +460,9 @@ export function TimelineFeed({
                         </p>
                       )}
 
-                      {event.sentiment && sentimentNote && (
+                      {event.sentiment && note && (
                         <p className="text-[11px] leading-relaxed text-muted-foreground">
-                          {sentimentNote}
+                          {note}
                         </p>
                       )}
 

@@ -29,11 +29,18 @@ I numeri in homepage non sono copy: se aggiungi un evento, si aggiornano da soli
 
 ## Pipeline redazionale
 
-`lib/pipeline/` scopre dichiarazioni da feed RSS su host autorizzati (`lib/pipeline/sources.ts`), le mette in coda e la redazione le pubblica o le rifiuta.
+`lib/pipeline/` scopre dichiarazioni da feed RSS su host autorizzati (`lib/pipeline/sources.ts`).
 
-- Store: Netlify Blobs in produzione, `.data/pipeline-store.json` in locale
+Due flussi:
+
+- **Segnali automatici.** Un nome completo (o un account X ufficiale) più un tag sopra soglia diventano un segnale. Non hanno citazione. In timeline gli articoli dello stesso giorno diventano un solo punto sulla curva. La redazione può correggere il tag, nascondere il pezzo o promuoverlo in coda.
+- **Coda editoriale.** Gli altri candidati restano `pending`. Pubblicare richiede una citazione: quel pin resta un vertice suo, distinto dal punto automatico del giorno.
+
+Il workflow `.github/workflows/pipeline-discover.yml` chiama `POST /api/pipeline/discover` ogni giorno (06:30 UTC). Senza `GROQ_API_KEY` il tag viene da un lessico; con la chiave gratuita di Groq, i titoli incerti passano da un modello.
+
+- Store: Netlify Blobs in produzione, `.data/pipeline-store.json` in locale (`candidates` e `signals`)
 - UI: `/redazione` con `PIPELINE_SECRET`
-- La lente Sentiment può unire eventi pubblicati dalla pipeline
+- La timeline unisce eventi curati, pin pubblicati e segnali automatici
 
 ## Sviluppo
 
@@ -53,6 +60,8 @@ Altri script: `npm run lint`, `npm run type-check`, `npm run build`.
 | `CONTACT_TO_EMAIL` | Destinatario segnalazioni |
 | `CONTACT_FROM_EMAIL` | Mittente Resend |
 | `PIPELINE_SECRET` | Auth redazione e API `/api/pipeline/*` |
+| `GROQ_API_KEY` | Facoltativa. Piano gratuito Groq (console.groq.com, senza carta). Classifica i titoli quando il lessico è incerto. Va sull’hosting, non nel repo |
+| `SENTIMENT_MODEL` | Facoltativa. Default `openai/gpt-oss-20b`, un modello del piano gratuito. Se Groq cambia l’elenco, usa l’id che vedi nella pagina Limits |
 
 ## SEO
 

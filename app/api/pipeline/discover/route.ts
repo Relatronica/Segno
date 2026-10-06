@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { discoverSentimentCandidates } from '@/lib/pipeline/discover';
 import { isAuthorized, unauthorized, assertPipelineConfigured, SESSION_COOKIE } from '@/lib/pipeline/auth';
-import { loadPipelineStore, savePipelineStore, upsertCandidates } from '@/lib/pipeline/store';
+import { loadPipelineStore, savePipelineStore, upsertCandidates, upsertSignals } from '@/lib/pipeline/store';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -22,14 +22,18 @@ export async function POST(request: Request) {
 
   const discovered = await discoverSentimentCandidates();
   const current = await loadPipelineStore();
-  const { store, added } = upsertCandidates(current, discovered.candidates);
-  await savePipelineStore(store);
+  const queued = upsertCandidates(current, discovered.candidates);
+  const signaled = upsertSignals(queued.store, discovered.signals);
+  await savePipelineStore(signaled.store);
 
   return NextResponse.json({
     ok: true,
-    added,
-    pending: store.candidates.filter((c) => c.status === 'pending').length,
-    total: store.candidates.length,
+    added: queued.added,
+    signalsAdded: signaled.added,
+    pending: signaled.store.candidates.filter((c) => c.status === 'pending').length,
+    signals: signaled.store.signals?.length ?? 0,
+    voting: signaled.store.signals?.filter((s) => s.votes && !s.hidden).length ?? 0,
+    total: signaled.store.candidates.length,
     scannedFeeds: discovered.scannedFeeds,
     matchedItems: discovered.matchedItems,
     rejectedBySource: discovered.rejectedBySource,
