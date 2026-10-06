@@ -324,6 +324,7 @@ export function HorizontalTimeline({
         pxPerMonth: 0,
         mood: [] as Array<{
           id: string;
+          date: string;
           x: number;
           score: number;
           sentiment: SentimentTag;
