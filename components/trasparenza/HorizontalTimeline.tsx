@@ -943,10 +943,24 @@ export function HorizontalTimeline({
   const amp = moodGeometry.amp ?? Math.min(stageHeight * 0.28, 120);
   const enthusiasmY = seriesMid - amp;
   const fearY = seriesMid + amp;
-  const hovered =
+  const hoveredMood =
     hoveredId && !hoveredId.startsWith('act-')
       ? moodGeometry.points.find((p) => p.id === hoveredId)
       : undefined;
+  const hoveredContext =
+    hoveredId && !hoveredMood
+      ? layout.contextMarks.find((m) => m.id === hoveredId)
+      : undefined;
+  const hoveredEvent =
+    hoveredId && hoveredId !== activeId
+      ? events.find((e) => e.id === hoveredId)
+      : undefined;
+  const hoverTipX = hoveredMood?.x ?? hoveredContext?.x;
+  const hoverTipY = hoveredMood
+    ? hoveredMood.y - 18
+    : hoveredContext
+      ? timeAxisY - 4
+      : null;
 
   const activeMoodPoint =
     activeId != null
@@ -1086,33 +1100,33 @@ export function HorizontalTimeline({
                 const isYear = tick.kind === 'year';
                 const label = isYear ? tick.label : monthLabel(tick.iso);
                 return (
-                  <div key={tick.key} className="absolute z-[1]" style={{ left: tick.x }}>
+                  <div key={tick.key} className="absolute z-[3]" style={{ left: tick.x }}>
                     {isYear && (
                       <div
                         aria-hidden
-                        className="absolute w-px bg-foreground/[0.06]"
+                        className="absolute w-px bg-foreground/[0.08]"
                         style={{
-                          top: stageHeight * 0.07,
-                          height: Math.max(0, timeAxisY - stageHeight * 0.07),
+                          top: chartBand.plotTop,
+                          height: Math.max(0, timeAxisY - chartBand.plotTop),
                         }}
                       />
                     )}
                     <div
                       aria-hidden
-                      className={`absolute w-px ${isYear ? 'bg-foreground/25' : 'bg-border/45'}`}
+                      className={`absolute w-px ${isYear ? 'bg-foreground/40' : 'bg-border/70'}`}
                       style={{
-                        top: timeAxisY - (isYear ? 10 : 5),
-                        height: isYear ? 10 : 5,
+                        top: timeAxisY - (isYear ? 12 : 7),
+                        height: isYear ? 12 : 7,
                       }}
                     />
                     <span
                       className={`absolute whitespace-nowrap font-mono ${
                         isYear
-                          ? 'left-1 text-[10px] font-medium tracking-tight text-foreground/65'
-                          : 'left-0.5 text-[8px] uppercase tracking-wider text-muted-foreground/55'
+                          ? 'left-1 text-[12px] font-semibold tracking-tight text-foreground/85'
+                          : 'left-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/80'
                       }`}
                       style={{
-                        top: timeAxisY - (isYear ? 24 : 18),
+                        top: timeAxisY - (isYear ? 28 : 20),
                       }}
                     >
                       {label}
@@ -1139,7 +1153,7 @@ export function HorizontalTimeline({
           {isChart && stageHeight > 0 && (
             <div
               aria-hidden
-              className="absolute left-0 right-0 z-[1] h-px bg-border/50"
+              className="absolute left-0 right-0 z-[1] h-px bg-border/60"
               style={{ top: timeAxisY }}
             />
           )}
@@ -1172,7 +1186,6 @@ export function HorizontalTimeline({
                   }}
                   aria-label={event?.title[locale] ?? mark.type}
                   aria-pressed={isActive}
-                  title={event?.title[locale]}
                 >
                   <span
                     aria-hidden
@@ -1224,7 +1237,7 @@ export function HorizontalTimeline({
                   : stageHeight * 0.84,
               }}
             >
-              <span className="absolute -top-5 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md border border-mark/20 bg-background/85 px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-mark/90 backdrop-blur-sm">
+              <span className="absolute -top-5 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md border border-mark/20 bg-background/85 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-mark backdrop-blur-sm">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mark opacity-45" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mark" />
@@ -1340,18 +1353,44 @@ export function HorizontalTimeline({
           )}
 
           {isChart &&
-            hovered &&
+            hoverTipX != null &&
             stageHeight > 0 &&
             hoveredId !== activeId && (
               <div
                 aria-hidden
                 className="pointer-events-none absolute z-[2] w-px bg-foreground/12"
                 style={{
-                  left: hovered.x,
+                  left: hoverTipX,
                   top: stageHeight * 0.08,
                   height: Math.max(0, activityTop - stageHeight * 0.08),
                 }}
               />
+            )}
+
+          {isChart &&
+            hoveredEvent &&
+            hoverTipX != null &&
+            hoverTipY != null &&
+            stageHeight > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute z-20 w-[12.5rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                style={{ left: hoverTipX, top: hoverTipY }}
+              >
+                <p className="font-mono text-[9px] text-muted-foreground">
+                  {formatEventDate(hoveredEvent.date, locale)}
+                  {' · '}
+                  {hoveredEvent.sentiment && sentimentLabel
+                    ? sentimentLabel(hoveredEvent.sentiment)
+                    : typeLabel(hoveredEvent.type)}
+                  {hoveredEvent.personId && people[hoveredEvent.personId]
+                    ? ` · ${people[hoveredEvent.personId].shortName}`
+                    : ''}
+                </p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug tracking-tight">
+                  {hoveredEvent.title[locale]}
+                </p>
+              </div>
             )}
 
           {isChart &&
