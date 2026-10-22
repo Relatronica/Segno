@@ -12,15 +12,6 @@ import {
 import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
 import { toMs as toMsDate } from '@/lib/dates';
 
-export const ALL_EVENT_TYPES: EventType[] = [
-  'legislative',
-  'meeting',
-  'spending',
-  'milestone',
-  'statement',
-  'sanction',
-];
-
 export const EVENT_META: Record<
   EventType,
   { icon: LucideIcon; color: string; bg: string; ring: string; dot: string; lane: 'up' | 'down' }

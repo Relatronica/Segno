@@ -22,6 +22,14 @@ export const SITE_KEYWORDS = [
   'timore',
 ];
 
+/** Internal paths for the transparency hub and its permalinks. */
+export const paths = {
+  trasparenza: '/trasparenza',
+  trasparenzaEvento: (id: string) => `/trasparenza/evento/${encodeURIComponent(id)}`,
+  trasparenzaPersona: (id: string) => `/trasparenza/persona/${encodeURIComponent(id)}`,
+  trasparenzaTema: (slug: string) => `/trasparenza/tema/${encodeURIComponent(slug)}`,
+} as const;
+
 export const pages = {
   trasparenza: {
     title: 'Sentiment',

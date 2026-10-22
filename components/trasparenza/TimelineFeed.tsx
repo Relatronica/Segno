@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, ExternalLink, Users, X } from 'lucide-react';
+import { Check, ChevronDown, ExternalLink, Link2, Users, X } from 'lucide-react';
 import {
   formatAmount,
   formatEventDate,
@@ -11,6 +11,7 @@ import {
 import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
 import { EVENT_META, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
+import { paths } from '@/lib/seo';
 import { cn } from '@/lib/utils';
 
 type ActorChip = { name: string; color: string };
@@ -44,6 +45,9 @@ type Props = {
   autoNote?: string;
   autoLabel?: string;
   sourceLabel: string;
+  /** Label for the internal permalink to the single-event page */
+  permalinkLabel?: string;
+  permalinkHint?: string;
   title: string;
   newestFirstLabel: string;
   emptyLabel: string;
@@ -87,6 +91,8 @@ export function TimelineFeed({
   autoNote,
   autoLabel,
   sourceLabel,
+  permalinkLabel,
+  permalinkHint,
   title,
   newestFirstLabel,
   emptyLabel,
@@ -522,6 +528,17 @@ export function TimelineFeed({
                         </span>
                         <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />
                       </a>
+
+                      {permalinkLabel && (
+                        <a
+                          href={paths.trasparenzaEvento(event.id)}
+                          title={permalinkHint}
+                          className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                          <Link2 className="h-3 w-3 shrink-0" />
+                          {permalinkLabel}
+                        </a>
+                      )}
                     </div>
                   )}
                 </li>

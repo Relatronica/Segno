@@ -800,6 +800,13 @@ export function HorizontalTimeline({
     const needsInitial = !initialPresentDone.current;
     if (!needsInitial && !tokenBumped) return;
 
+    // An explicit event focus (deep link, click, keyboard) outranks the initial
+    // "land on today" pass, so the two never fight over the viewport.
+    if (needsInitial && activeId && focusEventToken > 0) {
+      initialPresentDone.current = true;
+      return;
+    }
+
     let cancelled = false;
     let raf = 0;
     let tries = 0;
@@ -830,6 +837,8 @@ export function HorizontalTimeline({
     layout.width,
     layout.todayX,
     presentFocusToken,
+    focusEventToken,
+    activeId,
     scrollToPresent,
     stageHeight,
   ]);

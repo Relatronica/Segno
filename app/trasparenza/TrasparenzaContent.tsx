@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, PanelRight, SlidersHorizontal } from 'lucide-react';
+import { Calendar, PanelRight, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
@@ -18,6 +18,13 @@ import { localIsoDate } from '@/lib/dates';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { effectiveSentiment, rollupAutoSignals, signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
+import { PRESENT_PIN_ID } from '@/lib/trasparenza/constants';
+import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
+import {
+  buildTrasparenzaSearch,
+  parseTrasparenzaSearch,
+  type TrasparenzaUrlState,
+} from '@/lib/trasparenza/url';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
@@ -26,8 +33,58 @@ import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
 const FILTER_PANEL_TOP = 'calc(var(--nav-clearance) + 3.25rem)';
 
-/** Closing "today" pin on the AI Act track — date follows the calendar. */
-const PRESENT_PIN_ID = 'e-2026-09-today';
+type PersonMap = Record<string, { name: string; shortName: string; role: { it: string; en: string } }>;
+type ActorMap = Record<string, { name: string; shortName: string }>;
+
+/** Everything the free-text search looks at on a curated pin. */
+function eventHaystack(
+  event: TimelineEvent,
+  people: PersonMap,
+  actors: ActorMap,
+): string {
+  const person = event.personId ? people[event.personId] : undefined;
+  const actor = event.actorId ? actors[event.actorId] : undefined;
+  return haystack([
+    event.date,
+    event.title.it,
+    event.title.en,
+    event.summary.it,
+    event.summary.en,
+    event.detail?.it,
+    event.detail?.en,
+    event.quote?.it,
+    event.quote?.en,
+    event.sourceLabel.it,
+    event.sourceLabel.en,
+    event.sourceUrl,
+    person?.name,
+    person?.shortName,
+    person?.role.it,
+    person?.role.en,
+    actor?.name,
+    actor?.shortName,
+  ]);
+}
+
+/** Same, for automatic headline signals (no quote). */
+function signalHaystack(signal: AutoSignal, people: PersonMap, actors: ActorMap): string {
+  const person = people[signal.personId];
+  const actor = signal.actorId ? actors[signal.actorId] : undefined;
+  return haystack([
+    signal.date,
+    signal.title.it,
+    signal.title.en,
+    signal.summary.it,
+    signal.summary.en,
+    signal.sourceLabel.it,
+    signal.sourceLabel.en,
+    signal.sourceUrl,
+    person?.name,
+    person?.shortName,
+    actor?.name,
+    actor?.shortName,
+  ]);
+}
 
 export default function TrasparenzaContent() {
   const t = useT();
@@ -115,14 +172,94 @@ export default function TrasparenzaContent() {
   const [scrubId, setScrubId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feedOpen, setFeedOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  /** Set once the query string has been read, so filters are never reset by the first render. */
+  const [urlApplied, setUrlApplied] = useState(false);
+  const [pendingEvent, setPendingEvent] = useState<string | null>(null);
+  /** A `?year=` in the URL wins over the "merge new years as data arrives" rule. */
+  const explicitYears = useRef(false);
+
+  /** Defaults used when the URL leaves a filter open. */
+  const defaults = useRef({ types: [...track.filterTypes], years: allYears });
 
   useEffect(() => {
+    defaults.current = { types: [...track.filterTypes], years: allYears };
+  }, [track.filterTypes, allYears]);
+
+  const applyUrlState = useCallback((parsed: TrasparenzaUrlState) => {
+    setSelectedPerson(parsed.person ?? 'all');
+    setSelectedActor(parsed.actor ?? 'all');
+    setSelectedTypes(parsed.types ?? defaults.current.types);
+    explicitYears.current = Boolean(parsed.years);
+    setSelectedYears(parsed.years ?? defaults.current.years);
+    setSelectedSentiments(parsed.sentiments ?? [...ALL_SENTIMENT_TAGS]);
+    setQuery(parsed.q ?? '');
+
+    if (parsed.event) {
+      setPendingEvent(parsed.event);
+      setFeedOpen(true);
+    } else {
+      setPendingEvent(null);
+      setActiveId(null);
+      setChartActiveId(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    applyUrlState(parseTrasparenzaSearch(window.location.search));
+    setUrlApplied(true);
+  }, [applyUrlState]);
+
+  useEffect(() => {
+    const onPop = () => applyUrlState(parseTrasparenzaSearch(window.location.search));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [applyUrlState]);
+
+  useEffect(() => {
+    if (!urlApplied) return;
+    if (explicitYears.current) return;
     setSelectedYears((prev) => {
       const merged = [...new Set([...prev, ...allYears])].sort();
       if (merged.length === prev.length && merged.every((y, i) => y === prev[i])) return prev;
       return merged;
     });
-  }, [allYears]);
+  }, [allYears, urlApplied]);
+
+  /** Mirror the current view into the query string so any state is shareable. */
+  useEffect(() => {
+    if (!urlApplied) return;
+    const timer = window.setTimeout(() => {
+      const search = buildTrasparenzaSearch({
+        person: selectedPerson !== 'all' ? selectedPerson : undefined,
+        actor: selectedActor !== 'all' ? selectedActor : undefined,
+        types: selectedTypes.length < track.filterTypes.length ? selectedTypes : undefined,
+        years: selectedYears.length < allYears.length ? selectedYears : undefined,
+        sentiments:
+          selectedSentiments.length < ALL_SENTIMENT_TAGS.length
+            ? selectedSentiments
+            : undefined,
+        q: query.trim() || undefined,
+        event: activeId && !activeId.startsWith('auto-day-') ? activeId : undefined,
+      });
+      const next = `${window.location.pathname}${search}`;
+      if (next !== `${window.location.pathname}${window.location.search}`) {
+        window.history.replaceState(null, '', next);
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [
+    urlApplied,
+    selectedPerson,
+    selectedActor,
+    selectedTypes,
+    selectedYears,
+    selectedSentiments,
+    query,
+    activeId,
+    track.filterTypes,
+    allYears,
+  ]);
 
   const switchTheme = (_id: string) => {
     /* single unified track — theme switch retained for FilterSidebar API */
@@ -138,9 +275,12 @@ export default function TrasparenzaContent() {
     [],
   );
 
+  const needles = useMemo(() => queryTerms(query), [query]);
+
   const filtered = useMemo(() => {
     return [...track.events]
       .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((e) => matchesTerms(eventHaystack(e, personMap, actorMap), needles))
       .filter((e) => selectedTypes.includes(e.type))
       .filter((e) => selectedYears.includes(e.date.slice(0, 4)))
       .filter((e) => {
@@ -165,6 +305,9 @@ export default function TrasparenzaContent() {
     selectedTypes,
     selectedYears,
     selectedSentiments,
+    needles,
+    personMap,
+    actorMap,
   ]);
 
   const filteredSignals = useMemo(() => {
@@ -175,9 +318,20 @@ export default function TrasparenzaContent() {
       if (!selectedYears.includes(signal.date.slice(0, 4))) return false;
       if (selectedActor !== 'all' && signal.actorId !== selectedActor) return false;
       if (selectedPerson !== 'all' && signal.personId !== selectedPerson) return false;
+      if (!matchesTerms(signalHaystack(signal, personMap, actorMap), needles)) return false;
       return true;
     });
-  }, [autoSignals, selectedActor, selectedPerson, selectedTypes, selectedYears, selectedSentiments]);
+  }, [
+    autoSignals,
+    selectedActor,
+    selectedPerson,
+    selectedTypes,
+    selectedYears,
+    selectedSentiments,
+    needles,
+    personMap,
+    actorMap,
+  ]);
 
   const autoFeed = useMemo(
     () =>
@@ -225,6 +379,8 @@ export default function TrasparenzaContent() {
   };
 
   const toggleYear = (year: string) => {
+    // Once the reader picks years by hand, new data must not silently re-add them.
+    explicitYears.current = true;
     setSelectedYears((prev) => {
       if (prev.includes(year)) {
         if (prev.length === 1) return prev;
@@ -248,8 +404,10 @@ export default function TrasparenzaContent() {
     setSelectedActor('all');
     setSelectedPerson('all');
     setSelectedTypes([...track.filterTypes]);
+    explicitYears.current = false;
     setSelectedYears(allYears);
     setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
+    setQuery('');
   };
 
   const typeLabel = (type: EventType) => t.trasparenza.types[type];
@@ -266,6 +424,15 @@ export default function TrasparenzaContent() {
     setScrubId(null);
     setFocusEventToken((n) => n + 1);
   };
+
+  /** A `?event=` deep link wins over the "open on today" default. */
+  useEffect(() => {
+    if (!pendingEvent) return;
+    if (!feedEvents.some((e) => e.id === pendingEvent)) return;
+    centerOnEvent(pendingEvent);
+    setPendingEvent(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEvent, feedEvents]);
 
   const goPrev = () => {
     if (activeIndex > 0) centerOnEvent(feedEvents[activeIndex - 1].id);
@@ -432,6 +599,8 @@ export default function TrasparenzaContent() {
       autoNote={t.trasparenza.autoNote}
       autoLabel={t.trasparenza.autoLabel}
       sourceLabel={t.trasparenza.source}
+      permalinkLabel={t.trasparenza.permalink}
+      permalinkHint={t.trasparenza.permalinkHint}
       title={t.trasparenza.feedTitle}
       newestFirstLabel={t.trasparenza.feedNewest}
       emptyLabel={t.trasparenza.empty}
@@ -494,6 +663,31 @@ export default function TrasparenzaContent() {
                   <span className="h-1.5 w-1.5 rounded-full bg-mark" />
                 )}
               </button>
+
+              <div className="relative min-w-0 flex-1 sm:max-w-sm" title={t.trasparenza.searchHint}>
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.trasparenza.searchPlaceholder}
+                  aria-label={t.trasparenza.searchLabel}
+                  className="h-10 w-full rounded-md border border-border/50 bg-background/80 pl-8 pr-8 text-sm text-foreground outline-none backdrop-blur-md transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/25 focus:bg-background [&::-webkit-search-cancel-button]:appearance-none"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label={t.trasparenza.searchClear}
+                    className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
 
               <div className="ml-auto flex items-center gap-1">
                 <button
