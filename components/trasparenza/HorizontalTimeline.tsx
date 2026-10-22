@@ -785,7 +785,7 @@ export function HorizontalTimeline({
     layout.contextMarks,
   ]);
 
-  // Center on "today" only on first ready layout, or when the jump button bumps the token.
+  // Center on "today" on the first ready layout, or when the jump button bumps the token.
   // Do not re-run when selection clears — that used to yank the viewport back to today.
   const initialPresentDone = useRef(false);
   const lastPresentToken = useRef(presentFocusToken);
@@ -801,25 +801,29 @@ export function HorizontalTimeline({
     if (!needsInitial && !tokenBumped) return;
 
     let cancelled = false;
-    const run = (behavior: ScrollBehavior) => {
+    let raf = 0;
+    let tries = 0;
+
+    // The first pass can land before the scroller is laid out (or be discarded by
+    // StrictMode's mount/cleanup/remount), so retry until there is a real width:
+    // the "done" flag is set only once the scroll is actually issued, otherwise the
+    // view would stay parked at the beginning of the timeline.
+    const attempt = () => {
       if (cancelled) return;
-      scrollToPresent(behavior);
+      const el = scrollerRef.current;
+      if (!el || el.clientWidth === 0) {
+        if (tries++ < 180) raf = requestAnimationFrame(attempt);
+        return;
+      }
+      initialPresentDone.current = true;
+      scrollToPresent(needsInitial ? 'auto' : 'smooth');
     };
 
-    if (needsInitial) {
-      initialPresentDone.current = true;
-      const t0 = window.setTimeout(() => run('auto'), 0);
-      const t1 = window.setTimeout(() => run('auto'), 120);
-      return () => {
-        cancelled = true;
-        window.clearTimeout(t0);
-        window.clearTimeout(t1);
-      };
-    }
+    attempt();
 
-    run('smooth');
     return () => {
       cancelled = true;
+      if (raf) cancelAnimationFrame(raf);
     };
   }, [
     focusPresent,
