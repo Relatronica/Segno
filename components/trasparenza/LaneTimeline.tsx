@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import {
   ALL_LENSES,
   LENS_META,
@@ -22,7 +23,11 @@ import { LabMark, hasLabMark } from './LabMark';
 
 /** Row height: tall enough to hold several internal lines of captions. */
 const ROW_H_DESKTOP = 156;
-const ROW_H_MOBILE = 100;
+/** Mobile leaves the caption lines at two, but the header needs the room for
+    the lane's description to wrap whole instead of clipping. */
+const ROW_H_MOBILE = 116;
+/** Collapsed lane: a single-rail strip that holds the marks, none of the room. */
+const COLLAPSED_H = 44;
 /** Pitch of the caption lines inside a row. Also the room a 28px face needs. */
 const LINE_H = 32;
 /** Inset from the row edges, so the outermost line never clips. */
@@ -71,6 +76,9 @@ export type LaneLabels = {
   /** The two halves of the curve, for the tiny legend. */
   fear: string;
   enthusiasm: string;
+  /** Toggle on each lane header. */
+  collapseLane: string;
+  expandLane: string;
 };
 
 type Props = {
@@ -78,6 +86,9 @@ type Props = {
   people: Record<string, LobbyPerson>;
   locale: 'it' | 'en';
   activeId: string | null;
+  /** Lenses drawn as a compact strip. The data stays; only the room goes. */
+  collapsedLenses?: Lens[];
+  onToggleLensCollapsed?: (lens: Lens) => void;
   /** Feed scroll playhead: a moving cursor, no selection. */
   scrubId?: string | null;
   onSelect: (id: string) => void;
@@ -120,6 +131,13 @@ type Lane = {
   /** One line on what the lane holds, under the name. */
   blurb: string;
   accent: string;
+  /** Compact strip: one rail, no captions, the pin count on the header. */
+  collapsed: boolean;
+  /** Row height: the full lane, or the strip. */
+  height: number;
+  /** Caption lines the row can hold. One when collapsed. */
+  lines: number;
+  count: number;
   marks: LaneMark[];
 };
 
@@ -172,6 +190,8 @@ export function LaneTimeline({
   people,
   locale,
   activeId,
+  collapsedLenses,
+  onToggleLensCollapsed,
   scrubId = null,
   onSelect,
   emptyLabel,
@@ -205,6 +225,7 @@ export function LaneTimeline({
   }, []);
 
   const lineCount = lineCountFor(rowH);
+  const collapsedSet = useMemo(() => new Set(collapsedLenses ?? []), [collapsedLenses]);
 
   const layout = useMemo(() => {
     const scale = createTimeScale(events.map((e) => e.date), {
@@ -219,15 +240,15 @@ export function LaneTimeline({
      * mark on it; only when every line is busy does it settle for the roomiest.
      * That is what buys captions: the same pins, on separate runs.
      */
-    const buildMarks = (items: TimelineEvent[]): LaneMark[] => {
+    const buildMarks = (items: TimelineEvent[], lines: number, flat: boolean): LaneMark[] => {
       const marks: LaneMark[] = items
         .map((event) => ({ event, x: scale.xForDate(event.date), line: 0, room: false }))
         .sort((a, b) => a.x - b.x || a.event.date.localeCompare(b.event.date));
 
-      const order = Array.from({ length: lineCount }, (_, i) => i).sort(
-        (a, b) => Math.abs(lineDy(a, lineCount)) - Math.abs(lineDy(b, lineCount)) || a - b,
+      const order = Array.from({ length: lines }, (_, i) => i).sort(
+        (a, b) => Math.abs(lineDy(a, lines)) - Math.abs(lineDy(b, lines)) || a - b,
       );
-      const lastX = Array.from({ length: lineCount }, () => Number.NEGATIVE_INFINITY);
+      const lastX = Array.from({ length: lines }, () => Number.NEGATIVE_INFINITY);
       for (const mark of marks) {
         const free = order.find((i) => mark.x - lastX[i] >= LABEL_GAP_PX);
         const line =
@@ -248,7 +269,9 @@ export function LaneTimeline({
         list.forEach((mark, i) => {
           const next = list[i + 1];
           mark.room =
-            (!next || next.x - mark.x >= LABEL_GAP_PX) && mark.x + LABEL_GAP_PX <= scale.width;
+            !flat &&
+            (!next || next.x - mark.x >= LABEL_GAP_PX) &&
+            mark.x + LABEL_GAP_PX <= scale.width;
         });
       }
       return marks;
@@ -261,14 +284,26 @@ export function LaneTimeline({
       items: events.filter((event) => lensOf(event) === lens),
     }))
       .filter((entry) => entry.items.length > 0)
-      .map(({ lens, items }) => ({
-        key: `lens:${lens}`,
-        lens,
-        name: lensLabel?.(lens) ?? LENS_META[lens].label[locale],
-        blurb: LENS_META[lens].blurb[locale],
-        accent: LENS_META[lens].color,
-        marks: buildMarks(items),
-      }));
+      .map(({ lens, items }) => {
+        const collapsed = collapsedSet.has(lens);
+        const lines = collapsed ? 1 : lineCount;
+        return {
+          key: `lens:${lens}`,
+          lens,
+          name: lensLabel?.(lens) ?? LENS_META[lens].label[locale],
+          blurb: LENS_META[lens].blurb[locale],
+          accent: LENS_META[lens].color,
+          collapsed,
+          height: collapsed ? COLLAPSED_H : rowH,
+          lines,
+          count: items.length,
+          marks: buildMarks(items, lines, collapsed),
+        };
+      });
+
+    // Lanes no longer share a height, so the vertical furniture (gridlines,
+    // the today line) measures the stack instead of multiplying a constant.
+    const lanesHeight = lanes.reduce((sum, lane) => sum + lane.height, 0);
 
     // Volume band: one bar per day, oldest first.
     const buckets = new Map<string, { count: number; xSum: number }>();
@@ -321,14 +356,15 @@ export function LaneTimeline({
     return {
       scale,
       lanes,
+      lanesHeight,
       ticks: timeTicks(scale),
       volume,
       maxVolume,
       moodPoints: points,
     };
-  }, [events, locale, lensLabel, volumeEvents, moodEvents, lineCount]);
+  }, [events, locale, lensLabel, volumeEvents, moodEvents, lineCount, rowH, collapsedSet]);
 
-  const { scale, lanes, ticks, volume, maxVolume, moodPoints } = layout;
+  const { scale, lanes, lanesHeight, ticks, volume, maxVolume, moodPoints } = layout;
   const moodAmp = MOOD_H / 2 - 6;
   const moodY = (value: number) => MOOD_H / 2 - value * moodAmp;
   const contentW = labelW + scale.width;
@@ -389,13 +425,21 @@ export function LaneTimeline({
     scrollToX(scale.todayX, 'smooth');
   }, [presentFocusToken, scrollToX, scale.todayX]);
 
+  const lastFocusToken = useRef(0);
   useEffect(() => {
-    if (focusEventToken === 0 || !activeId) return;
-    const mark = lanes
-      .flatMap((lane) => lane.marks)
-      .find((m) => m.event.id === activeId);
-    if (mark) scrollToX(mark.x, 'smooth');
-  }, [focusEventToken, activeId, lanes, scrollToX]);
+    // Only a fresh selection moves the view; a resize or a collapse toggle
+    // reshapes `lanes` and must not drag the reader back to the active pin.
+    if (focusEventToken === 0 || focusEventToken === lastFocusToken.current) return;
+    lastFocusToken.current = focusEventToken;
+    if (!activeId) return;
+    const lane = lanes.find((entry) => entry.marks.some((m) => m.event.id === activeId));
+    const mark = lane?.marks.find((m) => m.event.id === activeId);
+    if (!mark) return;
+    // Reveal the row before centring: a pin inside a collapsed strip would
+    // scroll to a mark the reader cannot see.
+    if (lane?.collapsed) onToggleLensCollapsed?.(lane.lens);
+    scrollToX(mark.x, 'smooth');
+  }, [focusEventToken, activeId, lanes, scrollToX, onToggleLensCollapsed]);
 
   /** Keep the feed playhead in frame while scrubbing — no selection, only pan. */
   useEffect(() => {
@@ -502,7 +546,7 @@ export function LaneTimeline({
                 'pointer-events-none absolute z-0 w-px',
                 tick.kind === 'year' ? 'bg-border/45' : 'bg-border/20',
               )}
-              style={{ left: labelW + tick.x, top: AXIS_H, height: lanes.length * rowH }}
+              style={{ left: labelW + tick.x, top: AXIS_H, height: lanesHeight }}
             />
           ))}
 
@@ -523,12 +567,31 @@ export function LaneTimeline({
           )}
 
           {lanes.map((lane) => (
-            <div key={lane.key} className="relative flex" style={{ height: rowH, width: contentW }}>
+            <div
+              key={lane.key}
+              className="relative flex"
+              style={{ height: lane.height, width: contentW }}
+            >
               <div
                 className="sticky left-0 z-30 flex h-full flex-col justify-center gap-0.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
                 style={{ width: labelW }}
               >
-                <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onToggleLensCollapsed?.(lane.lens)}
+                  disabled={!onToggleLensCollapsed}
+                  aria-expanded={!lane.collapsed}
+                  aria-label={lane.collapsed ? labels.expandLane : labels.collapseLane}
+                  title={lane.collapsed ? labels.expandLane : labels.collapseLane}
+                  className="flex w-full items-center gap-1.5 rounded pr-1 text-left outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-foreground/25 disabled:cursor-default"
+                >
+                  <ChevronDown
+                    aria-hidden
+                    className={cn(
+                      'h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform',
+                      lane.collapsed && '-rotate-90',
+                    )}
+                  />
                   <span
                     aria-hidden
                     className="h-3 w-3 shrink-0 rounded-full"
@@ -537,25 +600,32 @@ export function LaneTimeline({
                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight">
                     {lane.name}
                   </span>
-                </span>
-                <span className="pl-5 text-[10px] leading-snug text-pretty text-muted-foreground/60">
-                  {lane.blurb}
-                </span>
+                  {lane.collapsed && (
+                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+                      {lane.count}
+                    </span>
+                  )}
+                </button>
+                {!lane.collapsed && (
+                  <span className="pl-5 text-[10px] leading-snug text-pretty text-muted-foreground/60">
+                    {lane.blurb}
+                  </span>
+                )}
               </div>
 
               <div className="relative h-full" style={{ width: scale.width }}>
                 {/* One internal line per caption run: the rail the marks sit on,
                     repeated so a spread-out lane still reads as a timeline. The
                     centre rail carries the lane's colour. */}
-                {Array.from({ length: lineCount }, (_, i) => {
-                  const centre = lineCount % 2 === 1 && i === Math.floor((lineCount - 1) / 2);
+                {Array.from({ length: lane.lines }, (_, i) => {
+                  const centre = lane.lines % 2 === 1 && i === Math.floor((lane.lines - 1) / 2);
                   return (
                     <div
                       key={`rail-${i}`}
                       aria-hidden
                       className={cn('absolute inset-x-0 h-px', !centre && 'bg-border/25')}
                       style={{
-                        top: `calc(50% + ${lineDy(i, lineCount)}px)`,
+                        top: `calc(50% + ${lineDy(i, lane.lines)}px)`,
                         backgroundColor: centre ? `${lane.accent}44` : undefined,
                       }}
                     />
@@ -596,14 +666,28 @@ export function LaneTimeline({
                       className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none"
                       style={{
                         left: mark.x,
-                        top: `calc(50% + ${lineDy(mark.line, lineCount)}px)`,
+                        top: `calc(50% + ${lineDy(mark.line, lane.lines)}px)`,
                         width: 36,
                         height: 36,
                       }}
                       aria-pressed={isActive}
                       aria-label={`${formatEventDate(event.date, locale)} — ${event.title[locale]}`}
                     >
-                      {isFace && person ? (
+                      {lane.collapsed ? (
+                        // The strip holds marks, not faces or brand tiles: same
+                        // colour and silhouette, none of the bulk.
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            width: isActive ? 10 : isHot ? 8 : 6,
+                            height: isActive ? 10 : isHot ? 8 : 6,
+                            backgroundColor: tone,
+                            ...lensShape(lane.lens),
+                            filter: isActive ? `drop-shadow(0 0 3px ${tone})` : undefined,
+                          }}
+                        />
+                      ) : isFace && person ? (
                         <span
                           aria-hidden
                           className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-background"
@@ -693,7 +777,7 @@ export function LaneTimeline({
                         className="pointer-events-none absolute z-40 w-[15rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
                         style={{
                           left: mark.x,
-                          top: `calc(50% + ${lineDy(mark.line, lineCount) - 14}px)`,
+                          top: `calc(50% + ${lineDy(mark.line, lane.lines) - 14}px)`,
                         }}
                       >
                         <p className="font-mono text-[9px] text-muted-foreground">

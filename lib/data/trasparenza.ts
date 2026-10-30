@@ -41,27 +41,42 @@ export const ALL_LENSES: Lens[] = ["models", "research", "business", "culture", 
 export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; color: string }> = {
   models: {
     label: { it: "Modelli", en: "Models" },
-    blurb: { it: "I sistemi rilasciati dai laboratori", en: "The systems labs ship" },
+    blurb: {
+      it: "I sistemi di frontiera che i laboratori rilasciano: chi pubblica cosa, e quando.",
+      en: "The frontier systems labs release: who ships what, and when.",
+    },
     color: "#3b6fe0",
   },
   research: {
     label: { it: "Ricerca", en: "Research" },
-    blurb: { it: "I lavori che hanno aperto la strada", en: "The papers that opened the way" },
+    blurb: {
+      it: "Le ricerche che aprono la strada: tecniche e risultati prima che diventino prodotto.",
+      en: "The research that opens the way: techniques and findings before they become product.",
+    },
     color: "#7c5cff",
   },
   business: {
     label: { it: "Mercato", en: "Business" },
-    blurb: { it: "Investimenti, spese, quote", en: "Investments, spending, shares" },
+    blurb: {
+      it: "Il denaro che muove il settore: investimenti, valutazioni, spese e quote di mercato.",
+      en: "The money moving the field: investments, valuations, spending and market shares.",
+    },
     color: "#0f9d8f",
   },
   culture: {
     label: { it: "Cultura", en: "Culture" },
-    blurb: { it: "Ciò che si dice in pubblico", en: "What is said in public" },
+    blurb: {
+      it: "Come l'IA entra nel discorso pubblico: cosa si dice, e con quale tono.",
+      en: "How AI enters public discourse: what is said, and in what tone.",
+    },
     color: "#c2703a",
   },
   policy: {
     label: { it: "Politica", en: "Policy" },
-    blurb: { it: "Leggi, sanzioni, istituzioni", en: "Laws, sanctions, institutions" },
+    blurb: {
+      it: "Le regole del gioco: leggi, sanzioni e le istituzioni che provano a governare l'IA.",
+      en: "The rules of the game: laws, sanctions, and the institutions trying to govern AI.",
+    },
     color: "#b3382c",
   },
 };

@@ -25,7 +25,7 @@ import { localIsoDate } from '@/lib/dates';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
-import { PRESENT_PIN_ID } from '@/lib/trasparenza/constants';
+import { DEFAULT_COLLAPSED_LENSES, PRESENT_PIN_ID } from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
 import {
   buildTrasparenzaSearch,
@@ -43,6 +43,13 @@ import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
 
 /** Offset timeline chrome below the floating header */
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
+
+/** Order-free comparison, so the URL stays clean while a set is untouched. */
+function sameLensSet(a: Lens[], b: Lens[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((lens) => set.has(lens));
+}
 
 type PersonMap = Record<string, { name: string; shortName: string; role: { it: string; en: string } }>;
 type ActorMap = Record<string, { name: string; shortName: string }>;
@@ -180,6 +187,8 @@ export default function TrasparenzaContent() {
   ]);
   /** Domain lenses kept on the axis. All of them by default. */
   const [selectedLenses, setSelectedLenses] = useState<Lens[]>([...ALL_LENSES]);
+  /** Lenses drawn as a compact strip. View-only: the data stays on the axis. */
+  const [collapsedLenses, setCollapsedLenses] = useState<Lens[]>([...DEFAULT_COLLAPSED_LENSES]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scrubId, setScrubId] = useState<string | null>(null);
   /** One panel on the right: filters and chronology are its two sections. */
@@ -209,6 +218,7 @@ export default function TrasparenzaContent() {
     setSelectedYears(parsed.years ?? defaults.current.years);
     setSelectedSentiments(parsed.sentiments ?? [...ALL_SENTIMENT_TAGS]);
     setSelectedLenses(parsed.lenses ?? [...ALL_LENSES]);
+    setCollapsedLenses(parsed.collapsedLenses ?? [...DEFAULT_COLLAPSED_LENSES]);
     setQuery(parsed.q ?? '');
     setSelectedThesis(parsed.thesis ?? 'all');
 
@@ -265,6 +275,9 @@ export default function TrasparenzaContent() {
             ? selectedSentiments
             : undefined,
         lenses: selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined,
+        collapsedLenses: sameLensSet(collapsedLenses, DEFAULT_COLLAPSED_LENSES)
+          ? undefined
+          : collapsedLenses,
         q: query.trim() || undefined,
         event: activeId && !activeId.startsWith('auto-day-') ? activeId : undefined,
         thesis: selectedThesis !== 'all' ? selectedThesis : undefined,
@@ -283,6 +296,7 @@ export default function TrasparenzaContent() {
     selectedYears,
     selectedSentiments,
     selectedLenses,
+    collapsedLenses,
     query,
     activeId,
     selectedThesis,
@@ -538,6 +552,12 @@ export default function TrasparenzaContent() {
     });
   };
 
+  const toggleLensCollapsed = (lens: Lens) => {
+    setCollapsedLenses((prev) =>
+      prev.includes(lens) ? prev.filter((l) => l !== lens) : [...prev, lens],
+    );
+  };
+
   const resetFilters = () => {
     setSelectedActor('all');
     setSelectedPerson('all');
@@ -546,6 +566,7 @@ export default function TrasparenzaContent() {
     setSelectedYears(allYears);
     setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
     setSelectedLenses([...ALL_LENSES]);
+    setCollapsedLenses([...DEFAULT_COLLAPSED_LENSES]);
     setSelectedThesis('all');
     setQuery('');
   };
@@ -666,6 +687,8 @@ export default function TrasparenzaContent() {
       sentimentHint: t.trasparenza.moodHint,
       fear: t.trasparenza.moodFear,
       enthusiasm: t.trasparenza.moodEnthusiasm,
+      collapseLane: t.trasparenza.laneCollapse,
+      expandLane: t.trasparenza.laneExpand,
     }),
     [t],
   );
@@ -785,6 +808,8 @@ export default function TrasparenzaContent() {
             people={personMap}
             locale={locale}
             activeId={activeId}
+            collapsedLenses={collapsedLenses}
+            onToggleLensCollapsed={toggleLensCollapsed}
             scrubId={scrubId}
             onSelect={selectEvent}
             emptyLabel={t.trasparenza.empty}

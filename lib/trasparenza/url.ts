@@ -19,6 +19,8 @@ export type TrasparenzaUrlState = {
   sentiments?: SentimentTag[];
   /** Domain lenses kept on the axis. Absent means all of them. */
   lenses?: Lens[];
+  /** Lenses drawn as a compact strip instead of a full lane. */
+  collapsedLenses?: Lens[];
   q?: string;
   event?: string;
   /** Thesis slug: narrows statements to readings recorded on that claim. */
@@ -32,6 +34,7 @@ const KEYS = {
   years: 'year',
   sentiments: 'sentiment',
   lenses: 'lente',
+  collapsedLenses: 'corsie',
   q: 'q',
   event: 'event',
   thesis: 'tesi',
@@ -74,6 +77,11 @@ export function parseTrasparenzaSearch(search: string): TrasparenzaUrlState {
   );
   if (lenses.length) state.lenses = lenses;
 
+  const collapsedLenses = splitList(params.get(KEYS.collapsedLenses)).filter(
+    (value): value is Lens => (ALL_LENSES as string[]).includes(value),
+  );
+  if (collapsedLenses.length) state.collapsedLenses = collapsedLenses;
+
   const q = params.get(KEYS.q)?.trim();
   if (q) state.q = q;
 
@@ -96,6 +104,8 @@ export function buildTrasparenzaSearch(state: TrasparenzaUrlState): string {
   if (state.years?.length) params.set(KEYS.years, state.years.join(','));
   if (state.sentiments?.length) params.set(KEYS.sentiments, state.sentiments.join(','));
   if (state.lenses?.length) params.set(KEYS.lenses, state.lenses.join(','));
+  if (state.collapsedLenses?.length)
+    params.set(KEYS.collapsedLenses, state.collapsedLenses.join(','));
   if (state.q) params.set(KEYS.q, state.q);
   if (state.event) params.set(KEYS.event, state.event);
   if (state.thesis) params.set(KEYS.thesis, state.thesis);
