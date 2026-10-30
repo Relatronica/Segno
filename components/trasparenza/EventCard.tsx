@@ -62,7 +62,7 @@ export function EventCard({ event }: { event: TimelineEvent }) {
         </div>
 
         <Link
-          href={paths.trasparenzaEvento(event.id)}
+          href={paths.timelineEvento(event.id)}
           className="mt-1 block text-[14px] font-medium leading-snug text-foreground underline-offset-4 hover:underline"
         >
           {event.title[locale]}
@@ -74,7 +74,7 @@ export function EventCard({ event }: { event: TimelineEvent }) {
 
         {person && (
           <Link
-            href={paths.trasparenzaPersona(person.id)}
+            href={paths.timelinePersona(person.id)}
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             <PersonAvatar person={person} size="sm" />

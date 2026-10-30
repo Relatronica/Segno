@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
-import { Menu, X, Globe, Quote, Heart, Flag } from 'lucide-react';
+import { Menu, X, Globe, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
@@ -20,7 +20,7 @@ export function Navbar() {
     setLocale(locale === 'it' ? 'en' : 'it');
   };
 
-  const timelineActive = pathname === '/trasparenza' || pathname.startsWith('/trasparenza/');
+  const timelineActive = pathname === '/timeline' || pathname.startsWith('/timeline/');
   const segnalaActive = pathname === '/segnala' || pathname.startsWith('/segnala/');
   const homeActive = pathname === '/';
 
@@ -30,110 +30,96 @@ export function Navbar() {
     setMobileMenuOpen(false);
   }, [pathname, setMobileMenuOpen]);
 
+  const items = [
+    { href: '/', label: t.nav.home, active: homeActive },
+    { href: '/timeline', label: t.nav.timeline, active: timelineActive },
+    { href: '/segnala', label: t.nav.segnala, active: segnalaActive },
+  ];
+
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center p-2.5 sm:p-4">
-      <div className="pointer-events-auto relative w-fit max-w-full">
-        <nav className="flex h-12 items-center gap-2 rounded-2xl border border-border/50 bg-background/80 px-2.5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:gap-3 sm:px-3">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center rounded-md p-1"
-            onClick={closeMobile}
-            aria-label="Segno"
-          >
-            <Image src="/segno_logo.png" alt="Segno" width={26} height={26} className="dark:hidden" />
-            <Image
-              src="/segno_logo_white.png"
-              alt="Segno"
-              width={26}
-              height={26}
-              className="hidden dark:block"
-            />
-          </Link>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <div className="relative mx-auto flex h-[var(--nav-bar-h)] max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2"
+          onClick={closeMobile}
+          aria-label="Segno"
+        >
+          <Image
+            src="/segno_logo.png"
+            alt=""
+            width={26}
+            height={26}
+            className="dark:hidden"
+            priority
+          />
+          <Image
+            src="/segno_logo_white.png"
+            alt=""
+            width={26}
+            height={26}
+            className="hidden dark:block"
+            priority
+          />
+          <span className="text-[15px] font-semibold tracking-tight">Segno</span>
+        </Link>
 
-          <div className="flex items-center gap-0.5 sm:gap-1">
-            <div className="hidden items-center gap-0.5 md:flex">
-              <Link
-                href="/"
-                className={`relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  homeActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t.nav.home}
-                {homeActive && (
-                  <motion.div
-                    layoutId="navbar-indicator"
-                    className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-foreground"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-              </Link>
+        <span aria-hidden className="hidden h-4 w-px bg-border md:block" />
 
-              <Link
-                href="/trasparenza"
-                className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  timelineActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Quote className="h-3.5 w-3.5" />
-                {t.nav.trasparenza}
-                {timelineActive && (
-                  <motion.div
-                    layoutId="navbar-indicator"
-                    className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-foreground"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-              </Link>
-
-              <Link
-                href="/segnala"
-                className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  segnalaActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Flag className="h-3.5 w-3.5" />
-                {t.nav.segnala}
-                {segnalaActive && (
-                  <motion.div
-                    layoutId="navbar-indicator"
-                    className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-foreground"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-              </Link>
-            </div>
-
-            <a
-              href={DONATE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-md border border-mark/30 bg-mark-muted px-2.5 py-1.5 text-sm font-semibold text-mark transition-colors hover:bg-mark/15 sm:inline-flex"
+        <nav className="hidden flex-1 items-center gap-0.5 md:flex">
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                item.active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <Heart className="h-3.5 w-3.5" />
-              {t.nav.donate}
-            </a>
-
-            <button
-              type="button"
-              onClick={toggleLocale}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Change language"
-            >
-              <Globe className="h-4 w-4" />
-              <span className="uppercase">{locale}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
-              aria-expanded={mobileMenuOpen}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
+              {item.label}
+              {item.active && (
+                <motion.span
+                  layoutId="navbar-indicator"
+                  className="absolute inset-x-3 -bottom-[3px] h-px rounded-full bg-mark"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+            </Link>
+          ))}
         </nav>
+
+        <div className="ml-auto flex items-center gap-1 md:ml-0">
+          <button
+            type="button"
+            onClick={toggleLocale}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Change language"
+          >
+            <Globe className="h-4 w-4" />
+            <span className="uppercase">{locale}</span>
+          </button>
+
+          <span aria-hidden className="mx-0.5 hidden h-4 w-px bg-border sm:block" />
+
+          <a
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            <Heart className="h-3.5 w-3.5" />
+            {t.nav.donate}
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
+            aria-expanded={mobileMenuOpen}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
 
         <AnimatePresence>
           {mobileMenuOpen && (
@@ -142,48 +128,29 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
-              className="absolute left-1/2 top-[calc(100%+0.5rem)] w-[min(18rem,calc(100vw-1.25rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border/50 bg-background/95 shadow-[0_12px_40px_rgba(15,23,42,0.1)] backdrop-blur-xl md:hidden"
+              className="absolute right-4 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-[0_12px_40px_rgba(15,23,42,0.1)] backdrop-blur-xl sm:right-6 lg:right-8 md:hidden"
             >
               <div className="space-y-1 p-2">
-                <Link
-                  href="/"
-                  onClick={closeMobile}
-                  className={`block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    homeActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                >
-                  {t.nav.home}
-                </Link>
-                <Link
-                  href="/trasparenza"
-                  onClick={closeMobile}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    timelineActive
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  }`}
-                >
-                  <Quote className="h-4 w-4" />
-                  {t.nav.trasparenza}
-                </Link>
-                <Link
-                  href="/segnala"
-                  onClick={closeMobile}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    segnalaActive
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  }`}
-                >
-                  <Flag className="h-4 w-4" />
-                  {t.nav.segnala}
-                </Link>
+                {items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobile}
+                    className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      item.active
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
                 <a
                   href={DONATE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={closeMobile}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-mark"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <Heart className="h-4 w-4" />
                   {t.nav.donate}

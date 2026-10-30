@@ -38,7 +38,6 @@ export function FaviconHandler() {
       
       if (favicon) {
         // Rimuovi il vecchio link per forzare il refresh
-        const oldHref = favicon.href;
         favicon.remove();
         
         // Crea un nuovo link con l'href corretto

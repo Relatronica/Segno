@@ -4,26 +4,26 @@ import { pages, SITE_URL } from '@/lib/seo';
 import TrasparenzaContent from './TrasparenzaContent';
 
 export const metadata: Metadata = {
-  title: pages.trasparenza.title,
-  description: pages.trasparenza.description,
-  alternates: { canonical: `${SITE_URL}/trasparenza` },
+  title: pages.timeline.title,
+  description: pages.timeline.description,
+  alternates: { canonical: `${SITE_URL}/timeline` },
   openGraph: {
-    title: `${pages.trasparenza.title} | Segno`,
-    description: pages.trasparenza.description,
-    url: `${SITE_URL}/trasparenza`,
+    title: `${pages.timeline.title} | Segno`,
+    description: pages.timeline.description,
+    url: `${SITE_URL}/timeline`,
   },
 };
 
-export default function TrasparenzaPage() {
+export default function TimelinePage() {
   return (
     <>
       <JsonLd
         data={{
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          name: `${pages.trasparenza.title} — Segno`,
-          description: pages.trasparenza.description,
-          url: `${SITE_URL}/trasparenza`,
+          name: `${pages.timeline.title} — Segno`,
+          description: pages.timeline.description,
+          url: `${SITE_URL}/timeline`,
           isPartOf: { '@id': `${SITE_URL}/#website` },
         }}
       />

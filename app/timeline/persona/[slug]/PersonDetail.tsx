@@ -18,12 +18,12 @@ type Props = {
 export function PersonDetail({ person, events }: Props) {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
-  const filterHref = `${paths.trasparenza}${buildTrasparenzaSearch({ person: person.id })}`;
+  const filterHref = `${paths.timeline}${buildTrasparenzaSearch({ person: person.id })}`;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-[calc(var(--nav-clearance)+2.5rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--nav-clearance)+3.5rem)] lg:px-8">
       <Link
-        href={paths.trasparenza}
+        href={paths.timeline}
         className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />

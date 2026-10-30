@@ -348,14 +348,6 @@ export const techLeaderPeople: LobbyPerson[] = lobbyPeople.filter((p) =>
   (TECH_LEADER_IDS as readonly string[]).includes(p.id),
 );
 
-export function personLabel(person: LobbyPerson, locale: "it" | "en"): string {
-  return person.name;
-}
-
-export function personRole(person: LobbyPerson, locale: "it" | "en"): string {
-  return person.role[locale];
-}
-
 /**
  * Pilot track: AI Act.
  * Dates and legislative milestones follow the public legislative timetable.

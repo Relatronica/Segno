@@ -22,17 +22,17 @@ export const SITE_KEYWORDS = [
   'timore',
 ];
 
-/** Internal paths for the transparency hub and its permalinks. */
+/** Internal paths for the timeline hub and its permalinks. */
 export const paths = {
-  trasparenza: '/trasparenza',
-  trasparenzaEvento: (id: string) => `/trasparenza/evento/${encodeURIComponent(id)}`,
-  trasparenzaPersona: (id: string) => `/trasparenza/persona/${encodeURIComponent(id)}`,
-  trasparenzaTema: (slug: string) => `/trasparenza/tema/${encodeURIComponent(slug)}`,
+  timeline: '/timeline',
+  timelineEvento: (id: string) => `/timeline/evento/${encodeURIComponent(id)}`,
+  timelinePersona: (id: string) => `/timeline/persona/${encodeURIComponent(id)}`,
+  timelineTema: (slug: string) => `/timeline/tema/${encodeURIComponent(slug)}`,
 } as const;
 
 export const pages = {
-  trasparenza: {
-    title: 'Sentiment',
+  timeline: {
+    title: 'Timeline',
     description:
       'Una riga per soggetto: dichiarazioni con citazione, incontri, spese e passaggi legislativi UE sullo stesso asse temporale. Sempre con fonte.',
   },

@@ -15,13 +15,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: SITE_URL, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
     {
-      url: `${SITE_URL}${paths.trasparenza}`,
+      url: `${SITE_URL}${paths.timeline}`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.95,
     },
     ...listThemeSlugs().map((slug) => ({
-      url: `${SITE_URL}${paths.trasparenzaTema(slug)}`,
+      url: `${SITE_URL}${paths.timelineTema(slug)}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.9,
@@ -33,13 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     ...listPersonSlugs().map((id) => ({
-      url: `${SITE_URL}${paths.trasparenzaPersona(id)}`,
+      url: `${SITE_URL}${paths.timelinePersona(id)}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
     ...eventIds.map((id) => ({
-      url: `${SITE_URL}${paths.trasparenzaEvento(id)}`,
+      url: `${SITE_URL}${paths.timelineEvento(id)}`,
       lastModified: now,
       changeFrequency: 'monthly' as const,
       priority: 0.6,

@@ -886,7 +886,7 @@ export default function RedazioneContent() {
       </div>
 
       <p className="mt-12 text-center text-sm text-muted-foreground">
-        <Link href="/trasparenza" className="inline-flex items-center gap-1 hover:text-foreground">
+        <Link href="/timeline" className="inline-flex items-center gap-1 hover:text-foreground">
           {t.redazione.backTimeline}
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>

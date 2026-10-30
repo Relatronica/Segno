@@ -43,12 +43,12 @@ export function EventDetailPanel({ event, theme }: Props) {
   const Icon = meta.icon;
   const sentiment = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
   const isAuto = event.origin === 'auto';
-  const timelineHref = `${paths.trasparenza}${buildTrasparenzaSearch({ event: event.id })}`;
+  const timelineHref = `${paths.timeline}${buildTrasparenzaSearch({ event: event.id })}`;
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 pb-16 pt-[calc(var(--nav-clearance)+2.5rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--nav-clearance)+3.5rem)] lg:px-8">
       <Link
-        href={paths.trasparenza}
+        href={paths.timeline}
         className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -99,7 +99,7 @@ export function EventDetailPanel({ event, theme }: Props) {
 
       {person && (
         <Link
-          href={paths.trasparenzaPersona(person.id)}
+          href={paths.timelinePersona(person.id)}
           className="mt-5 inline-flex items-center gap-2.5 rounded-lg border border-border/50 px-3 py-2 transition-colors hover:bg-muted/40"
         >
           <PersonAvatar person={person} size="lg" />
@@ -188,7 +188,7 @@ export function EventDetailPanel({ event, theme }: Props) {
 
         {theme && (
           <Link
-            href={paths.trasparenzaTema(theme.slug)}
+            href={paths.timelineTema(theme.slug)}
             className="text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             {t.trasparenza.detailTheme}: {theme.name[locale]}

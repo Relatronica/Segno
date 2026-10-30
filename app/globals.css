@@ -41,10 +41,9 @@
 }
 
 :root {
-  /* Floating header footprint (inset + bar) */
-  --nav-inset: 0.625rem;
-  --nav-bar-h: 3rem;
-  --nav-clearance: calc(var(--nav-inset) + var(--nav-bar-h));
+  /* Full-width header footprint (bar + bottom rule) */
+  --nav-bar-h: 3.5rem;
+  --nav-clearance: calc(var(--nav-bar-h) + 1px);
 
   /* Tighter, dossier-like corners */
   --radius: 0.4rem;
@@ -112,12 +111,6 @@
   --chart-3: oklch(0.72 0.12 70);
   --chart-4: oklch(0.65 0.08 200);
   --chart-5: oklch(0.62 0.1 140);
-}
-
-@media (min-width: 640px) {
-  :root {
-    --nav-inset: 1rem;
-  }
 }
 
 @layer base {

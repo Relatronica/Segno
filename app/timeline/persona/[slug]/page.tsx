@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     events[0]?.summary.it ??
     `${person.name} — ${person.role.it}. Tracce e dichiarazioni sulla timeline di Segno.`;
-  const url = `${SITE_URL}${paths.trasparenzaPersona(person.id)}`;
+  const url = `${SITE_URL}${paths.timelinePersona(person.id)}`;
 
   return {
     title: person.name,
@@ -35,7 +35,7 @@ export default async function TrasparenzaPersonaPage({ params }: PageProps) {
   if (!resolved) notFound();
 
   const { person, events } = resolved;
-  const url = `${SITE_URL}${paths.trasparenzaPersona(person.id)}`;
+  const url = `${SITE_URL}${paths.timelinePersona(person.id)}`;
 
   return (
     <>
@@ -56,7 +56,7 @@ export default async function TrasparenzaPersonaPage({ params }: PageProps) {
             '@type': 'Article',
             headline: event.title.it,
             datePublished: event.date,
-            url: `${SITE_URL}${paths.trasparenzaEvento(event.id)}`,
+            url: `${SITE_URL}${paths.timelineEvento(event.id)}`,
             citation: event.sourceUrl,
           })),
         }}

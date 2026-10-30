@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ArrowRight,
   CheckCircle2,
@@ -11,20 +11,44 @@ import {
   Check,
   Link2,
   Share2,
-  ChevronDown,
-  Eye,
   History,
-  Waypoints,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/useT';
 import { useAppStore } from '@/store/useAppStore';
 import { roadmapPhases, type PhaseStatus } from '@/lib/data/roadmap';
 import { homeFaqs } from '@/lib/data/home-faq';
-import { ALL_LENSES, LENS_META, getHomeSnapshot } from '@/lib/data/trasparenza';
+import {
+  ALL_LENSES,
+  LENS_META,
+  formatEventDate,
+  getHomeSnapshot,
+  lensOf,
+  unifiedTheme,
+} from '@/lib/data/trasparenza';
 import { cn } from '@/lib/utils';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_NAME, SITE_URL, paths } from '@/lib/seo';
+
+const DONATE_URL = 'https://buymeacoffee.com/relatronica';
+const LATEST_COUNT = 6;
 
 const homeSnapshot = getHomeSnapshot();
+const currentYear = new Date().getFullYear();
+
+const latestEvents = [...unifiedTheme.events]
+  .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+  .slice(0, LATEST_COUNT);
+
+const lensIndex = ALL_LENSES.map((lens) => ({
+  lens,
+  meta: LENS_META[lens],
+  count: unifiedTheme.events.filter((event) => lensOf(event) === lens).length,
+}));
+
+const METHOD_FAQ_IDS = ['what', 'sources', 'causation', 'sentiment'];
+const methodFaqs = METHOD_FAQ_IDS.map((id) => homeFaqs.find((faq) => faq.id === id)).filter(
+  (faq): faq is (typeof homeFaqs)[number] => Boolean(faq),
+);
+
 const heroYears = Array.from(
   { length: homeSnapshot.toYear - homeSnapshot.fromYear + 1 },
   (_, i) => String(homeSnapshot.fromYear + i),
@@ -60,19 +84,23 @@ const statusStyles: Record<
   },
 };
 
+const subscribeNoop = () => () => {};
+const getNativeShareClient = () =>
+  typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
 export default function HomeContent() {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
-  const [openFaq, setOpenFaq] = useState<string | null>(homeFaqs[0]?.id ?? null);
-  const [copied, setCopied] = useState(false);
-  const [canNativeShare, setCanNativeShare] = useState(false);
-
-  useEffect(() => {
-    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
-  }, []);
+  const [copied, setCopied] = useState<'cite' | 'link' | null>(null);
+  const canNativeShare = useSyncExternalStore(
+    subscribeNoop,
+    getNativeShareClient,
+    () => false,
+  );
 
   const shareUrl = SITE_URL;
   const shareText = t.home.shareText;
+  const citation = `${SITE_NAME} (${currentYear}). ${t.home.citeWork}. Relatronica. ${SITE_URL}`;
 
   const mastodonIntent = useMemo(() => {
     return (instance: string) => {
@@ -81,11 +109,11 @@ export default function HomeContent() {
     };
   }, [shareText, shareUrl]);
 
-  const copyLink = async () => {
+  const copy = async (text: string, key: 'cite' | 'link') => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
     } catch {
       // ignore
     }
@@ -117,19 +145,12 @@ export default function HomeContent() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const stats = [
-    { value: String(homeSnapshot.eventCount), label: t.hero.statsEvents },
-    { value: String(homeSnapshot.actorCount), label: t.hero.statsActors },
-    {
-      value: `${homeSnapshot.fromYear}–${homeSnapshot.toYear}`,
-      label: t.hero.statsSpan,
-    },
-    { value: String(homeSnapshot.sourceCount), label: t.hero.statsSources },
-  ];
+  const quietButton =
+    'inline-flex items-center gap-2 rounded-md border border-border bg-background px-3.5 py-2 text-sm font-medium transition-colors hover:bg-accent';
 
   return (
     <div className="relative overflow-hidden">
-      {/* Hero */}
+      {/* Masthead */}
       <section className="relative isolate">
         <div
           aria-hidden
@@ -141,13 +162,13 @@ export default function HomeContent() {
         />
 
         <div className="relative mx-auto max-w-6xl px-4 pb-0 pt-[calc(var(--nav-clearance)+3.5rem)] sm:px-6 sm:pt-[calc(var(--nav-clearance)+5rem)] lg:px-8">
-          <motion.div initial="hidden" animate="visible" className="mx-auto max-w-3xl text-center">
+          <motion.div initial="hidden" animate="visible" className="max-w-3xl">
             <motion.p
               custom={0}
               variants={fadeUp}
               className="font-mono text-xs uppercase tracking-[0.22em] text-mark/80"
             >
-              Segno
+              Segno · {t.home.mastheadOrg}
             </motion.p>
             <motion.h1
               custom={1}
@@ -159,17 +180,13 @@ export default function HomeContent() {
             <motion.p
               custom={2}
               variants={fadeUp}
-              className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
+              className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
             >
               {t.hero.subtitle}
             </motion.p>
-            <motion.div
-              custom={3}
-              variants={fadeUp}
-              className="mt-10 flex flex-wrap items-center justify-center gap-3"
-            >
+            <motion.div custom={3} variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-5">
               <Link
-                href="/trasparenza"
+                href="/timeline"
                 className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
                 <History className="h-4 w-4" />
@@ -177,12 +194,21 @@ export default function HomeContent() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <a
-                href="#problema"
-                className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 text-sm font-semibold transition-colors hover:bg-accent"
+                href="#metodo"
+                className="text-sm font-semibold underline-offset-4 hover:underline"
               >
                 {t.hero.ctaSecondary}
               </a>
             </motion.div>
+            <motion.p
+              custom={4}
+              variants={fadeUp}
+              className="mt-8 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground"
+            >
+              {t.home.updatedLabel} {formatEventDate(latestEvents[0].date, locale)} ·{' '}
+              {homeSnapshot.eventCount} {t.hero.statsEvents} · {homeSnapshot.fromYear}–
+              {homeSnapshot.toYear} · {homeSnapshot.sourceCount} {t.hero.statsSources}
+            </motion.p>
           </motion.div>
 
           <div aria-hidden className="relative mx-auto mt-16 hidden max-w-4xl sm:block">
@@ -209,155 +235,128 @@ export default function HomeContent() {
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="relative mt-14 border-t border-border/50 bg-background/55 sm:mt-16">
-          <dl className="mx-auto grid max-w-6xl grid-cols-2 sm:grid-cols-4">
-            {stats.map((stat, i) => (
-              <div
-                key={stat.label}
-                className={cn(
-                  'px-4 py-8 text-center sm:px-6',
-                  i % 2 === 1 && 'border-l border-border/50',
-                  i >= 2 && 'border-t border-border/50 sm:border-t-0',
-                  i > 0 && 'sm:border-l sm:border-border/50',
-                )}
-              >
-                <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  {stat.label}
-                </dt>
-                <dd className="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{stat.value}</dd>
+      {/* Latest entries */}
+      <section id="ultimi" className="relative scroll-mt-20 border-t border-border/50 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.latestTitle}</h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.latestSubtitle}</p>
+            </div>
+            <Link
+              href="/timeline"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+            >
+              {t.home.latestAll}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <ul className="mt-10 border-y border-border/50">
+            {latestEvents.map((event) => {
+              const meta = LENS_META[lensOf(event)];
+              return (
+                <li key={event.id} className="border-b border-border/50 last:border-b-0">
+                  <Link
+                    href={paths.timelineEvento(event.id)}
+                    className="group flex flex-wrap items-baseline gap-x-4 gap-y-1 py-4"
+                  >
+                    <time className="w-24 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                      {formatEventDate(event.date, locale)}
+                    </time>
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
+                      style={{ color: meta.color }}
+                    >
+                      <span
+                        aria-hidden
+                        className="block h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: meta.color }}
+                      />
+                      {meta.label[locale]}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-medium leading-snug group-hover:underline">
+                      {event.title[locale]}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {event.sourceLabel[locale]}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* Method */}
+      <section
+        id="metodo"
+        className="relative scroll-mt-20 border-t border-border/50 bg-muted/15 py-16 sm:py-20"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.methodTitle}</h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.methodSubtitle}</p>
+          </div>
+
+          <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-2">
+            {methodFaqs.map((faq) => (
+              <div key={faq.id}>
+                <dt className="text-sm font-semibold tracking-tight">{faq.question[locale]}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
+                  {faq.answer[locale]}
+                </dd>
               </div>
             ))}
           </dl>
         </div>
       </section>
 
-      {/* Problem */}
-      <section id="problema" className="relative scroll-mt-20 border-y border-border/40 bg-background/70 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            className="max-w-2xl"
-          >
-            <motion.h2 custom={0} variants={fadeUp} className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {t.home.problemTitle}
-            </motion.h2>
-            <motion.p custom={1} variants={fadeUp} className="mt-4 text-muted-foreground leading-relaxed">
-              {t.home.problemSubtitle}
-            </motion.p>
-          </motion.div>
-
-          <div className="mt-12 grid gap-10 sm:grid-cols-3">
-            {[
-              { icon: Waypoints, title: t.home.problem1Title, text: t.home.problem1Text },
-              { icon: Eye, title: t.home.problem2Title, text: t.home.problem2Text },
-              { icon: Link2, title: t.home.problem3Title, text: t.home.problem3Text },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.title}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: '-60px' }}
-                  custom={i}
-                  variants={fadeUp}
-                >
-                  <div className="mb-4 inline-flex text-mark">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-lg font-semibold tracking-tight">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.text}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* What we do */}
-      <section className="relative py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.solutionTitle}</h2>
-              <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
-                {t.home.solutionText}
-              </p>
-              <Link
-                href="/trasparenza"
-                className="mt-8 inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-              >
-                {t.home.solutionCta}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <blockquote className="border-l-2 border-mark/40 pl-6 sm:pl-8">
-              <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                {t.home.solutionAsideLabel}
-              </p>
-              <p className="mt-3 text-lg leading-relaxed text-foreground/90">{t.home.solutionAside}</p>
-            </blockquote>
-          </div>
-        </div>
-      </section>
-
-      {/* Themes */}
-      <section className="relative border-y border-border/40 bg-muted/15 py-16 sm:py-24">
+      {/* Data index */}
+      <section id="indice" className="relative scroll-mt-20 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.themesTitle}</h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.themesSubtitle}</p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.indexTitle}</h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.indexSubtitle}</p>
           </div>
 
-          <motion.ol
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/50 sm:grid-cols-2 lg:grid-cols-5"
-          >
-            {ALL_LENSES.map((lens, i) => {
-              const meta = LENS_META[lens];
-              return (
-                <motion.li
-                  key={lens}
-                  custom={i}
-                  variants={fadeUp}
-                  className={cn(
-                    'bg-background p-5',
-                    i === ALL_LENSES.length - 1 && 'sm:col-span-2 lg:col-span-1',
-                  )}
+          <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/50 sm:grid-cols-2 lg:grid-cols-5">
+            {lensIndex.map(({ lens, meta, count }, i) => (
+              <li
+                key={lens}
+                className={cn('bg-background', i === lensIndex.length - 1 && 'sm:col-span-2 lg:col-span-1')}
+              >
+                <Link
+                  href={`/timeline?lente=${lens}`}
+                  className="group flex h-full flex-col p-5 transition-colors hover:bg-accent/40"
                 >
                   <span
                     aria-hidden
                     className="block h-1 w-8 rounded-full"
                     style={{ backgroundColor: meta.color }}
                   />
-                  <h3 className="mt-4 text-base font-semibold tracking-tight">
-                    {meta.label[locale]}
-                  </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  <span className="mt-4 text-base font-semibold tracking-tight">{meta.label[locale]}</span>
+                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-pretty text-muted-foreground">
                     {meta.blurb[locale]}
                   </p>
-                </motion.li>
-              );
-            })}
-          </motion.ol>
-
-          <Link
-            href="/trasparenza"
-            className="mt-10 inline-flex items-center gap-2 rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
-          >
-            {t.home.themesCta}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+                  <span className="mt-4 font-mono text-xs tabular-nums text-muted-foreground">
+                    {t.home.indexEntries.replace('{count}', String(count))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       {/* Roadmap */}
-      <section id="avanzamento" className="relative scroll-mt-20 py-16 sm:py-24">
+      <section
+        id="avanzamento"
+        className="relative scroll-mt-20 border-t border-border/50 bg-muted/15 py-16 sm:py-20"
+      >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.roadmapTitle}</h2>
@@ -400,117 +399,87 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* Share */}
-      <section id="diffondi" className="relative scroll-mt-20 border-y border-border/40 bg-muted/20 py-16 sm:py-24">
+      {/* Cite & contact */}
+      <section id="citare" className="relative scroll-mt-20 border-t border-border/50 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.shareTitle}</h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.shareSubtitle}</p>
-          </div>
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.citeTitle}</h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.citeSubtitle}</p>
+              <div className="mt-6 flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+                <code className="min-w-0 flex-1 break-words font-mono text-xs leading-relaxed">
+                  {citation}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copy(citation, 'cite')}
+                  aria-label={t.home.copyLink}
+                  className="shrink-0 rounded-md border border-border bg-background p-2 transition-colors hover:bg-accent"
+                >
+                  {copied === 'cite' ? (
+                    <Check className="h-4 w-4 text-mark" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={copyLink}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              {copied ? <Check className="h-4 w-4 text-mark" /> : <Copy className="h-4 w-4" />}
-              {copied ? t.home.copied : t.home.copyLink}
-            </button>
-            <button
-              type="button"
-              onClick={shareMastodon}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              <Link2 className="h-4 w-4" />
-              Mastodon
-            </button>
-            <button
-              type="button"
-              onClick={shareBluesky}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Bluesky
-            </button>
-            <button
-              type="button"
-              onClick={shareLinkedIn}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              LinkedIn
-            </button>
-            {canNativeShare && (
-              <button
-                type="button"
-                onClick={shareNative}
-                className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-              >
-                <Share2 className="h-4 w-4" />
-                {t.home.shareNative}
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.contactTitle}</h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.contactText}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/segnala"
+                  className="inline-flex items-center gap-2 rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+                >
+                  {t.nav.segnala}
+                </Link>
+                <a
+                  href={DONATE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={quietButton}
+                >
+                  {t.nav.donate}
+                </a>
+              </div>
 
-      {/* FAQ */}
-      <section id="faq" className="relative scroll-mt-20 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.faqTitle}</h2>
-          <p className="mt-3 max-w-2xl text-muted-foreground">{t.home.faqSubtitle}</p>
-
-          <div className="mt-10 max-w-3xl divide-y divide-border/60">
-            {homeFaqs.map((faq) => {
-              const open = openFaq === faq.id;
-              return (
-                <div key={faq.id} className="py-1">
+              <div className="mt-8 flex flex-wrap items-center gap-2">
+                <span className="mr-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {t.home.shareLabel}
+                </span>
+                <button type="button" onClick={() => copy(shareUrl, 'link')} className={quietButton}>
+                  {copied === 'link' ? (
+                    <Check className="h-4 w-4 text-mark" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copied === 'link' ? t.home.copied : t.home.copyLink}
+                </button>
+                <button type="button" onClick={shareMastodon} className={quietButton}>
+                  <Link2 className="h-4 w-4" />
+                  Mastodon
+                </button>
+                <button type="button" onClick={shareBluesky} className={quietButton}>
+                  Bluesky
+                </button>
+                <button type="button" onClick={shareLinkedIn} className={quietButton}>
+                  LinkedIn
+                </button>
+                {canNativeShare && (
                   <button
                     type="button"
-                    onClick={() => setOpenFaq(open ? null : faq.id)}
-                    className="flex w-full items-center justify-between gap-4 py-4 text-left"
-                    aria-expanded={open}
+                    onClick={shareNative}
+                    className="inline-flex items-center gap-2 rounded-md bg-foreground px-3.5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
                   >
-                    <span className="text-base font-semibold tracking-tight">{faq.question[locale]}</span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-                        open ? 'rotate-180' : ''
-                      }`}
-                    />
+                    <Share2 className="h-4 w-4" />
+                    {t.home.shareNative}
                   </button>
-                  <AnimatePresence initial={false}>
-                    {open && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <p className="pb-5 text-sm leading-relaxed text-muted-foreground">
-                          {faq.answer[locale]}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="relative border-t border-border/40 bg-[radial-gradient(ellipse_at_50%_0%,oklch(0.48_0.17_25/_0.07),transparent_55%)] py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t.home.ctaTitle}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{t.home.ctaSubtitle}</p>
-          <Link
-            href="/trasparenza"
-            className="mt-8 inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
-          >
-            {t.home.ctaButton}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
     </div>

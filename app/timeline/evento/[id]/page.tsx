@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const title = resolved.event.title.it;
   const description = resolved.event.summary.it;
-  const url = `${SITE_URL}${paths.trasparenzaEvento(resolved.event.id)}`;
+  const url = `${SITE_URL}${paths.timelineEvento(resolved.event.id)}`;
 
   return {
     title,
@@ -34,7 +34,7 @@ export default async function TrasparenzaEventPage({ params }: PageProps) {
   if (!resolved) notFound();
 
   const { event, theme } = resolved;
-  const url = `${SITE_URL}${paths.trasparenzaEvento(event.id)}`;
+  const url = `${SITE_URL}${paths.timelineEvento(event.id)}`;
   const person = event.personId
     ? lobbyPeople.find((p) => p.id === event.personId)
     : undefined;
@@ -55,7 +55,7 @@ export default async function TrasparenzaEventPage({ params }: PageProps) {
           citation: event.sourceUrl,
           articleSection: theme ? theme.name.it : 'Sentiment',
           about: person
-            ? { '@type': 'Person', name: person.name, url: `${SITE_URL}${paths.trasparenzaPersona(person.id)}` }
+            ? { '@type': 'Person', name: person.name, url: `${SITE_URL}${paths.timelinePersona(person.id)}` }
             : undefined,
         }}
       />

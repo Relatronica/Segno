@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!resolved) return { title: 'Tema non trovato' };
 
   const { theme } = resolved;
-  const url = `${SITE_URL}${paths.trasparenzaTema(theme.slug)}`;
+  const url = `${SITE_URL}${paths.timelineTema(theme.slug)}`;
 
   return {
     title: theme.name.it,
@@ -37,7 +37,7 @@ export default async function TrasparenzaTemaPage({ params }: PageProps) {
   if (!resolved) notFound();
 
   const { theme, events, people } = resolved;
-  const url = `${SITE_URL}${paths.trasparenzaTema(theme.slug)}`;
+  const url = `${SITE_URL}${paths.timelineTema(theme.slug)}`;
 
   return (
     <>
@@ -56,7 +56,7 @@ export default async function TrasparenzaTemaPage({ params }: PageProps) {
             itemListElement: events.slice(0, 25).map((event, index) => ({
               '@type': 'ListItem',
               position: index + 1,
-              url: `${SITE_URL}${paths.trasparenzaEvento(event.id)}`,
+              url: `${SITE_URL}${paths.timelineEvento(event.id)}`,
               name: event.title.it,
             })),
           },

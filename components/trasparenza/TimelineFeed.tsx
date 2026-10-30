@@ -417,7 +417,7 @@ export function TimelineFeed({
 
                             {permalinkLabel && (
                               <a
-                                href={paths.trasparenzaEvento(event.id)}
+                                href={paths.timelineEvento(event.id)}
                                 title={permalinkHint}
                                 className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                               >

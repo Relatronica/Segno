@@ -37,7 +37,7 @@ export function ThemeDetail({ theme, events, people }: Props) {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-[calc(var(--nav-clearance)+2.5rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--nav-clearance)+3.5rem)] lg:px-8">
       <Link
-        href={paths.trasparenza}
+        href={paths.timeline}
         className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export function ThemeDetail({ theme, events, people }: Props) {
       </p>
 
       <Link
-        href={paths.trasparenza}
+        href={paths.timeline}
         className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-foreground px-3.5 py-2 text-[13px] font-semibold text-background transition-opacity hover:opacity-90"
       >
         {t.trasparenza.themeOpenTimeline}
@@ -91,7 +91,7 @@ export function ThemeDetail({ theme, events, people }: Props) {
             {people.map((person) => (
               <Link
                 key={person.id}
-                href={paths.trasparenzaPersona(person.id)}
+                href={paths.timelinePersona(person.id)}
                 className="inline-flex items-center gap-2 rounded-md border border-border/50 py-1 pl-1 pr-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-muted/40"
               >
                 <PersonAvatar person={person} size="sm" />

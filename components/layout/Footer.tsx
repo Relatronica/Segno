@@ -12,8 +12,8 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   if (
-    pathname === '/trasparenza' ||
-    pathname.startsWith('/trasparenza/') ||
+    pathname === '/timeline' ||
+    pathname.startsWith('/timeline/') ||
     pathname === '/redazione' ||
     pathname.startsWith('/redazione/')
   ) {
@@ -42,18 +42,18 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/trasparenza"
+                  href="/timeline"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {t.nav.trasparenza}
+                  {t.nav.timeline}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/#faq"
+                  href="/#metodo"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {t.home.faqTitle}
+                  {t.home.methodTitle}
                 </Link>
               </li>
             </ul>

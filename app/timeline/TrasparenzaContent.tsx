@@ -34,12 +34,7 @@ import {
   type TrasparenzaUrlState,
 } from '@/lib/trasparenza/url';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
-import { LaneTimeline, subjectOf } from '@/components/trasparenza/LaneTimeline';
-import {
-  PositionMatrix,
-  type ThesisRow,
-  type ThesisSubject,
-} from '@/components/trasparenza/PositionMatrix';
+import { LaneTimeline } from '@/components/trasparenza/LaneTimeline';
 import { TimelineFeed, type ScrubState } from '@/components/trasparenza/TimelineFeed';
 
 /** Offset timeline chrome below the floating header */
@@ -328,7 +323,7 @@ export default function TrasparenzaContent() {
     allYears,
   ]);
 
-  const switchTheme = (_id: string) => {
+  const switchTheme = () => {
     /* single unified track — theme switch retained for FilterSidebar API */
   };
 
@@ -371,67 +366,6 @@ export default function TrasparenzaContent() {
         : null,
     [thesisReadings],
   );
-
-  /** Board for the matrix: one row per subject, silence listed separately. */
-  const thesisBoard = useMemo(() => {
-    if (!activeThesis || !thesisReadings) return null;
-    const peopleById = new Map(track.people.map((person) => [person.id, person]));
-    const actorsById = new Map(track.actors.map((actor) => [actor.id, actor]));
-
-    const toSubject = (kind: 'person' | 'actor', id: string): ThesisSubject | null => {
-      if (kind === 'person') {
-        const person = peopleById.get(id);
-        if (!person) return null;
-        return {
-          key: `person:${person.id}`,
-          kind: 'person',
-          id: person.id,
-          name: person.name,
-          shortName: person.shortName,
-          avatar: person.avatar,
-        };
-      }
-      const actor = actorsById.get(id);
-      if (!actor) return null;
-      return {
-        key: `actor:${actor.id}`,
-        kind: 'actor',
-        id: actor.id,
-        name: actor.name,
-        shortName: actor.shortName,
-        accent: actor.color,
-      };
-    };
-
-    const byKey = new Map<string, ThesisRow>();
-    for (const reading of thesisReadings) {
-      const subject = subjectOf(reading.event);
-      if (!subject) continue;
-      const meta = toSubject(subject.kind, subject.id);
-      if (!meta) continue;
-      const row = byKey.get(meta.key);
-      if (row) row.readings.push(reading);
-      else byKey.set(meta.key, { subject: meta, readings: [reading] });
-    }
-
-    const rows = [...byKey.values()]
-      .map((row) => ({
-        ...row,
-        readings: [...row.readings].sort((a, b) => a.event.date.localeCompare(b.event.date)),
-      }))
-      .sort(
-        (a, b) =>
-          b.readings.length - a.readings.length ||
-          a.subject.shortName.localeCompare(b.subject.shortName),
-      );
-
-    const silent = [
-      ...track.people.map((person) => toSubject('person', person.id)),
-      ...track.actors.map((actor) => toSubject('actor', actor.id)),
-    ].filter((subject): subject is ThesisSubject => subject !== null && !byKey.has(subject.key));
-
-    return { rows, silent };
-  }, [activeThesis, thesisReadings, track.people, track.actors]);
 
   const stanceByEventId = useMemo(() => {
     if (!thesisReadings) return undefined;
@@ -1001,7 +935,7 @@ export default function TrasparenzaContent() {
         {panelOpen && (
           <motion.aside
             key="desktop-panel"
-            className="relative z-20 hidden h-full shrink-0 overflow-hidden border-l border-border/50 bg-background/95 backdrop-blur-xl lg:flex"
+            className="relative z-20 hidden h-full shrink-0 overflow-hidden border-l border-border/50 bg-background/95 pt-[var(--nav-clearance)] backdrop-blur-xl lg:flex"
             initial={{ width: 0, opacity: 0.6 }}
             animate={{ width: 380, opacity: 1 }}
             exit={{ width: 0, opacity: 0.6 }}
