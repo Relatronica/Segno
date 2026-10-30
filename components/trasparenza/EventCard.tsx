@@ -59,6 +59,11 @@ export function EventCard({ event }: { event: TimelineEvent }) {
               {t.trasparenza.autoLabel}
             </span>
           )}
+          {(event.benchmarkLabel || event.benchmarkMetric) && (
+            <span className="rounded bg-sky-500/15 px-1.5 py-px font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30">
+              {event.benchmarkLabel ?? `${event.benchmarkMetric?.name} ${event.benchmarkMetric?.value}`}
+            </span>
+          )}
         </div>
 
         <Link

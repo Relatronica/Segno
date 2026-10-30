@@ -84,6 +84,12 @@ export function EventDetailPanel({ event, theme }: Props) {
             {t.trasparenza.autoLabel}
           </span>
         )}
+
+        {(event.benchmarkLabel || event.benchmarkMetric) && (
+          <span className="rounded bg-sky-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30">
+            {event.benchmarkLabel ?? `${event.benchmarkMetric?.name}: ${event.benchmarkMetric?.value}`}
+          </span>
+        )}
       </div>
 
       <time

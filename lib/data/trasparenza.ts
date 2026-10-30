@@ -33,9 +33,9 @@ export type EventType =
  * says what form the event takes. The timeline reads on both axes: the form
  * decides how we filter, the lens decides which story the pin belongs to.
  */
-export type Lens = "models" | "research" | "business" | "culture" | "policy";
+export type Lens = "models" | "capabilities" | "research" | "business" | "culture" | "policy";
 
-export const ALL_LENSES: Lens[] = ["models", "research", "business", "culture", "policy"];
+export const ALL_LENSES: Lens[] = ["models", "capabilities", "research", "business", "culture", "policy"];
 
 /** Declaration order is the reading order: from the artefact to its rules. */
 export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; color: string }> = {
@@ -46,6 +46,14 @@ export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; col
       en: "The frontier systems labs release: who ships what, and when.",
     },
     color: "#3b6fe0",
+  },
+  capabilities: {
+    label: { it: "Capacità", en: "Capabilities" },
+    blurb: {
+      it: "Le metriche e i test di frontiera: come crescono le capacità misurate dei sistemi (ECI di Epoch, SWE-bench, reasoning).",
+      en: "Frontier benchmarks and metrics: how measured system capabilities progress over time (Epoch's ECI, SWE-bench, reasoning).",
+    },
+    color: "#0284c7",
   },
   research: {
     label: { it: "Ricerca", en: "Research" },
@@ -78,6 +86,48 @@ export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; col
       en: "The rules of the game: laws, sanctions, and the institutions trying to govern AI.",
     },
     color: "#b3382c",
+  },
+};
+
+/**
+ * Capability domains tracked in the capabilities lane. Each domain is drawn
+ * as a separate coloured line so the user sees at a glance where AI progresses
+ * fastest (coding, reasoning, math, agentic autonomy) and where it lags.
+ */
+export type CapabilityDomain = "general" | "reasoning" | "coding" | "math" | "agentic";
+
+export const ALL_CAPABILITY_DOMAINS: CapabilityDomain[] = [
+  "general", "reasoning", "coding", "math", "agentic",
+];
+
+export const CAPABILITY_DOMAIN_META: Record<
+  CapabilityDomain,
+  { label: LocaleText; color: string; order: number }
+> = {
+  general: {
+    label: { it: "Generale", en: "General" },
+    color: "#0284c7",
+    order: 0,
+  },
+  reasoning: {
+    label: { it: "Ragionamento", en: "Reasoning" },
+    color: "#7c3aed",
+    order: 1,
+  },
+  coding: {
+    label: { it: "Coding", en: "Coding" },
+    color: "#059669",
+    order: 2,
+  },
+  math: {
+    label: { it: "Matematica", en: "Math" },
+    color: "#d97706",
+    order: 3,
+  },
+  agentic: {
+    label: { it: "Agenti", en: "Agentic" },
+    color: "#e11d48",
+    order: 4,
   },
 };
 
@@ -158,6 +208,18 @@ export type TimelineEvent = {
   sourceUrl: string;
   /** Source thumbnail, when the feed provides one. Automatic rows only. */
   imageUrl?: string;
+  /**
+   * Capability domain scores (0–100 normalised) for the capabilities lane.
+   * Each key maps to a domain line; only the domains with data are drawn.
+   * The pin is placed at the *primary* domain's Y — the highest score.
+   */
+  capabilityScores?: Partial<Record<CapabilityDomain, number>>;
+  /** Which domain this capability milestone principally represents. */
+  capabilityDomain?: CapabilityDomain;
+  /** Human-readable label for the primary benchmark result, shown as a badge. */
+  benchmarkLabel?: string;
+  /** Structured benchmark metric */
+  benchmarkMetric?: { name: string; value: string };
 };
 
 export type TimelineTheme = {
@@ -237,6 +299,7 @@ export const lobbyActors: LobbyActor[] = [
   { id: "mistral", name: "Mistral AI", shortName: "Mistral", color: "#FF7000" },
   { id: "stability", name: "Stability AI", shortName: "Stability", color: "#7629C8" },
   { id: "qwen", name: "Qwen", shortName: "Qwen", color: "#6D5CE7" },
+  { id: "epoch", name: "Epoch AI", shortName: "Epoch AI", color: "#0284c7" },
 ];
 
 export const lobbyPeople: LobbyPerson[] = [
@@ -2455,8 +2518,8 @@ export const unifiedTheme: TimelineTheme = {
   shortName: "IA",
   period: { it: "2013 — oggi", en: "2013 — today" },
   intro: {
-    it: "Come evolve l’IA, letta per lenti: modelli, ricerca, mercato, cultura e politica sullo stesso asse. Ogni segno è un dato con la sua fonte.",
-    en: "How AI evolves, read through lenses: models, research, business, culture and policy on the same axis. Every mark is a datum with its source.",
+    it: "Come evolve l’IA, letta per lenti: modelli, capacità, ricerca, mercato, cultura e politica sullo stesso asse. Ogni segno è un dato con la sua fonte.",
+    en: "How AI evolves, read through lenses: models, capabilities, research, business, culture and policy on the same axis. Every mark is a datum with its source.",
   },
   events: mergeContextEvents(sentimentTheme.events, aiActTrack.events, aiHistoryEvents),
 };

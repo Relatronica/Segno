@@ -12,7 +12,7 @@ const translations = {
     hero: {
       title: 'Come evolve l’IA, dal modello alla regola.',
       subtitle:
-        'Segno mette su un solo asse i rilasci dei laboratori, la ricerca, il mercato, la cultura e la politica: cinque lenti, un solo racconto dal 2013 a oggi. Ogni segno è un dato con la sua fonte.',
+        'Segno mette su un solo asse i rilasci dei laboratori, le capacità misurate, la ricerca, il mercato, la cultura e la politica: sei lenti, un solo racconto dal 2013 a oggi. Ogni segno è un dato con la sua fonte.',
       cta: 'Esplora la timeline',
       ctaSecondary: 'Perché conta',
       statsEvents: 'Punti in timeline',
@@ -21,12 +21,12 @@ const translations = {
     home: {
       roadmapTitle: 'Cosa stiamo costruendo',
       roadmapSubtitle:
-        'La timeline è viva e in aggiornamento: cinque lenti dal 2013 a oggi. Intorno, fonti più precise, racconti da condividere e nuove letture.',
+        'La timeline è viva e in aggiornamento: sei lenti dal 2013 a oggi. Intorno, fonti più precise, racconti da condividere e nuove letture.',
       statusDone: 'Online',
       statusActive: 'In corso',
       statusNext: 'Prossimo',
       shareText:
-        'Segno: l’evoluzione dell’IA dal modello alla regola — modelli, ricerca, mercato, cultura e politica su un’unica timeline con fonti. Guarda e condividi:',
+        'Segno: l’evoluzione dell’IA dal modello alla regola — modelli, capacità, ricerca, mercato, cultura e politica su un’unica timeline con fonti. Guarda e condividi:',
       copyLink: 'Copia link',
       copied: 'Copiato',
       shareNative: 'Condividi',
@@ -276,7 +276,7 @@ const translations = {
       eyebrow: 'Chi siamo',
       title: 'Segno mette l’evoluzione dell’IA su un unico asse, con le fonti.',
       intro:
-        'Segno è un progetto di Relatronica. Raccoglie rilasci dei laboratori, ricerca, mercato, cultura e politica dal 2013 a oggi su un’unica timeline: cinque lenti, un solo racconto, ogni segno con la sua fonte.',
+        'Segno è un progetto di Relatronica. Raccoglie rilasci dei laboratori, capacità, ricerca, mercato, cultura e politica dal 2013 a oggi su un’unica timeline: sei lenti, un solo racconto, ogni segno con la sua fonte.',
       whyTitle: 'Perché lo facciamo',
       whyText1:
         'L’IA avanza più in fretta di quanto riusciamo a leggerla. Comunicati, paper, investimenti, regole e dichiarazioni arrivano separati, senza un filo che li tenga insieme. Chi vuole capire cosa sta succedendo riparte ogni volta da zero.',
@@ -326,7 +326,7 @@ const translations = {
     hero: {
       title: 'How AI evolves, from the model to the rule.',
       subtitle:
-        'Segno places lab releases, research, business, culture and policy on one axis: five lenses, one story from 2013 to today. Every mark is a datum with its source.',
+        'Segno places lab releases, measured capabilities, research, business, culture and policy on one axis: six lenses, one story from 2013 to today. Every mark is a datum with its source.',
       cta: 'Explore the timeline',
       ctaSecondary: 'Why it matters',
       statsEvents: 'Timeline points',
@@ -335,12 +335,12 @@ const translations = {
     home: {
       roadmapTitle: 'What we are building',
       roadmapSubtitle:
-        'The timeline is live and updating: five lenses from 2013 to today. Around it, sharper sources, stories worth sharing and new readings.',
+        'The timeline is live and updating: six lenses from 2013 to today. Around it, sharper sources, stories worth sharing and new readings.',
       statusDone: 'Live',
       statusActive: 'In progress',
       statusNext: 'Next',
       shareText:
-        'Segno: AI’s evolution from the model to the rule — models, research, business, culture and policy on one sourced timeline. Explore and share:',
+        'Segno: AI’s evolution from the model to the rule — models, capabilities, research, business, culture and policy on one sourced timeline. Explore and share:',
       copyLink: 'Copy link',
       copied: 'Copied',
       shareNative: 'Share',
@@ -587,7 +587,7 @@ const translations = {
       eyebrow: 'About',
       title: 'Segno puts the evolution of AI on a single sourced axis.',
       intro:
-        'Segno is a Relatronica project. It gathers lab releases, research, business, culture and policy from 2013 to today on one timeline: five lenses, one story, every mark with its source.',
+        'Segno is a Relatronica project. It gathers lab releases, capabilities, research, business, culture and policy from 2013 to today on one timeline: six lenses, one story, every mark with its source.',
       whyTitle: 'Why we do it',
       whyText1:
         'AI moves faster than we can read it. Press releases, papers, investments, rules and statements arrive separately, with no thread holding them together. Anyone trying to understand what is happening starts from scratch every time.',

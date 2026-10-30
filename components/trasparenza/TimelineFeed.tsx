@@ -328,6 +328,11 @@ export function TimelineFeed({
                                   {sentimentLabel(event.sentiment)}
                                 </span>
                               )}
+                              {!event.sentiment && (event.benchmarkLabel || event.benchmarkMetric) && (
+                                <span className="ml-auto shrink-0 rounded bg-sky-500/15 px-1.5 py-px font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30">
+                                  {event.benchmarkLabel ?? `${event.benchmarkMetric?.name} ${event.benchmarkMetric?.value}`}
+                                </span>
+                              )}
                             </span>
 
                             <span

@@ -11,7 +11,7 @@ Sito: [segno.app](https://segno.app) · Progetto [Relatronica](https://relatroni
 | Percorso | Cosa fa |
 | --- | --- |
 | `/` | Home: manifesto e numeri presi dai dati della timeline |
-| `/timeline` | Timeline interattiva, cinque lenti (modelli, ricerca, mercato, cultura, politica) |
+| `/timeline` | Timeline interattiva, sei lenti (modelli, capacità, ricerca, mercato, cultura, politica) |
 | `/segnala` | Errori, fonti mancanti, contributi |
 | `/redazione` | Coda candidati (protetta, non indicizzata) |
 

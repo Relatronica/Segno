@@ -5,6 +5,9 @@ import { ChevronDown } from 'lucide-react';
 import {
   ALL_LENSES,
   LENS_META,
+  ALL_CAPABILITY_DOMAINS,
+  CAPABILITY_DOMAIN_META,
+  type CapabilityDomain,
   SENTIMENT_FEAR_SCORE,
   formatEventDate,
   lensOf,
@@ -27,6 +30,9 @@ const ROW_H_DESKTOP = 156;
 /** Mobile leaves the caption lines at two, but the header needs the room for
     the lane's description to wrap whole instead of clipping. */
 const ROW_H_MOBILE = 116;
+/** Capabilities lane height: generous vertical space for multi-domain lines & levels. */
+const CAP_ROW_H_DESKTOP = 270;
+const CAP_ROW_H_MOBILE = 190;
 /** Collapsed lane: a single-rail strip that holds the marks, none of the room. */
 const COLLAPSED_H = 44;
 /** Pitch of the caption lines inside a row. Also the room a 28px face needs. */
@@ -204,9 +210,140 @@ function lensShape(lens: Lens): { clipPath?: string; borderRadius?: string } {
       return { clipPath: 'polygon(50% 0,100% 100%,0 100%)' };
     case 'policy':
       return { borderRadius: '2px' };
+    case 'capabilities':
+      return { clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' };
     default:
       return { borderRadius: '9999px' };
   }
+}
+
+function capabilityY(score: number, rowHeight: number): number {
+  const pad = 18;
+  const ratio = Math.max(0, Math.min(1, score / 100));
+  return rowHeight - pad - ratio * (rowHeight - pad * 2);
+}
+
+type DomainLine = {
+  domain: CapabilityDomain;
+  color: string;
+  lineD: string;
+  areaD: string;
+  /** The highest point on this line — used to position the domain label. */
+  peakX: number;
+  peakY: number;
+};
+
+/**
+ * Build one smooth spline per capability domain from the events that carry
+ * `capabilityScores`. Each domain only draws through the events that have a
+ * score for it; events without a score for a domain are silently skipped.
+ */
+function buildDomainLines(
+  marks: LaneMark[],
+  rowHeight: number,
+  enabledDomains?: Set<CapabilityDomain>,
+): DomainLine[] {
+  const lines: DomainLine[] = [];
+  const domains = enabledDomains
+    ? ALL_CAPABILITY_DOMAINS.filter((d) => enabledDomains.has(d))
+    : ALL_CAPABILITY_DOMAINS;
+
+  for (const domain of domains) {
+    const meta = CAPABILITY_DOMAIN_META[domain];
+    const scored = marks
+      .filter((m) => m.event.capabilityScores?.[domain] != null)
+      .sort((a, b) => a.x - b.x);
+
+    if (scored.length < 2) continue;
+
+    const points = scored.map((m) => ({
+      x: m.x,
+      y: capabilityY(m.event.capabilityScores![domain]!, rowHeight),
+      score: m.event.capabilityScores![domain]!,
+    }));
+
+    // Build smooth cubic bezier path
+    let lineD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const c1x = prev.x + (curr.x - prev.x) * 0.45;
+      const c2x = prev.x + (curr.x - prev.x) * 0.55;
+      lineD += ` C ${c1x} ${prev.y}, ${c2x} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    const bottomY = rowHeight - 18;
+    const last = points[points.length - 1];
+    const areaD = `${lineD} L ${last.x} ${bottomY} L ${points[0].x} ${bottomY} Z`;
+
+    const peak = points.reduce((best, p) => (p.score > best.score ? p : best), points[0]);
+
+    lines.push({
+      domain,
+      color: meta.color,
+      lineD,
+      areaD,
+      peakX: peak.x,
+      peakY: peak.y,
+    });
+  }
+
+  return lines;
+}
+
+/** Primary domain for a capability event — used for pin color and badge. */
+function primaryCapDomain(event: TimelineEvent): CapabilityDomain | null {
+  if (event.capabilityDomain) return event.capabilityDomain;
+  if (event.capabilityScores) {
+    let bestDomain: CapabilityDomain | null = null;
+    let bestScore = -1;
+    for (const d of ALL_CAPABILITY_DOMAINS) {
+      const s = event.capabilityScores[d];
+      if (s != null && s > bestScore) {
+        bestScore = s;
+        bestDomain = d;
+      }
+    }
+    return bestDomain;
+  }
+  return null;
+}
+
+/**
+ * For a capability milestone, resolve the score and domain to use
+ * based on the currently enabled domains.
+ * If the primary domain is enabled and has a score, it is preferred;
+ * otherwise the highest score among the enabled domains is picked.
+ */
+function activeCapData(
+  event: TimelineEvent,
+  enabled: Set<CapabilityDomain>,
+): { score: number; domain: CapabilityDomain } | null {
+  if (!event.capabilityScores) return null;
+  if (
+    event.capabilityDomain &&
+    enabled.has(event.capabilityDomain) &&
+    event.capabilityScores[event.capabilityDomain] != null
+  ) {
+    return {
+      score: event.capabilityScores[event.capabilityDomain]!,
+      domain: event.capabilityDomain,
+    };
+  }
+  let bestDomain: CapabilityDomain | null = null;
+  let bestScore = -1;
+  for (const d of ALL_CAPABILITY_DOMAINS) {
+    if (!enabled.has(d)) continue;
+    const s = event.capabilityScores[d];
+    if (s != null && s > bestScore) {
+      bestScore = s;
+      bestDomain = d;
+    }
+  }
+  if (bestDomain && bestScore >= 0) {
+    return { score: bestScore, domain: bestDomain };
+  }
+  return null;
 }
 
 export function LaneTimeline({
@@ -239,6 +376,27 @@ export function LaneTimeline({
   const [hoveredVolume, setHoveredVolume] = useState<string | null>(null);
   const [labelW, setLabelW] = useState(168);
   const [rowH, setRowH] = useState(ROW_H_DESKTOP);
+  const [enabledDomains, setEnabledDomains] = useState<Set<CapabilityDomain>>(
+    () => new Set(ALL_CAPABILITY_DOMAINS),
+  );
+  const [hoveredLegendDomain, setHoveredLegendDomain] = useState<CapabilityDomain | null>(null);
+
+  const toggleDomain = (domain: CapabilityDomain, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEnabledDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domain)) {
+        if (next.size > 1) {
+          next.delete(domain);
+        } else {
+          return new Set(ALL_CAPABILITY_DOMAINS);
+        }
+      } else {
+        next.add(domain);
+      }
+      return next;
+    });
+  };
   /** Playhead furniture: moved imperatively on each frame, never via state. */
   const playheadRef = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLSpanElement>(null);
@@ -324,7 +482,11 @@ export function LaneTimeline({
           blurb: LENS_META[lens].blurb[locale],
           accent: LENS_META[lens].color,
           collapsed,
-          height: collapsed ? COLLAPSED_H : rowH,
+          height: collapsed
+            ? COLLAPSED_H
+            : lens === 'capabilities'
+              ? (rowH === ROW_H_MOBILE ? CAP_ROW_H_MOBILE : CAP_ROW_H_DESKTOP)
+              : rowH,
           lines,
           count: items.length,
           marks: buildMarks(items, lines, collapsed),
@@ -745,26 +907,176 @@ export function LaneTimeline({
                     {lane.blurb}
                   </span>
                 )}
+                {!lane.collapsed && lane.lens === 'capabilities' && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pl-5">
+                    {ALL_CAPABILITY_DOMAINS.map((dom) => {
+                      const active = enabledDomains.has(dom);
+                      const meta = CAPABILITY_DOMAIN_META[dom];
+                      return (
+                        <button
+                          key={dom}
+                          type="button"
+                          onClick={(e) => toggleDomain(dom, e)}
+                          onMouseEnter={() => setHoveredLegendDomain(dom)}
+                          onMouseLeave={() => setHoveredLegendDomain(null)}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[9px] transition-all cursor-pointer select-none',
+                            active
+                              ? 'border-border/60 bg-background text-foreground shadow-xs'
+                              : 'border-transparent bg-muted/30 text-muted-foreground/45 hover:text-muted-foreground/75',
+                          )}
+                          style={{
+                            borderColor: active ? `${meta.color}66` : undefined,
+                          }}
+                          title={
+                            active
+                              ? locale === 'it'
+                                ? `Clicca per nascondere ${meta.label.it}`
+                                : `Click to hide ${meta.label.en}`
+                              : locale === 'it'
+                                ? `Clicca per mostrare ${meta.label.it}`
+                                : `Click to show ${meta.label.en}`
+                          }
+                        >
+                          <span
+                            className={cn(
+                              'h-1.5 w-1.5 shrink-0 rounded-full transition-opacity',
+                              !active && 'opacity-25',
+                            )}
+                            style={{ backgroundColor: meta.color }}
+                          />
+                          <span className={cn(!active && 'line-through opacity-60')}>
+                            {meta.label[locale]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {enabledDomains.size < ALL_CAPABILITY_DOMAINS.length && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEnabledDomains(new Set(ALL_CAPABILITY_DOMAINS));
+                        }}
+                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
+                      >
+                        {locale === 'it' ? 'Mostra tutti' : 'Show all'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="relative h-full" style={{ width: scale.width }}>
-                {/* One internal line per caption run: the rail the marks sit on,
-                    repeated so a spread-out lane still reads as a timeline. The
-                    centre rail carries the lane's colour. */}
-                {Array.from({ length: lane.lines }, (_, i) => {
-                  const centre = lane.lines % 2 === 1 && i === Math.floor((lane.lines - 1) / 2);
+                {/* For capability lane when expanded: render multiple colored domain lines and reference levels */}
+                {(() => {
+                  const isCapLane = lane.lens === 'capabilities';
+                  const domainLines = isCapLane && !lane.collapsed ? buildDomainLines(lane.marks, lane.height, enabledDomains) : null;
+                  if (!domainLines || domainLines.length === 0) return null;
                   return (
-                    <div
-                      key={`rail-${i}`}
+                    <svg
                       aria-hidden
-                      className={cn('absolute inset-x-0 h-px', !centre && 'bg-border/25')}
-                      style={{
-                        top: `calc(50% + ${lineDy(i, lane.lines)}px)`,
-                        backgroundColor: centre ? `${lane.accent}44` : undefined,
-                      }}
-                    />
+                      className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
+                    >
+                      <defs>
+                        {domainLines.map((dl) => (
+                          <linearGradient key={`grad-${dl.domain}`} id={`cap-grad-${dl.domain}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={dl.color} stopOpacity="0.14" />
+                            <stop offset="60%" stopColor={dl.color} stopOpacity="0.03" />
+                            <stop offset="100%" stopColor={dl.color} stopOpacity="0.00" />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      {/* Reference dashed guidelines for benchmark thresholds */}
+                      {[
+                        { score: 100, label: locale === 'it' ? '100 · Frontiera / SOTA 2026' : '100 · Frontier / SOTA 2026', opacity: '0.14' },
+                        { score: 75, label: locale === 'it' ? '75 · Ragionamento e coding complessi' : '75 · Complex reasoning & coding', opacity: '0.09' },
+                        { score: 50, label: locale === 'it' ? '50 · Competenza solida' : '50 · Solid competence', opacity: '0.08' },
+                        { score: 25, label: locale === 'it' ? '25 · Baseline modelli 2020' : '25 · LLM Baseline 2020', opacity: '0.06' },
+                      ].map((g) => (
+                        <g key={`guide-${g.score}`}>
+                          <line
+                            x1="0"
+                            y1={capabilityY(g.score, lane.height)}
+                            x2={scale.width}
+                            y2={capabilityY(g.score, lane.height)}
+                            stroke="currentColor"
+                            strokeOpacity={g.opacity}
+                            strokeDasharray="4 6"
+                            strokeWidth="1"
+                          />
+                          <text
+                            x={16}
+                            y={capabilityY(g.score, lane.height) - 4}
+                            fill="currentColor"
+                            fillOpacity="0.38"
+                            fontSize="8.5"
+                            fontFamily="monospace"
+                          >
+                            {g.label}
+                          </text>
+                        </g>
+                      ))}
+                      {/* Filled areas under each domain curve */}
+                      {domainLines.map((dl) => (
+                        <path key={`area-${dl.domain}`} d={dl.areaD} fill={`url(#cap-grad-${dl.domain})`} />
+                      ))}
+                      {/* Domain lines */}
+                      {domainLines.map((dl) => {
+                        const isHoveredLine = hoveredLegendDomain === dl.domain || (hoveredId && (() => {
+                          const ev = lane.marks.find((m) => m.event.id === hoveredId)?.event;
+                          if (!ev) return false;
+                          const d = activeCapData(ev, enabledDomains);
+                          return d ? d.domain === dl.domain : false;
+                        })());
+                        const isAnyHovered = Boolean(hoveredLegendDomain || hoveredId);
+                        return (
+                          <g key={`line-group-${dl.domain}`}>
+                            <path
+                              d={dl.lineD}
+                              fill="none"
+                              stroke={dl.color}
+                              strokeWidth={isHoveredLine ? 3 : 2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              opacity={isAnyHovered ? (isHoveredLine ? 1 : 0.25) : 0.85}
+                              className="transition-all duration-200"
+                              style={{
+                                filter: `drop-shadow(0 0 5px ${dl.color}55)`,
+                              }}
+                            />
+                            {/* Domain badge / indicator at peak */}
+                            <circle
+                              cx={dl.peakX}
+                              cy={dl.peakY}
+                              r={isHoveredLine ? 4 : 3}
+                              fill={dl.color}
+                              opacity={isAnyHovered ? (isHoveredLine ? 1 : 0.3) : 0.85}
+                              className="transition-all duration-200"
+                            />
+                          </g>
+                        );
+                      })}
+                    </svg>
                   );
-                })}
+                })()}
+
+                {/* Standard internal rails (only if not capability lane or collapsed) */}
+                {(lane.lens !== 'capabilities' || lane.collapsed) &&
+                  Array.from({ length: lane.lines }, (_, i) => {
+                    const centre = lane.lines % 2 === 1 && i === Math.floor((lane.lines - 1) / 2);
+                    return (
+                      <div
+                        key={`rail-${i}`}
+                        aria-hidden
+                        className={cn('absolute inset-x-0 h-px', !centre && 'bg-border/25')}
+                        style={{
+                          top: `calc(50% + ${lineDy(i, lane.lines)}px)`,
+                          backgroundColor: centre ? `${lane.accent}44` : undefined,
+                        }}
+                      />
+                    );
+                  })}
                 {lane.marks.map((mark) => {
                   const { event } = mark;
                   const isActive = activeId === event.id;
@@ -772,23 +1084,30 @@ export function LaneTimeline({
                   const isHot = hoveredId === event.id || isScrubbed;
                   const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
                   const isStatement = event.type === 'statement';
+                  const isCapLane = lane.lens === 'capabilities';
+                  const capData = isCapLane && !lane.collapsed ? activeCapData(event, enabledDomains) : null;
+                  if (isCapLane && !lane.collapsed && !capData) return null;
+                  const markTopY = capData !== null ? capabilityY(capData.score, lane.height) : null;
+                  const capDomain = capData?.domain ?? (isCapLane ? primaryCapDomain(event) : null);
+                  const capDomainMeta = capDomain ? CAPABILITY_DOMAIN_META[capDomain] : null;
                   /** Diary headline: on the lane, but not the equal of a quote. */
                   const isAuto = event.origin === 'auto';
                   const person = event.personId ? people[event.personId] : undefined;
                   const isFace = isStatement && Boolean(person);
                   const stance = stanceByEventId?.[event.id];
                   // Colour carries meaning where there is meaning to carry: the
-                  // stance of a thesis, the tone of a verified quote. Everything
-                  // else wears its lane's colour, so the rows read as families
-                  // and not as one column of identical dots.
-                  const tone = isAuto
-                    ? lane.accent
-                    : stance
-                      ? STANCE_META[stance].dot
-                      : sentimentMeta?.dot ?? (isStatement ? NEUTRAL_MARK : lane.accent);
+                  // stance of a thesis, the tone of a verified quote, or the
+                  // capability domain in the capabilities lane. Everything
+                  // else wears its lane's colour.
+                  const tone = isCapLane
+                    ? (capDomainMeta?.color ?? lane.accent)
+                    : isAuto
+                      ? lane.accent
+                      : stance
+                        ? STANCE_META[stance].dot
+                        : sentimentMeta?.dot ?? (isStatement ? NEUTRAL_MARK : lane.accent);
                   // Caption: the person behind a statement, otherwise the head
-                  // of the title itself. The form of the event ("Contesto")
-                  // tells the reader nothing the lane has not said already.
+                  // of the title itself.
                   const caption =
                     isFace && person ? person.shortName : shortTitle(event.title[locale]);
                   const captionLeft = isFace ? 38 : 28;
@@ -804,7 +1123,7 @@ export function LaneTimeline({
                       className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none"
                       style={{
                         left: mark.x,
-                        top: `calc(50% + ${lineDy(mark.line, lane.lines)}px)`,
+                        top: markTopY !== null ? `${markTopY}px` : `calc(50% + ${lineDy(mark.line, lane.lines)}px)`,
                         width: 36,
                         height: 36,
                       }}
@@ -859,10 +1178,8 @@ export function LaneTimeline({
                             className={cn('h-full w-full ring-0')}
                           />
                         </span>
-                      ) : lane.lens === 'models' && hasLabMark(event.actorId) ? (
-                        // The models lane is where the actor is the story, so
-                        // the pin wears the lab's mark and colour — the fastest
-                        // read of who shipped what across the row.
+                      ) : (lane.lens === 'models' || isCapLane) && hasLabMark(event.actorId) ? (
+                        // Lab models wear their lab's mark and silhouette, with domain glow in capability lane
                         <span
                           aria-hidden
                           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -874,6 +1191,23 @@ export function LaneTimeline({
                             hot={isHot}
                           />
                         </span>
+                      ) : isCapLane ? (
+                        // Capability milestone: domain-colored glowing diamond
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            width: isActive ? 12 : isHot ? 11 : 9,
+                            height: isActive ? 12 : isHot ? 11 : 9,
+                            backgroundColor: tone,
+                            transform: 'rotate(45deg)',
+                            filter: isActive
+                              ? `drop-shadow(0 0 5px ${tone})`
+                              : isHot
+                                ? `drop-shadow(0 0 3px ${tone}bb)`
+                                : `drop-shadow(0 0 2px ${tone}88)`,
+                          }}
+                        />
                       ) : (
                         <span
                           aria-hidden
@@ -891,23 +1225,31 @@ export function LaneTimeline({
                           }}
                         />
                       )}
-                      {/* Caption reads without a hover. Clear of the mark, and on
-                          its own chip so the lane rail does not run through the
-                          words. Clipped rather than allowed to reach the next
-                          mark, whatever the name throws at it. */}
+                      {/* Caption reads without a hover. */}
                       {mark.room && (
                         <span
                           aria-hidden
                           className={cn(
-                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] leading-tight tracking-tight',
+                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] leading-tight tracking-tight shadow-sm ring-1 ring-border/20',
                             isAuto
                               ? 'italic text-muted-foreground/55'
                               : isActive
-                                ? 'font-medium text-foreground'
+                                ? 'font-medium text-foreground ring-foreground/30'
                                 : 'font-medium text-muted-foreground/75',
                           )}
                           style={{ left: captionLeft, maxWidth: LABEL_GAP_PX - captionLeft + 12 }}
                         >
+                          {isCapLane && (event.benchmarkLabel || event.benchmarkMetric) && (
+                            <span
+                              className="mr-1 rounded px-1 py-px font-mono text-[9px] font-semibold"
+                              style={{
+                                backgroundColor: `${tone}20`,
+                                color: tone,
+                              }}
+                            >
+                              {event.benchmarkLabel ?? `${event.benchmarkMetric?.name} ${event.benchmarkMetric?.value}`}
+                            </span>
+                          )}
                           {caption}
                         </span>
                       )}
@@ -922,22 +1264,33 @@ export function LaneTimeline({
                     const person = event.personId ? people[event.personId] : undefined;
                     const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
                     const stance = stanceByEventId?.[event.id];
+                    const isCapLane = lane.lens === 'capabilities';
+                    const capData = isCapLane && !lane.collapsed ? activeCapData(event, enabledDomains) : null;
+                    if (isCapLane && !lane.collapsed && !capData) return null;
+                    const markTopY = capData !== null ? capabilityY(capData.score, lane.height) : null;
+                    const capDomain = capData?.domain ?? (isCapLane ? primaryCapDomain(event) : null);
+                    const capDomainMeta = capDomain ? CAPABILITY_DOMAIN_META[capDomain] : null;
+                    const tipTone = isCapLane ? (capDomainMeta?.color ?? lane.accent) : lane.accent;
                     const detailLabel =
                       event.origin === 'auto'
                         ? labels.autoLabel
-                        : stance && stanceLabel
-                          ? stanceLabel(stance)
-                          : sentimentMeta && sentimentLabel
-                            ? sentimentLabel(event.sentiment as SentimentTag)
-                            : typeLabel(event.type);
+                        : isCapLane && capDomainMeta
+                          ? capDomainMeta.label[locale]
+                          : stance && stanceLabel
+                            ? stanceLabel(stance)
+                            : sentimentMeta && sentimentLabel
+                              ? sentimentLabel(event.sentiment as SentimentTag)
+                              : typeLabel(event.type);
                     return (
                       <div
                         key={`tip-${event.id}`}
                         aria-hidden
-                        className="pointer-events-none absolute z-40 w-[15rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                        className="pointer-events-none absolute z-40 w-[16rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-2 shadow-md backdrop-blur-md"
                         style={{
                           left: mark.x,
-                          top: `calc(50% + ${lineDy(mark.line, lane.lines) - 14}px)`,
+                          top: markTopY !== null
+                            ? `${markTopY - 14}px`
+                            : `calc(50% + ${lineDy(mark.line, lane.lines) - 14}px)`,
                         }}
                       >
                         <p className="font-mono text-[9px] text-muted-foreground">
@@ -949,6 +1302,59 @@ export function LaneTimeline({
                         <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug tracking-tight">
                           {event.title[locale]}
                         </p>
+                        {(event.benchmarkLabel || event.benchmarkMetric) && (
+                          <div className="mt-1 flex items-center gap-1.5 font-mono text-[9px] font-semibold">
+                            <span
+                              className="rounded px-1.5 py-0.5 ring-1"
+                              style={{
+                                backgroundColor: `${tipTone}20`,
+                                color: tipTone,
+                                borderColor: `${tipTone}40`,
+                              }}
+                            >
+                              {event.benchmarkLabel ?? `${event.benchmarkMetric?.name}: ${event.benchmarkMetric?.value}`}
+                            </span>
+                            {capDomainMeta && (
+                              <span className="text-muted-foreground/80">
+                                · {capDomainMeta.label[locale]}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {isCapLane && event.capabilityScores && (
+                          <div className="mt-2 space-y-1 border-t border-border/40 pt-1.5 font-mono text-[9px]">
+                            {ALL_CAPABILITY_DOMAINS.map((dom) => {
+                              const score = event.capabilityScores?.[dom];
+                              if (score == null) return null;
+                              const dMeta = CAPABILITY_DOMAIN_META[dom];
+                              const isPrimary = dom === capDomain;
+                              return (
+                                <div key={dom} className="flex items-center justify-between gap-1.5">
+                                  <span className="flex items-center gap-1 text-muted-foreground">
+                                    <span
+                                      className="h-1.5 w-1.5 rounded-full"
+                                      style={{ backgroundColor: dMeta.color }}
+                                    />
+                                    <span className={cn(isPrimary && 'font-semibold text-foreground')}>
+                                      {dMeta.label[locale]}
+                                    </span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+                                      <div
+                                        className="h-full rounded-full transition-all"
+                                        style={{ width: `${score}%`, backgroundColor: dMeta.color }}
+                                      />
+                                    </div>
+                                    <span className="w-5 text-right font-semibold text-foreground/85">
+                                      {score}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
