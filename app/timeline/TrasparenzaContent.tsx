@@ -655,6 +655,7 @@ export default function TrasparenzaContent() {
       sentimentHint: t.trasparenza.moodHint,
       fear: t.trasparenza.moodFear,
       enthusiasm: t.trasparenza.moodEnthusiasm,
+      moodNeutral: t.trasparenza.moodNeutral,
       collapseLane: t.trasparenza.laneCollapse,
       expandLane: t.trasparenza.laneExpand,
     }),

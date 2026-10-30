@@ -81,6 +81,8 @@ export type LaneLabels = {
   /** The two halves of the curve, for the tiny legend. */
   fear: string;
   enthusiasm: string;
+  /** Legend for the dashed stretch: the neutral level where no quote was recorded. */
+  moodNeutral: string;
   /** Toggle on each lane header. */
   collapseLane: string;
   expandLane: string;
@@ -417,6 +419,10 @@ export function LaneTimeline({
   const { scale, lanes, lanesHeight, ticks, volume, moodPoints } = layout;
   const moodAmp = MOOD_H / 2 - 10;
   const moodY = (value: number) => MOOD_H / 2 - value * moodAmp;
+  /** Neutral level: where the line rests while no quote is on record. */
+  const moodNeutralY = moodY(0);
+  const moodFirst = moodPoints[0];
+  const moodLast = moodPoints[moodPoints.length - 1];
   const contentW = labelW + scale.width;
 
   /** Event id → mark x, so the playhead resolves without a flat scan. */
@@ -972,6 +978,20 @@ export function LaneTimeline({
                 <span className="text-[9px] leading-none text-muted-foreground/50">
                   ↑ {labels.enthusiasm} · ↓ {labels.fear}
                 </span>
+                <span className="flex items-center gap-1 text-[9px] leading-none text-muted-foreground/50">
+                  <svg width="16" height="4" aria-hidden className="shrink-0">
+                    <line
+                      x1="0"
+                      y1="2"
+                      x2="16"
+                      y2="2"
+                      stroke={MOOD_MID}
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                    />
+                  </svg>
+                  {labels.moodNeutral}
+                </span>
               </div>
               <div className="relative h-full" style={{ width: scale.width }}>
                 <div aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-border/50" />
@@ -983,6 +1003,50 @@ export function LaneTimeline({
                       <stop offset="100%" stopColor={MOOD_DOWN} />
                     </linearGradient>
                   </defs>
+                  {/* No quote on record: the line keeps a neutral level instead of
+                      breaking, so the curve reaches back to the past and forward to
+                      today. Dashed, because the level is a convention, not a measure. */}
+                  <line
+                    x1={0}
+                    y1={moodNeutralY}
+                    x2={moodFirst.x}
+                    y2={moodNeutralY}
+                    stroke={MOOD_MID}
+                    strokeWidth={1.5}
+                    strokeDasharray="3 4"
+                    strokeOpacity={0.45}
+                  />
+                  <line
+                    x1={moodLast.x}
+                    y1={moodNeutralY}
+                    x2={scale.todayX}
+                    y2={moodNeutralY}
+                    stroke={MOOD_MID}
+                    strokeWidth={1.5}
+                    strokeDasharray="3 4"
+                    strokeOpacity={0.45}
+                  />
+                  {/* Where the convention gives way to a measured quote. */}
+                  <line
+                    x1={moodFirst.x}
+                    y1={moodNeutralY}
+                    x2={moodFirst.x}
+                    y2={moodY(moodFirst.value)}
+                    stroke={MOOD_MID}
+                    strokeWidth={1.5}
+                    strokeDasharray="2 3"
+                    strokeOpacity={0.55}
+                  />
+                  <line
+                    x1={moodLast.x}
+                    y1={moodNeutralY}
+                    x2={moodLast.x}
+                    y2={moodY(moodLast.value)}
+                    stroke={MOOD_MID}
+                    strokeWidth={1.5}
+                    strokeDasharray="2 3"
+                    strokeOpacity={0.55}
+                  />
                   <polyline
                     fill="none"
                     stroke={`url(#${moodGradId})`}

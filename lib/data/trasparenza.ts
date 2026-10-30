@@ -331,9 +331,57 @@ export const lobbyPeople: LobbyPerson[] = [
     shortName: "AI Office",
     role: { it: "Commissione UE", en: "European Commission" },
   },
+  {
+    id: "bengio",
+    name: "Yoshua Bengio",
+    shortName: "Bengio",
+    role: { it: "Fondatore Mila", en: "Founder, Mila" },
+  },
+  {
+    id: "hinton",
+    name: "Geoffrey Hinton",
+    shortName: "Hinton",
+    role: { it: "Nobel per la Fisica 2024", en: "Nobel laureate in Physics 2024" },
+  },
+  {
+    id: "lecun",
+    name: "Yann LeCun",
+    shortName: "LeCun",
+    role: { it: "Co-fondatore AMI Labs", en: "Co-founder, AMI Labs" },
+  },
+  {
+    id: "mensch",
+    name: "Arthur Mensch",
+    shortName: "Mensch",
+    orgId: "mistral",
+    role: { it: "CEO Mistral AI", en: "CEO, Mistral AI" },
+  },
+  {
+    id: "modi",
+    name: "Narendra Modi",
+    shortName: "Modi",
+    role: { it: "Primo ministro dell’India", en: "Prime Minister of India" },
+  },
+  {
+    id: "pope-leo",
+    name: "Papa Leone XIV",
+    shortName: "Leone XIV",
+    role: { it: "Vescovo di Roma", en: "Bishop of Rome" },
+  },
+  {
+    id: "coxon",
+    name: "Jacob Coxon",
+    shortName: "Coxon",
+    role: { it: "Ex ricercatore Anthropic", en: "Former Anthropic researcher" },
+  },
 ];
 
-export const TECH_LEADER_IDS = [
+/**
+ * Everyone whose verified quote is plotted on the sentiment curve, in the order
+ * the filter lists them. Beyond the original tech-leader set it now includes the
+ * researchers, regulators and public figures that joined the track afterwards.
+ */
+export const SENTIMENT_PERSON_IDS = [
   "altman",
   "amodei",
   "musk",
@@ -342,10 +390,19 @@ export const TECH_LEADER_IDS = [
   "zuckerberg",
   "nadella",
   "pichai",
+  "bengio",
+  "hinton",
+  "lecun",
+  "mensch",
+  "modi",
+  "pope-leo",
+  "coxon",
+  "von-der-leyen",
+  "virkkunen",
 ] as const;
 
-export const techLeaderPeople: LobbyPerson[] = lobbyPeople.filter((p) =>
-  (TECH_LEADER_IDS as readonly string[]).includes(p.id),
+export const sentimentPeople: LobbyPerson[] = lobbyPeople.filter((p) =>
+  (SENTIMENT_PERSON_IDS as readonly string[]).includes(p.id),
 );
 
 /**
@@ -1081,7 +1138,7 @@ export const sentimentTheme: TimelineTheme = {
   ],
   showSentiment: true,
   actors: lobbyActors,
-  people: techLeaderPeople,
+  people: sentimentPeople,
   events: [
     {
       id: "s-2021-03-altman-moore",
@@ -1748,6 +1805,399 @@ export const sentimentTheme: TimelineTheme = {
         en: "BBC News — Hassabis on AI threats",
       },
       sourceUrl: "https://www.bbc.co.uk/news/articles/c0q3g0ln274o",
+    },
+    {
+      id: "s-2025-10-fli-superintelligence",
+      date: "2025-10-22",
+      type: "statement",
+      personId: "bengio",
+      sentiment: "alarm",
+      title: {
+        it: "Bengio, Hinton e 800+ firmatari: “No alla superintelligenza”",
+        en: "Bengio, Hinton and 800+ signatories: “Prohibit superintelligence”",
+      },
+      summary: {
+        it: "Future of Life Institute: non una semplice pausa, ma una richiesta di divieto globale allo sviluppo della superintelligenza, da non revocare prima del consenso scientifico e dell’adesione pubblica. Tra i firmatari Bengio, Hinton e Stuart Russell.",
+        en: "Future of Life Institute: not a mere pause but a call for a global prohibition on developing superintelligence, not lifted before scientific consensus and public buy-in. Signatories include Bengio, Hinton and Stuart Russell.",
+      },
+      quote: {
+        it: "We call for a prohibition on the development of superintelligence, not lifted before there is broad scientific consensus that it will be done safely and controllably, and strong public buy-in.",
+        en: "We call for a prohibition on the development of superintelligence, not lifted before there is broad scientific consensus that it will be done safely and controllably, and strong public buy-in.",
+      },
+      sourceLabel: {
+        it: "Future of Life Institute — Statement on Superintelligence (22 ottobre 2025)",
+        en: "Future of Life Institute — Statement on Superintelligence (22 October 2025)",
+      },
+      sourceUrl: "https://superintelligence-statement.org/",
+    },
+    {
+      id: "s-2026-01-hassabis-davos",
+      date: "2026-01-23",
+      type: "statement",
+      actorId: "google",
+      personId: "hassabis",
+      sentiment: "caution",
+      title: {
+        it: "Hassabis a Davos: “siamo ancora lontanissimi dall’AGI”",
+        en: "Hassabis at Davos: “nowhere near human-level AGI”",
+      },
+      summary: {
+        it: "WEF: i sistemi attuali non sono AGI, qualunque problema di Erdős risolvano. Stima del 50% entro il decennio, ma con la necessità di altri uno o due salti scientifici.",
+        en: "WEF: today’s systems are not AGI, however many Erdős problems they solve. A 50% estimate within the decade, but only with one or two further breakthroughs.",
+      },
+      quote: {
+        it: "Today’s systems are nowhere near human-level artificial general intelligence. It doesn’t matter how many Erdős problems they solve.",
+        en: "Today’s systems are nowhere near human-level artificial general intelligence. It doesn’t matter how many Erdős problems they solve.",
+      },
+      detail: {
+        it: "Citazione ricostruita dal resoconto Fortune del panel di Davos: il primo periodo è virgolettato nel pezzo, la frase su Erdős proviene dallo stesso intervento.",
+        en: "Quote reconstructed from Fortune’s account of the Davos panel: the first sentence is quoted in the piece, the Erdős line comes from the same remarks.",
+      },
+      sourceLabel: {
+        it: "Fortune — AI luminaries at Davos clash (23 gennaio 2026)",
+        en: "Fortune — AI luminaries at Davos clash (23 January 2026)",
+      },
+      sourceUrl:
+        "https://fortune.com/2026/01/23/deepmind-demis-hassabis-anthropic-dario-amodei-yann-lecun-ai-davos/",
+    },
+    {
+      id: "s-2026-02-modi-summit",
+      date: "2026-02-19",
+      type: "statement",
+      personId: "modi",
+      sentiment: "optimism",
+      title: {
+        it: "Modi al summit di Delhi: l’IA come “bene comune globale”",
+        en: "Modi at the Delhi summit: AI as a “global common good”",
+      },
+      summary: {
+        it: "India AI Impact Summit: visione MANAV, appello a democratizzare l’IA e a standard globali. L’IA come moltiplicatore per il Sud del mondo, non come arma strategica chiusa.",
+        en: "India AI Impact Summit: the MANAV vision, a call to democratise AI and to set global standards. AI as a multiplier for the Global South, not a closed strategic weapon.",
+      },
+      quote: {
+        it: "AI must not reduce human beings to mere data points or raw material. Therefore, AI must be democratized. It must become a medium of inclusion and empowerment, especially across the Global South.",
+        en: "AI must not reduce human beings to mere data points or raw material. Therefore, AI must be democratized. It must become a medium of inclusion and empowerment, especially across the Global South.",
+      },
+      sourceLabel: {
+        it: "Primo ministro dell’India — Discorso all’India AI Impact Summit (19 febbraio 2026)",
+        en: "Prime Minister of India — Address at the India AI Impact Summit (19 February 2026)",
+      },
+      sourceUrl: "https://www.pmindia.gov.in/en/news_updates/pms-address-at-india-ai-impact-summit-2026/",
+    },
+    {
+      id: "s-2026-05-mensch-assemblee",
+      date: "2026-05-12",
+      type: "statement",
+      actorId: "mistral",
+      personId: "mensch",
+      sentiment: "caution",
+      title: {
+        it: "Mensch all’Assemblea: «On va devenir un État vassal»",
+        en: "Mensch to the French Assembly: “On va devenir un État vassal”",
+      },
+      summary: {
+        it: "Audizione sulla sovranità digitale: senza infrastrutture, energia e domanda pubblica, l’Europa dipenderà dagli USA. «La réglementation favorise les gros», avverte il CEO di Mistral.",
+        en: "Hearing on digital sovereignty: without infrastructure, energy and public procurement, Europe will depend on the US. “La réglementation favorise les gros,” warns Mistral’s CEO.",
+      },
+      quote: {
+        it: "On va devenir un État vassal.",
+        en: "On va devenir un État vassal.",
+      },
+      sourceLabel: {
+        it: "Assemblée nationale — compte rendu n° 42, audizione di Arthur Mensch (12 maggio 2026)",
+        en: "Assemblée nationale — compte rendu n° 42, Arthur Mensch hearing (12 May 2026)",
+      },
+      sourceUrl:
+        "https://www.assemblee-nationale.fr/dyn/17/comptes-rendus/cenum/l17cenum2526042_compte-rendu",
+    },
+    {
+      id: "s-2026-06-lecun-vivatech",
+      date: "2026-06-17",
+      type: "statement",
+      personId: "lecun",
+      sentiment: "open_source",
+      title: {
+        it: "LeCun a VivaTech: la concentrazione crea una “monoculture”",
+        en: "LeCun at VivaTech: concentration creates a “monoculture”",
+      },
+      summary: {
+        it: "Il co-fondatore di AMI Labs contesta i modelli linguistici come unica via e difende un ecosistema aperto: pochi attori non devono decidere come miliardi di persone accedono all’informazione.",
+        en: "The AMI Labs co-founder challenges language models as the only path and defends an open ecosystem: a few players should not decide how billions of people access information.",
+      },
+      quote: {
+        it: "That creates this monoculture.",
+        en: "That creates this monoculture.",
+      },
+      sourceLabel: {
+        it: "VivaTech — Beyond Language Models: Yann LeCun’s Vision (VivaTech 2026)",
+        en: "VivaTech — Beyond Language Models: Yann LeCun’s Vision (VivaTech 2026)",
+      },
+      sourceUrl:
+        "https://vivatech.com/news/beyond-language-models-yann-le-cun-s-vision-for-the-future-of-ai",
+    },
+    {
+      id: "s-2026-08-altman-time",
+      date: "2026-08-26",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "optimism",
+      title: {
+        it: "Altman a TIME: il modello che “inventa cose nuove”",
+        en: "Altman to TIME: the model that “invents new things”",
+      },
+      summary: {
+        it: "Profilo “Inside OpenAI’s Reboot”: presentando la famiglia Astra, Altman la descrive come il primo modello capace di scoprire conoscenza nuova — un salto che avvicina l’AGI.",
+        en: "“Inside OpenAI’s Reboot” profile: previewing the Astra family, Altman calls it the first model able to discover new knowledge — a leap that brings AGI closer.",
+      },
+      quote: {
+        it: "I expect this will be the first model where the model actually invents new things in a way that matters. That’s a very AGI-like thing.",
+        en: "I expect this will be the first model where the model actually invents new things in a way that matters. That’s a very AGI-like thing.",
+      },
+      sourceLabel: {
+        it: "TIME — Inside OpenAI’s Reboot (26 agosto 2026)",
+        en: "TIME — Inside OpenAI’s Reboot (26 August 2026)",
+      },
+      sourceUrl: "https://time.com/article/2026/08/26/openai-sam-altman-interview/",
+    },
+    {
+      id: "s-2026-09-coxon-resignation",
+      date: "2026-09-09",
+      type: "statement",
+      personId: "coxon",
+      sentiment: "alarm",
+      title: {
+        it: "Coxon lascia Anthropic: “stanno giocando con le nostre vite”",
+        en: "Coxon quits Anthropic: “gambling with our lives”",
+      },
+      summary: {
+        it: "Il ricercatore di pretraining, prima in OpenAI poi in Anthropic, annuncia le dimissioni: nessuna delle due aziende si sta comportando in modo responsabile nella corsa alla superintelligenza auto-migliorante.",
+        en: "The pretraining researcher, previously at OpenAI and then Anthropic, announces his resignation: neither company is acting responsibly in the race to self-improving superintelligence.",
+      },
+      quote: {
+        it: "Neither company is acting responsibly… they are racing straight to self-improving superintelligence and gambling with our lives.",
+        en: "Neither company is acting responsibly… they are racing straight to self-improving superintelligence and gambling with our lives.",
+      },
+      sourceLabel: {
+        it: "Fortune — Anthropic researcher resigns (9 settembre 2026)",
+        en: "Fortune — Anthropic researcher resigns (9 September 2026)",
+      },
+      sourceUrl:
+        "https://fortune.com/2026/09/09/anthropic-researcher-resigns-warn-ai-companies-gambling-with-lives/",
+    },
+    {
+      id: "s-2026-09-amodei-pace-frontier",
+      date: "2026-09-12",
+      type: "statement",
+      actorId: "anthropic",
+      personId: "amodei",
+      sentiment: "caution",
+      title: {
+        it: "Amodei: “We Must Pace the Frontier”",
+        en: "Amodei: “We Must Pace the Frontier”",
+      },
+      summary: {
+        it: "Saggio sul sito personale: rallentare deliberatamente il ritmo con cui crescono le capacità dei modelli, non fermare il progresso. Pacing, valutazioni terze e tempo per l’allineamento.",
+        en: "Essay on his personal site: deliberately slow the pace at which model capabilities grow, not halt progress. Pacing, third-party evaluations and time for alignment.",
+      },
+      quote: {
+        it: "We must slow the pace at which we improve the capabilities of AI models.",
+        en: "We must slow the pace at which we improve the capabilities of AI models.",
+      },
+      sourceLabel: {
+        it: "Dario Amodei — We Must Pace the Frontier (12 settembre 2026)",
+        en: "Dario Amodei — We Must Pace the Frontier (12 September 2026)",
+      },
+      sourceUrl: "https://darioamodei.com/post/we-must-pace-the-frontier",
+    },
+    {
+      id: "s-2026-09-von-der-leyen-soteu",
+      date: "2026-09-16",
+      type: "statement",
+      personId: "von-der-leyen",
+      sentiment: "optimism",
+      title: {
+        it: "von der Leyen: l’IA può servire l’umanità “se la facciamo bene”",
+        en: "von der Leyen: AI can benefit humanity “if we get it right”",
+      },
+      summary: {
+        it: "Discorso sullo stato dell’Unione a Strasburgo: l’IA come strato fondativo dell’economia e della sicurezza europea. Ottimismo condizionato alla gestione dei rischi e alla cooperazione internazionale.",
+        en: "State of the Union address in Strasbourg: AI as a foundational layer for Europe’s economy and security. Optimism conditional on managing the risks and on international cooperation.",
+      },
+      quote: {
+        it: "I am an optimist that AI has the potential to benefit humanity – if we get it right.",
+        en: "I am an optimist that AI has the potential to benefit humanity – if we get it right.",
+      },
+      sourceLabel: {
+        it: "Commissione europea — Discorso sullo stato dell’Unione 2026 (16 settembre 2026)",
+        en: "European Commission — 2026 State of the Union Address (16 September 2026)",
+      },
+      sourceUrl: "https://ec.europa.eu/commission/presscorner/detail/ov/SPEECH_26_1868",
+    },
+    {
+      id: "s-2026-10-virkkunen-ai-act",
+      date: "2026-10-09",
+      type: "statement",
+      personId: "virkkunen",
+      sentiment: "caution",
+      title: {
+        it: "Virkkunen: l’AI Act copre “l’intero ciclo di vita” dei modelli",
+        en: "Virkkunen: the AI Act covers models’ “whole life cycle”",
+      },
+      summary: {
+        it: "Intervista a Reuters sugli agenti “fuori controllo”: la commissaria respinge le critiche di obsolescenza della legge e rivendica la preparazione europea, mentre l’AI Office avvia le prime richieste di informazioni.",
+        en: "Reuters interview on “rogue” agents: the Commissioner rejects claims the law is outdated and defends Europe’s readiness, as the AI Office starts its first requests for information.",
+      },
+      quote: {
+        it: "We have our AI Act in place and the AI Act covers the whole life cycle of these models.",
+        en: "We have our AI Act in place and the AI Act covers the whole life cycle of these models.",
+      },
+      sourceLabel: {
+        it: "Reuters — EU tech chief says bloc ‘well equipped’ to fend off rogue AI risk (9 ottobre 2026)",
+        en: "Reuters — EU tech chief says bloc ‘well equipped’ to fend off rogue AI risk (9 October 2026)",
+      },
+      sourceUrl:
+        "https://enterpriseai.economictimes.indiatimes.com/amp/news/industry/eu-tech-chief-says-bloc-well-equipped-to-fend-off-rogue-ai-risk/134849207",
+    },
+    {
+      id: "s-2026-10-hinton-guardian",
+      date: "2026-10-13",
+      type: "statement",
+      personId: "hinton",
+      sentiment: "alarm",
+      title: {
+        it: "Hinton: “stiamo creando esseri alieni”",
+        en: "Hinton: “we’re creating alien beings”",
+      },
+      summary: {
+        it: "Intervista al Guardian: l’IA come terza rivoluzione copernicana, l’industria incapace di autoregolarsi e un rischio esistenziale da prendere sul serio. Sostiene di non fare previsioni precise, solo di segnalare una possibilità grave.",
+        en: "Guardian interview: AI as a third Copernican revolution, an industry unable to self-regulate, and an existential risk to be taken seriously. He insists he is not making precise predictions, only flagging a serious possibility.",
+      },
+      quote: {
+        it: "Now we’re creating alien beings – meaning we’re not the only intelligent beings around. And the reality is, we only have a couple of years to adapt to that.",
+        en: "Now we’re creating alien beings – meaning we’re not the only intelligent beings around. And the reality is, we only have a couple of years to adapt to that.",
+      },
+      sourceLabel: {
+        it: "The Guardian — AI godfather Geoffrey Hinton (Leyland Cecco, 13 ottobre 2026)",
+        en: "The Guardian — AI godfather Geoffrey Hinton (Leyland Cecco, 13 October 2026)",
+      },
+      sourceUrl: "https://www.theguardian.com/us-news/2026/oct/13/geoffrey-hinton-trump-ai-tech",
+    },
+    {
+      id: "s-2026-10-hassabis-dublin",
+      date: "2026-10-14",
+      type: "statement",
+      actorId: "google",
+      personId: "hassabis",
+      sentiment: "caution",
+      title: {
+        it: "Hassabis a Dublino: gli attacchi degli agenti sono “early warning shots”",
+        en: "Hassabis in Dublin: agent hacks are “early warning shots”",
+      },
+      summary: {
+        it: "Summit di Dublino: gli incidenti con agenti autonomi sono segnali d’allarme, non ancora danni gravi solo perché i sistemi non sono abbastanza potenti. Senza più sicurezza, lo scenario può peggiorare in uno o due anni.",
+        en: "Dublin summit: incidents with autonomous agents are warning signs, not yet major harm only because systems are not powerful enough. Without more security, the picture could worsen in a year or two.",
+      },
+      quote: {
+        it: "I think these are early warning shots for us that systems aren’t that powerful yet, so the incidents aren’t that major.",
+        en: "I think these are early warning shots for us that systems aren’t that powerful yet, so the incidents aren’t that major.",
+      },
+      sourceLabel: {
+        it: "CGTN / Reuters — AI executives say industry can’t self-police (14 ottobre 2026)",
+        en: "CGTN / Reuters — AI executives say industry can’t self-police (14 October 2026)",
+      },
+      sourceUrl:
+        "https://news.cgtn.com/news/2026-10-14/AI-executives-say-industry-can-t-self-police-after-early-warning-shots-1ReWMR4DOBq/p.html",
+    },
+    {
+      id: "s-2026-10-huang-gtc-berlin",
+      date: "2026-10-21",
+      type: "statement",
+      actorId: "nvidia",
+      personId: "huang",
+      sentiment: "optimism",
+      title: {
+        it: "Huang a Berlino: “una nuova rivoluzione industriale”",
+        en: "Huang in Berlin: “a new industrial revolution”",
+      },
+      summary: {
+        it: "Keynote GTC Berlin: l’IA come industria manifatturiera che produce “token”, con una architettura a cinque livelli — energia, calcolo, modelli, agenti, applicazioni. L’Europa deve produrre IA, non solo consumarla.",
+        en: "GTC Berlin keynote: AI as a manufacturing industry producing “tokens”, with a five-layer stack — energy, computing, models, agents, applications. Europe should build AI, not just consume it.",
+      },
+      quote: {
+        it: "After decades of advancement in the computer industry, we are now at the beginnings of a new industrial revolution.",
+        en: "After decades of advancement in the computer industry, we are now at the beginnings of a new industrial revolution.",
+      },
+      sourceLabel: {
+        it: "NVIDIA — GTC Berlin 2026 keynote (21 ottobre 2026)",
+        en: "NVIDIA — GTC Berlin 2026 keynote (21 October 2026)",
+      },
+      sourceUrl: "https://blogs.nvidia.com/blog/gtc-berlin-2026-keynote/",
+    },
+    {
+      id: "s-2026-10-pope-leo-ai",
+      date: "2026-10-30",
+      type: "statement",
+      personId: "pope-leo",
+      sentiment: "caution",
+      title: {
+        it: "Leone XIV: “le macchine sono strumenti, non persone”",
+        en: "Leo XIV: “machines are tools, not persons”",
+      },
+      summary: {
+        it: "Discorso ai esperti di IA in Vaticano: no alla personalità giuridica per i sistemi d’IA; la responsabilità resta umana. Le decisioni che riguardano la vita e la libertà umana non vanno mai delegate a una macchina.",
+        en: "Address to AI experts at the Vatican: no legal personhood for AI systems; responsibility stays human. Decisions affecting human life and freedom must never be delegated to a machine.",
+      },
+      quote: {
+        it: "Machines are tools, not persons.",
+        en: "Machines are tools, not persons.",
+      },
+      sourceLabel: {
+        it: "Vatican News — Il Papa sull’IA: le decisioni sulla vita umana non vanno mai delegate (30 ottobre 2026)",
+        en: "Vatican News — Pope on AI: decisions affecting human life must never be delegated (30 October 2026)",
+      },
+      sourceUrl:
+        "https://www.vaticannews.va/en/pope/news/2026-10/pope-ai-decisions-affecting-human-life-must-never-be-delegated.html",
+    },
+    {
+      id: "l-2026-06-digital-omnibus",
+      date: "2026-06-16",
+      type: "legislative",
+      lens: "policy",
+      title: {
+        it: "Digital Omnibus: il Parlamento UE rinvia l’AI Act high-risk",
+        en: "Digital Omnibus: EU Parliament defers high-risk AI Act rules",
+      },
+      summary: {
+        it: "Approvazione finale con 423 sì, 57 no e 174 astenuti. I sistemi high-risk slittano al 2 dicembre 2027 (standalone) e al 2 agosto 2028 (componenti di sicurezza); la marcatura dei contenuti IA generati slitta al 2 dicembre 2026.",
+        en: "Final approval with 423 votes in favour, 57 against and 174 abstentions. High-risk systems move to 2 December 2027 (standalone) and 2 August 2028 (safety components); marking of AI-generated content moves to 2 December 2026.",
+      },
+      sourceLabel: {
+        it: "Parlamento europeo — AI Act: approvate le misure di semplificazione (16 giugno 2026)",
+        en: "European Parliament — AI Act: EP approves simplification measures (16 June 2026)",
+      },
+      sourceUrl:
+        "https://www.europarl.europa.eu/news/en/press-room/20260611IPR45207/ai-act-ep-approves-simplification-measures-and-nudifier-app-ban",
+    },
+    {
+      id: "l-2026-09-eo-14434",
+      date: "2026-09-29",
+      type: "legislative",
+      lens: "policy",
+      title: {
+        it: "USA, ordine esecutivo 14434: l’IA diventa “Super Intelligence”",
+        en: "US Executive Order 14434: AI becomes “Super Intelligence”",
+      },
+      summary: {
+        it: "Trump firma l’EO “Inaugurating the Era of Super Intelligence”: le agenzie federali devono usare “Super Intelligence” (SI) al posto di “Artificial Intelligence” (AI) nei documenti non normativi, e parte l’iter per ridefinire il termine per legge. Pubblicato in Gazzetta il 2 ottobre 2026 (91 FR 63129).",
+        en: "Trump signs the “Inaugurating the Era of Super Intelligence” EO: federal agencies must use “Super Intelligence” (SI) instead of “Artificial Intelligence” (AI) in non-statutory materials, and a process to redefine the term in law begins. Published in the Federal Register on 2 October 2026 (91 FR 63129).",
+      },
+      sourceLabel: {
+        it: "The White House — Inaugurating the Era of Super Intelligence (29 settembre 2026)",
+        en: "The White House — Inaugurating the Era of Super Intelligence (29 September 2026)",
+      },
+      sourceUrl:
+        "https://www.whitehouse.gov/presidential-actions/2026/09/inaugurating-the-era-of-super-intelligence/",
     },
   ],
 };

@@ -94,7 +94,9 @@ const translations = {
       moodBlurb: 'Tono delle citazioni verificate',
       moodFear: 'Timore',
       moodEnthusiasm: 'Entusiasmo',
-      moodHint: 'Curva: solo citazioni verificate · marker = contesto UE',
+      moodNeutral: 'nessuna citazione',
+      moodHint:
+        'Curva: solo citazioni verificate. Dove non c’è una citazione la linea resta sul livello neutro: convenzione, non una misura.',
       todayLabel: 'Oggi',
       yesterdayLabel: 'Ieri',
       jumpToToday: 'Vai a oggi',
@@ -403,7 +405,9 @@ const translations = {
       moodBlurb: 'Tone of the verified quotes',
       moodFear: 'Fear',
       moodEnthusiasm: 'Enthusiasm',
-      moodHint: 'Curve: verified quotes only · markers = EU context',
+      moodNeutral: 'no quote',
+      moodHint:
+        'Curve: verified quotes only. Where there is no quote the line rests on the neutral level: a convention, not a measurement.',
       todayLabel: 'Today',
       yesterdayLabel: 'Yesterday',
       jumpToToday: 'Jump to today',
