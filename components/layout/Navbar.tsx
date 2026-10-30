@@ -41,27 +41,26 @@ export function Navbar() {
       <div className="relative mx-auto flex h-[var(--nav-bar-h)] max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2"
+          className="flex shrink-0 items-center"
           onClick={closeMobile}
           aria-label="Segno"
         >
           <Image
             src="/segno_logo.png"
             alt=""
-            width={26}
-            height={26}
+            width={28}
+            height={28}
             className="dark:hidden"
             priority
           />
           <Image
             src="/segno_logo_white.png"
             alt=""
-            width={26}
-            height={26}
+            width={28}
+            height={28}
             className="hidden dark:block"
             priority
           />
-          <span className="text-[15px] font-semibold tracking-tight">Segno</span>
         </Link>
 
         <span aria-hidden className="hidden h-4 w-px bg-border md:block" />

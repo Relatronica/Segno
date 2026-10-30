@@ -642,21 +642,14 @@ export default function TrasparenzaContent() {
     [filtered],
   );
 
-  /**
-   * Volume band: verified quotes plus the headline diary.
-   * Only the quotes carry a tone, so the bars show how much was said.
-   */
-  const activityEvents = useMemo(
-    () => [...moodEvents, ...autoFeed],
-    [moodEvents, autoFeed],
-  );
-
   const laneLabels = useMemo(
     () => ({
       todayLabel: t.trasparenza.todayLabel,
       hint: t.trasparenza.lanesHint,
       volume: t.trasparenza.activity,
       volumeHint: t.trasparenza.activityHint,
+      volumeCount: t.trasparenza.activityCount,
+      autoLabel: t.trasparenza.autoLabel,
       sentiment: t.trasparenza.moodTitle,
       sentimentBlurb: t.trasparenza.moodBlurb,
       sentimentHint: t.trasparenza.moodHint,
@@ -838,7 +831,9 @@ export default function TrasparenzaContent() {
       <section id="timeline" className="relative min-h-0 min-w-0 flex-1">
         <div className="absolute inset-0">
           <LaneTimeline
-            events={filtered}
+            /* Same set as the volume band: verified pins and diary headlines
+               alike, so the band mirrors exactly what the lanes draw. */
+            events={feedEvents}
             people={personMap}
             locale={locale}
             activeId={activeId}
@@ -854,7 +849,7 @@ export default function TrasparenzaContent() {
             lensLabel={lensLabel}
             stanceByEventId={stanceByEventId}
             stanceLabel={stanceLabel}
-            volumeEvents={activityEvents}
+            volumeEvents={feedEvents}
             moodEvents={moodEvents}
             focusPresent
             presentFocusToken={presentFocusToken}

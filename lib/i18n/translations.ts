@@ -101,6 +101,7 @@ const translations = {
       activity: 'Volume',
       activityHint:
         'Quante voci pubbliche quel giorno: citazioni verificate e titoli del diario automatico.',
+      activityCount: '{count} voci',
       feedTitle: 'Cronologia',
       searchLabel: 'Cerca',
       searchPlaceholder: 'Cerca dichiarazioni, persone, fonti…',
@@ -409,6 +410,7 @@ const translations = {
       activity: 'Volume',
       activityHint:
         'Public voices that day: verified quotes and automatic-diary headlines.',
+      activityCount: '{count} voices',
       feedTitle: 'History',
       searchLabel: 'Search',
       searchPlaceholder: 'Search statements, people, sources…',

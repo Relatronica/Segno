@@ -49,11 +49,11 @@ function lineDy(line: number, count: number): number {
 /** Statement with no tone tag: the level is there, the editorial tone is not. */
 const NEUTRAL_MARK = '#64748b';
 /** Volume band under the lanes: how much was said, day by day. */
-const VOLUME_H = 34;
+const VOLUME_H = 48;
 const VOLUME_BAR = 6;
 /** Sentiment band: the tone of verified quotes, as a bipolar curve. Tall
     enough that the line reads as a shape, not a wobble. */
-const MOOD_H = 64;
+const MOOD_H = 96;
 /** Moving window (in days either side) that smooths the tone curve. */
 const MOOD_WINDOW_DAYS = 3;
 const MOOD_UP = '#047857';
@@ -69,6 +69,10 @@ export type LaneLabels = {
   /** Title of the volume band. */
   volume: string;
   volumeHint: string;
+  /** "{count} voci": the day's total, on the volume tooltip. */
+  volumeCount: string;
+  /** Diary headline with no verified quote, tagged in the pin tooltip. */
+  autoLabel: string;
   /** Title of the sentiment band. */
   sentiment: string;
   /** One line on what the curve reads, under the title. */
@@ -148,7 +152,18 @@ type Lane = {
   marks: LaneMark[];
 };
 
-type VolumeBar = { key: string; date: string; x: number; count: number };
+type VolumeSegment = { lens: Lens; count: number; y: number; h: number };
+
+/** One day of the volume band: its voices, split by the lane they came from. */
+type VolumeBar = {
+  key: string;
+  date: string;
+  x: number;
+  count: number;
+  /** Stacked height of the whole bar. */
+  h: number;
+  segments: VolumeSegment[];
+};
 
 /** The subject a pin speaks for: people and companies, statements only. */
 export type EventSubject = { kind: 'person' | 'actor'; id: string };
@@ -217,7 +232,9 @@ export function LaneTimeline({
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const moodGradId = useId().replace(/:/g, '');
+  const volClipId = useId().replace(/:/g, '');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [hoveredVolume, setHoveredVolume] = useState<string | null>(null);
   const [labelW, setLabelW] = useState(168);
   const [rowH, setRowH] = useState(ROW_H_DESKTOP);
   /** Playhead furniture: moved imperatively on each frame, never via state. */
@@ -316,24 +333,47 @@ export function LaneTimeline({
     // the today line) measures the stack instead of multiplying a constant.
     const lanesHeight = lanes.reduce((sum, lane) => sum + lane.height, 0);
 
-    // Volume band: one bar per day, oldest first.
-    const buckets = new Map<string, { count: number; xSum: number }>();
+    // Volume band: one stacked bar per day, oldest first. Each bar is the
+    // day's voices split by the lane that produced them, so the band reads
+    // against the rows above it instead of on its own. Volume only — the tone
+    // of a headline is not the stance of the person it mentions.
+    const buckets = new Map<string, { count: number; xSum: number; byLens: Map<Lens, number> }>();
     for (const event of volumeEvents ?? []) {
       const key = event.date.slice(0, 10);
-      const bucket = buckets.get(key) ?? { count: 0, xSum: 0 };
+      const bucket = buckets.get(key) ?? { count: 0, xSum: 0, byLens: new Map<Lens, number>() };
       bucket.count += 1;
       bucket.xSum += scale.xForDate(key);
+      const lens = lensOf(event);
+      bucket.byLens.set(lens, (bucket.byLens.get(lens) ?? 0) + 1);
       buckets.set(key, bucket);
     }
-    const volume: VolumeBar[] = [...buckets.entries()]
+    const rawVolume = [...buckets.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([key, bucket]) => ({
         key,
         date: key,
         x: bucket.xSum / bucket.count,
         count: bucket.count,
+        byLens: bucket.byLens,
       }));
-    const maxVolume = Math.max(1, ...volume.map((bar) => bar.count));
+    const maxVolume = Math.max(1, ...rawVolume.map((bar) => bar.count));
+    // A taller range plus a small floor keeps a one-voice day apart from a
+    // two-voice one, instead of both collapsing to the same stub.
+    const volumeRange = VOLUME_H - 12;
+    const volume: VolumeBar[] = rawVolume.map((bar) => {
+      const h = Math.max(2.5, (bar.count / maxVolume) * volumeRange);
+      let cursor = VOLUME_H - 5;
+      const segments: VolumeSegment[] = ALL_LENSES.filter((lens) => bar.byLens.has(lens)).map(
+        (lens) => {
+          const count = bar.byLens.get(lens) ?? 0;
+          const segH = (count / bar.count) * h;
+          const y = cursor - segH;
+          cursor = y;
+          return { lens, count, y, h: segH };
+        },
+      );
+      return { key: bar.key, date: bar.date, x: bar.x, count: bar.count, h, segments };
+    });
 
     // Tone curve: a bipolar, smoothed reading of verified quotes only.
     // Fear pulls the line down, optimism lifts it; silence breaks the line.
@@ -370,13 +410,12 @@ export function LaneTimeline({
       lanesHeight,
       ticks: timeTicks(scale),
       volume,
-      maxVolume,
       moodPoints: points,
     };
   }, [events, locale, lensLabel, volumeEvents, moodEvents, lineCount, rowH, collapsedSet]);
 
-  const { scale, lanes, lanesHeight, ticks, volume, maxVolume, moodPoints } = layout;
-  const moodAmp = MOOD_H / 2 - 6;
+  const { scale, lanes, lanesHeight, ticks, volume, moodPoints } = layout;
+  const moodAmp = MOOD_H / 2 - 10;
   const moodY = (value: number) => MOOD_H / 2 - value * moodAmp;
   const contentW = labelW + scale.width;
 
@@ -727,6 +766,8 @@ export function LaneTimeline({
                   const isHot = hoveredId === event.id || isScrubbed;
                   const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
                   const isStatement = event.type === 'statement';
+                  /** Diary headline: on the lane, but not the equal of a quote. */
+                  const isAuto = event.origin === 'auto';
                   const person = event.personId ? people[event.personId] : undefined;
                   const isFace = isStatement && Boolean(person);
                   const stance = stanceByEventId?.[event.id];
@@ -734,9 +775,11 @@ export function LaneTimeline({
                   // stance of a thesis, the tone of a verified quote. Everything
                   // else wears its lane's colour, so the rows read as families
                   // and not as one column of identical dots.
-                  const tone = stance
-                    ? STANCE_META[stance].dot
-                    : sentimentMeta?.dot ?? (isStatement ? NEUTRAL_MARK : lane.accent);
+                  const tone = isAuto
+                    ? lane.accent
+                    : stance
+                      ? STANCE_META[stance].dot
+                      : sentimentMeta?.dot ?? (isStatement ? NEUTRAL_MARK : lane.accent);
                   // Caption: the person behind a statement, otherwise the head
                   // of the title itself. The form of the event ("Contesto")
                   // tells the reader nothing the lane has not said already.
@@ -764,15 +807,31 @@ export function LaneTimeline({
                     >
                       {lane.collapsed ? (
                         // The strip holds marks, not faces or brand tiles: same
-                        // colour and silhouette, none of the bulk.
+                        // colour and silhouette, none of the bulk. A diary
+                        // headline keeps its lane's colour as a hollow ring.
                         <span
                           aria-hidden
                           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                           style={{
                             width: isActive ? 10 : isHot ? 8 : 6,
                             height: isActive ? 10 : isHot ? 8 : 6,
-                            backgroundColor: tone,
-                            ...lensShape(lane.lens),
+                            backgroundColor: isAuto ? undefined : tone,
+                            border: isAuto ? `1.5px solid ${tone}` : undefined,
+                            ...(isAuto ? { borderRadius: '9999px' } : lensShape(lane.lens)),
+                            filter: isActive ? `drop-shadow(0 0 3px ${tone})` : undefined,
+                          }}
+                        />
+                      ) : isAuto ? (
+                        // A diary headline rides its lane but is not the equal of
+                        // a quote: no fill, the lane's colour as an outline only.
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background"
+                          style={{
+                            width: isActive ? 11 : isHot ? 10 : 8,
+                            height: isActive ? 11 : isHot ? 10 : 8,
+                            border: `${isHot ? 2 : 1.5}px solid ${tone}`,
+                            opacity: isActive ? 1 : 0.9,
                             filter: isActive ? `drop-shadow(0 0 3px ${tone})` : undefined,
                           }}
                         />
@@ -834,8 +893,12 @@ export function LaneTimeline({
                         <span
                           aria-hidden
                           className={cn(
-                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] font-medium leading-tight tracking-tight',
-                            isActive ? 'text-foreground' : 'text-muted-foreground/75',
+                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] leading-tight tracking-tight',
+                            isAuto
+                              ? 'italic text-muted-foreground/55'
+                              : isActive
+                                ? 'font-medium text-foreground'
+                                : 'font-medium text-muted-foreground/75',
                           )}
                           style={{ left: captionLeft, maxWidth: LABEL_GAP_PX - captionLeft + 12 }}
                         >
@@ -854,11 +917,13 @@ export function LaneTimeline({
                     const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
                     const stance = stanceByEventId?.[event.id];
                     const detailLabel =
-                      stance && stanceLabel
-                        ? stanceLabel(stance)
-                        : sentimentMeta && sentimentLabel
-                          ? sentimentLabel(event.sentiment as SentimentTag)
-                          : typeLabel(event.type);
+                      event.origin === 'auto'
+                        ? labels.autoLabel
+                        : stance && stanceLabel
+                          ? stanceLabel(stance)
+                          : sentimentMeta && sentimentLabel
+                            ? sentimentLabel(event.sentiment as SentimentTag)
+                            : typeLabel(event.type);
                     return (
                       <div
                         key={`tip-${event.id}`}
@@ -921,13 +986,13 @@ export function LaneTimeline({
                   <polyline
                     fill="none"
                     stroke={`url(#${moodGradId})`}
-                    strokeWidth={1.5}
+                    strokeWidth={1.75}
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     points={moodPoints.map((point) => `${point.x},${moodY(point.value)}`).join(' ')}
                   />
                   {moodPoints.map((point) => (
-                    <circle key={point.day} cx={point.x} cy={moodY(point.value)} r={1.6} fill={MOOD_MID}>
+                    <circle key={point.day} cx={point.x} cy={moodY(point.value)} r={2.2} fill={MOOD_MID}>
                       <title>{`${formatEventDate(point.day, locale)} · ${point.value.toFixed(2)}`}</title>
                     </circle>
                   ))}
@@ -953,24 +1018,91 @@ export function LaneTimeline({
             </div>
             <div className="relative h-full" style={{ width: scale.width }}>
               <svg aria-hidden width={scale.width} height={VOLUME_H} className="block">
+                {/* One clip per day, so the stack keeps a single rounded top
+                    instead of rounding every segment on its own. */}
+                <defs>
+                  {volume.map((bar) => (
+                    <clipPath key={bar.key} id={`vol-${volClipId}-${bar.key}`}>
+                      <rect
+                        x={bar.x - VOLUME_BAR / 2}
+                        y={VOLUME_H - 5 - bar.h}
+                        width={VOLUME_BAR}
+                        height={bar.h}
+                        rx={1.5}
+                      />
+                    </clipPath>
+                  ))}
+                </defs>
                 {volume.map((bar) => {
-                  const h = Math.max(1.5, (bar.count / maxVolume) * (VOLUME_H - 10));
+                  const dim = hoveredVolume != null && hoveredVolume !== bar.key;
                   return (
-                    <rect
+                    <g
                       key={bar.key}
-                      x={bar.x - VOLUME_BAR / 2}
-                      y={VOLUME_H - 4 - h}
-                      width={VOLUME_BAR}
-                      height={h}
-                      rx={1}
-                      fill={NEUTRAL_MARK}
-                      opacity={0.5}
+                      clipPath={`url(#vol-${volClipId}-${bar.key})`}
+                      opacity={dim ? 0.3 : 1}
                     >
-                      <title>{`${formatEventDate(bar.date, locale)} · ${bar.count}`}</title>
-                    </rect>
+                      {bar.segments.map((segment) => (
+                        <rect
+                          key={segment.lens}
+                          x={bar.x - VOLUME_BAR / 2}
+                          y={segment.y}
+                          width={VOLUME_BAR}
+                          height={segment.h}
+                          fill={LENS_META[segment.lens].color}
+                        />
+                      ))}
+                    </g>
                   );
                 })}
+                {/* The bars are thin, so the pointer gets a wider column; the
+                    date lives in the tooltip, not in a native title. */}
+                {volume.map((bar) => (
+                  <rect
+                    key={`hit-${bar.key}`}
+                    x={bar.x - 9}
+                    y={0}
+                    width={18}
+                    height={VOLUME_H}
+                    fill="transparent"
+                    onMouseEnter={() => setHoveredVolume(bar.key)}
+                    onMouseLeave={() => setHoveredVolume((key) => (key === bar.key ? null : key))}
+                  />
+                ))}
               </svg>
+
+              {volume
+                .filter((bar) => hoveredVolume === bar.key)
+                .map((bar) => (
+                  <div
+                    key={`voltip-${bar.key}`}
+                    aria-hidden
+                    className="pointer-events-none absolute z-40 w-max max-w-[13rem] -translate-x-1/2 rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                    style={{ left: bar.x, bottom: VOLUME_H + 6 }}
+                  >
+                    <p className="font-mono text-[9px] text-muted-foreground">
+                      {formatEventDate(bar.date, locale)} ·{' '}
+                      {labels.volumeCount.replace('{count}', String(bar.count))}
+                    </p>
+                    <div className="mt-1 flex flex-col gap-0.5">
+                      {bar.segments.map((segment) => (
+                        <span
+                          key={segment.lens}
+                          className="flex items-center gap-1.5 text-[10px] leading-tight"
+                        >
+                          <span
+                            aria-hidden
+                            className="h-2 w-2 shrink-0 rounded-sm"
+                            style={{ backgroundColor: LENS_META[segment.lens].color }}
+                          />
+                          <span className="flex-1 truncate text-muted-foreground">
+                            {LENS_META[segment.lens].label[locale]}
+                          </span>
+                          <span className="font-mono text-foreground/80">{segment.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
