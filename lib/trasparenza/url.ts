@@ -1,6 +1,8 @@
 import {
+  ALL_LENSES,
   ALL_SENTIMENT_TAGS,
   type EventType,
+  type Lens,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { ALL_EVENT_TYPES } from './constants';
@@ -15,8 +17,12 @@ export type TrasparenzaUrlState = {
   types?: EventType[];
   years?: string[];
   sentiments?: SentimentTag[];
+  /** Domain lenses kept on the axis. Absent means all of them. */
+  lenses?: Lens[];
   q?: string;
   event?: string;
+  /** Thesis slug: narrows statements to readings recorded on that claim. */
+  thesis?: string;
 };
 
 const KEYS = {
@@ -25,8 +31,10 @@ const KEYS = {
   types: 'type',
   years: 'year',
   sentiments: 'sentiment',
+  lenses: 'lente',
   q: 'q',
   event: 'event',
+  thesis: 'tesi',
 } as const;
 
 function splitList(value: string | null): string[] {
@@ -61,11 +69,19 @@ export function parseTrasparenzaSearch(search: string): TrasparenzaUrlState {
   );
   if (sentiments.length) state.sentiments = sentiments;
 
+  const lenses = splitList(params.get(KEYS.lenses)).filter((value): value is Lens =>
+    (ALL_LENSES as string[]).includes(value),
+  );
+  if (lenses.length) state.lenses = lenses;
+
   const q = params.get(KEYS.q)?.trim();
   if (q) state.q = q;
 
   const event = params.get(KEYS.event)?.trim();
   if (event) state.event = event;
+
+  const thesis = params.get(KEYS.thesis)?.trim();
+  if (thesis) state.thesis = thesis;
 
   return state;
 }
@@ -79,8 +95,10 @@ export function buildTrasparenzaSearch(state: TrasparenzaUrlState): string {
   if (state.types?.length) params.set(KEYS.types, state.types.join(','));
   if (state.years?.length) params.set(KEYS.years, state.years.join(','));
   if (state.sentiments?.length) params.set(KEYS.sentiments, state.sentiments.join(','));
+  if (state.lenses?.length) params.set(KEYS.lenses, state.lenses.join(','));
   if (state.q) params.set(KEYS.q, state.q);
   if (state.event) params.set(KEYS.event, state.event);
+  if (state.thesis) params.set(KEYS.thesis, state.thesis);
 
   const query = params.toString();
   return query ? `?${query}` : '';

@@ -13,14 +13,14 @@ import {
   Share2,
   ChevronDown,
   Eye,
-  Quote,
+  History,
   Waypoints,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/useT';
 import { useAppStore } from '@/store/useAppStore';
 import { roadmapPhases, type PhaseStatus } from '@/lib/data/roadmap';
 import { homeFaqs } from '@/lib/data/home-faq';
-import { getHomeSnapshot } from '@/lib/data/trasparenza';
+import { ALL_LENSES, LENS_META, getHomeSnapshot } from '@/lib/data/trasparenza';
 import { cn } from '@/lib/utils';
 import { SITE_URL } from '@/lib/seo';
 
@@ -172,7 +172,7 @@ export default function HomeContent() {
                 href="/trasparenza"
                 className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
-                <Quote className="h-4 w-4" />
+                <History className="h-4 w-4" />
                 {t.hero.cta}
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -251,8 +251,8 @@ export default function HomeContent() {
 
           <div className="mt-12 grid gap-10 sm:grid-cols-3">
             {[
-              { icon: Eye, title: t.home.problem1Title, text: t.home.problem1Text },
-              { icon: Quote, title: t.home.problem2Title, text: t.home.problem2Text },
+              { icon: Waypoints, title: t.home.problem1Title, text: t.home.problem1Text },
+              { icon: Eye, title: t.home.problem2Title, text: t.home.problem2Text },
               { icon: Link2, title: t.home.problem3Title, text: t.home.problem3Text },
             ].map((item, i) => {
               const Icon = item.icon;
@@ -312,44 +312,39 @@ export default function HomeContent() {
             <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.themesSubtitle}</p>
           </div>
 
-          <div className="mt-12 grid gap-10 sm:grid-cols-2">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              custom={0}
-              variants={fadeUp}
-            >
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
-                  <Quote className="h-3.5 w-3.5" />
-                  {t.home.themeSentimentTitle}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {t.home.themePrimary}
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeSentimentText}</p>
-            </motion.div>
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              custom={1}
-              variants={fadeUp}
-            >
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-mark/85">
-                  <Waypoints className="h-3.5 w-3.5" />
-                  {t.home.themeAiTitle}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {t.home.themeSecondary}
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{t.home.themeAiText}</p>
-            </motion.div>
-          </div>
+          <motion.ol
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/50 sm:grid-cols-2 lg:grid-cols-5"
+          >
+            {ALL_LENSES.map((lens, i) => {
+              const meta = LENS_META[lens];
+              return (
+                <motion.li
+                  key={lens}
+                  custom={i}
+                  variants={fadeUp}
+                  className={cn(
+                    'bg-background p-5',
+                    i === ALL_LENSES.length - 1 && 'sm:col-span-2 lg:col-span-1',
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="block h-1 w-8 rounded-full"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                  <h3 className="mt-4 text-base font-semibold tracking-tight">
+                    {meta.label[locale]}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {meta.blurb[locale]}
+                  </p>
+                </motion.li>
+              );
+            })}
+          </motion.ol>
 
           <Link
             href="/trasparenza"

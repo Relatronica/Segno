@@ -33,10 +33,10 @@ I numeri in homepage non sono copy: se aggiungi un evento, si aggiornano da soli
 
 Due flussi:
 
-- **Segnali automatici.** Un nome completo (o un account X ufficiale) più un tag sopra soglia diventano un segnale. Non hanno citazione. In timeline gli articoli dello stesso giorno diventano un solo punto sulla curva. La redazione può correggere il tag, nascondere il pezzo o promuoverlo in coda.
-- **Coda editoriale.** Gli altri candidati restano `pending`. Pubblicare richiede una citazione: quel pin resta un vertice suo, distinto dal punto automatico del giorno.
+- **Segnali automatici.** Un titolo che nomina una persona tracciata diventa una voce del diario automatico. Non ha citazione, quindi non ha tono e non entra in curva: il tono di un titolo non è la posizione della persona che nomina. La redazione può nascondere il pezzo o promuoverlo in coda.
+- **Coda editoriale.** Gli altri candidati restano `pending`. Pubblicare richiede una citazione: solo quella citazione diventa un vertice della curva.
 
-Il workflow `.github/workflows/pipeline-discover.yml` chiama `POST /api/pipeline/discover` ogni giorno (06:30 UTC). Senza `GROQ_API_KEY` il tag viene da un lessico; con la chiave gratuita di Groq, i titoli incerti passano da un modello.
+Il workflow `.github/workflows/pipeline-discover.yml` chiama `POST /api/pipeline/discover` ogni giorno (06:30 UTC). La scansione raccoglie i titoli che nominano le persone tracciate; il tag di tono resta solo un suggerimento mostrato in redazione, mai applicato d’ufficio alle voci del diario.
 
 - Store: Netlify Blobs in produzione, `.data/pipeline-store.json` in locale (`candidates` e `signals`)
 - UI: `/redazione` con `PIPELINE_SECRET`
@@ -60,8 +60,6 @@ Altri script: `npm run lint`, `npm run type-check`, `npm run build`.
 | `CONTACT_TO_EMAIL` | Destinatario segnalazioni |
 | `CONTACT_FROM_EMAIL` | Mittente Resend |
 | `PIPELINE_SECRET` | Auth redazione e API `/api/pipeline/*` |
-| `GROQ_API_KEY` | Facoltativa. Piano gratuito Groq (console.groq.com, senza carta). Classifica i titoli quando il lessico è incerto. Va sull’hosting, non nel repo |
-| `SENTIMENT_MODEL` | Facoltativa. Default `openai/gpt-oss-20b`, un modello del piano gratuito. Se Groq cambia l’elenco, usa l’id che vedi nella pagina Limits |
 
 ## SEO
 

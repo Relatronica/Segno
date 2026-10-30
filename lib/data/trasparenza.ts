@@ -1,3 +1,5 @@
+import { aiHistoryEvents } from "./ai-history";
+
 export type LocaleText = { it: string; en: string };
 
 export type LobbyActor = {
@@ -25,6 +27,44 @@ export type EventType =
   | "milestone"
   | "statement"
   | "sanction";
+
+/**
+ * Domain lens: what an event is about. Orthogonal to `EventType`, which only
+ * says what form the event takes. The timeline reads on both axes: the form
+ * decides how we filter, the lens decides which story the pin belongs to.
+ */
+export type Lens = "models" | "research" | "business" | "culture" | "policy";
+
+export const ALL_LENSES: Lens[] = ["models", "research", "business", "culture", "policy"];
+
+/** Declaration order is the reading order: from the artefact to its rules. */
+export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; color: string }> = {
+  models: {
+    label: { it: "Modelli", en: "Models" },
+    blurb: { it: "I sistemi rilasciati dai laboratori", en: "The systems labs ship" },
+    color: "#3b6fe0",
+  },
+  research: {
+    label: { it: "Ricerca", en: "Research" },
+    blurb: { it: "I lavori che hanno aperto la strada", en: "The papers that opened the way" },
+    color: "#7c5cff",
+  },
+  business: {
+    label: { it: "Mercato", en: "Business" },
+    blurb: { it: "Investimenti, spese, quote", en: "Investments, spending, shares" },
+    color: "#0f9d8f",
+  },
+  culture: {
+    label: { it: "Cultura", en: "Culture" },
+    blurb: { it: "Ciò che si dice in pubblico", en: "What is said in public" },
+    color: "#c2703a",
+  },
+  policy: {
+    label: { it: "Politica", en: "Policy" },
+    blurb: { it: "Leggi, sanzioni, istituzioni", en: "Laws, sanctions, institutions" },
+    color: "#b3382c",
+  },
+};
 
 /** Editorial reading of a public statement — not an objective score */
 export type SentimentTag =
@@ -54,35 +94,49 @@ export const SENTIMENT_FEAR_SCORE: Record<SentimentTag, number> = {
   optimism: -1,
 };
 
+/**
+ * Where a reading stands on a thesis — not on a generic mood axis.
+ * `undetermined` is for a sourced statement that does not answer the claim.
+ */
+export type PositionStance =
+  | "support"
+  | "oppose"
+  | "conditional"
+  | "ambiguous"
+  | "undetermined";
+
+export const ALL_POSITION_STANCES: PositionStance[] = [
+  "support",
+  "oppose",
+  "conditional",
+  "ambiguous",
+  "undetermined",
+];
+
 export type TimelineEvent = {
   id: string;
   date: string; // ISO YYYY-MM-DD
   type: EventType;
+  /**
+   * Reading lens. Optional on the legacy curated pins, where `lensOf` derives
+   * it from the event form; every pin added for the history track sets it.
+   */
+  lens?: Lens;
   actorId?: string;
   /** Linked public figure (statements, some meetings) */
   personId?: string;
   title: LocaleText;
   summary: LocaleText;
   detail?: LocaleText;
-  /**
-   * Verbatim quote. Required for editorial statements.
-   * Automatic daily signals move the curve without one.
-   */
+  /** Verbatim quote. Required for editorial statements. */
   quote?: LocaleText;
-  /** Sentiment lens tag (statements in the sentiment theme) */
+  /**
+   * Sentiment lens tag. Only ever set on a verified quote: the tone of a
+   * headline is not the stance of the person it mentions.
+   */
   sentiment?: SentimentTag;
-  /** editorial = curated or accepted quote. auto = headline signal, no verified quote. */
+  /** editorial = curated or accepted quote. auto = headline diary row, no verified quote. */
   origin?: "editorial" | "auto";
-  /**
-   * Blended fear↔enthusiasm score (−1 enthusiasm … +1 fear).
-   * When set, the curve uses this instead of the tag lookup.
-   */
-  moodScore?: number;
-  /**
-   * How many headlines/statements this pin represents for the activity bars.
-   * Day rollups set this to the number of automatic sources that day.
-   */
-  activityWeight?: number;
   amountEur?: number;
   sourceLabel: LocaleText;
   /** Stable public URL — required for every event */
@@ -109,6 +163,39 @@ export type TimelineTheme = {
 /** @deprecated Prefer TimelineTheme */
 export type LawTrack = TimelineTheme;
 
+/**
+ * A claim under test. The wording is stable: readings change, the claim does not.
+ * A thesis is only ever answered by statements that carry a verified quote.
+ */
+export type Thesis = {
+  id: string;
+  slug: string;
+  themeId: string;
+  /** Short chip label. */
+  label: LocaleText;
+  /** The full, citable claim. */
+  claim: LocaleText;
+  /** Reading key: what each stance means for this specific claim. */
+  definition: LocaleText;
+  status: "open" | "settled";
+  /** ISO date of the first recorded reading. */
+  since: string;
+};
+
+/**
+ * One editorial reading of one verified quote against one thesis.
+ * Keeping it as a join table (rather than a field on the event) lets a single
+ * statement answer more than one claim without duplicating the quote.
+ */
+export type ThesisReading = {
+  thesisId: string;
+  /** Curated statement id — no reading exists without a verified quote. */
+  eventId: string;
+  stance: PositionStance;
+  /** Why this stance, in one line. */
+  note?: LocaleText;
+};
+
 export const lobbyActors: LobbyActor[] = [
   { id: "google", name: "Google", shortName: "Google", color: "#4285F4" },
   { id: "meta", name: "Meta", shortName: "Meta", color: "#0668E1" },
@@ -129,6 +216,10 @@ export const lobbyActors: LobbyActor[] = [
   },
   { id: "nvidia", name: "NVIDIA", shortName: "NVIDIA", color: "#76B900" },
   { id: "xai", name: "xAI", shortName: "xAI", color: "#111111" },
+  { id: "deepseek", name: "DeepSeek", shortName: "DeepSeek", color: "#4D6BFE" },
+  { id: "mistral", name: "Mistral AI", shortName: "Mistral", color: "#FF7000" },
+  { id: "stability", name: "Stability AI", shortName: "Stability", color: "#7629C8" },
+  { id: "qwen", name: "Qwen", shortName: "Qwen", color: "#6D5CE7" },
 ];
 
 export const lobbyPeople: LobbyPerson[] = [
@@ -964,12 +1055,12 @@ export const sentimentTheme: TimelineTheme = {
     en: "2021 — today",
   },
   intro: {
-    it: "Tono pubblico dei leader sull’IA e, sullo stesso asse, incontri, spese e passaggi delle regole europee. La curva unisce le citazioni curate e il tono automatico dei titoli del giorno.",
-    en: "Public tone from AI leaders and, on the same axis, meetings, spend and EU rule-making steps. The curve joins curated quotes and the automatic tone of each day’s headlines.",
+    it: "Tono pubblico dei leader sull’IA — ricostruito solo da citazioni verificate — e, sullo stesso asse, incontri, spese e passaggi delle regole europee. I titoli dei giornali restano in un diario a parte, fuori dalla curva.",
+    en: "Public tone from AI leaders — drawn only from verified quotes — and, on the same axis, meetings, spend and EU rule-making steps. Headlines stay in a separate diary, off the curve.",
   },
   disclaimer: {
-    it: "Due letture sulla stessa curva. I pin con citazione sono una lettura editoriale della frase. I punti senza citazione sono il tono automatico dei titoli di quel giorno, con link alla fonte: non sono un punteggio oggettivo. Gli altri pin (incontri, spese, voti) sono contesto verificabile: la vicinanza nel tempo non dimostra causalità.",
-    en: "Two readings on one curve. Pins with a quote are an editorial reading of that sentence. Pins without a quote are the automatic tone of that day’s headlines, with a link to the source: not an objective score. Other pins (meetings, spend, votes) are verifiable context: temporal proximity does not prove causation.",
+    it: "Una sola lettura sulla curva: i pin con citazione, ciascuno una lettura editoriale di quella frase. Le voci senza citazione restano nel diario automatico, con link alla fonte, e non spostano la curva: il tono di un titolo non è la posizione della persona che nomina. Gli altri pin (incontri, spese, voti) sono contesto verificabile: la vicinanza nel tempo non dimostra causalità.",
+    en: "One reading on the curve: pins with a quote, each an editorial reading of that sentence. Entries without a quote stay in the automatic diary, with a link to the source, and never move the curve: the tone of a headline is not the stance of the person it mentions. Other pins (meetings, spend, votes) are verifiable context: temporal proximity does not prove causation.",
   },
   filterTypes: [
     "statement",
@@ -1653,33 +1744,262 @@ export const sentimentTheme: TimelineTheme = {
 };
 
 /**
+ * Claims under test. Every reading below points at a curated statement with a
+ * verified quote: the thesis is the question, the quote is the evidence.
+ * Stances are editorial readings of that sentence — the reader can re-read it.
+ */
+export const theses: Thesis[] = [
+  {
+    id: "thesis-binding-rules",
+    slug: "regole-vincolanti",
+    themeId: "sentiment",
+    label: { it: "Regole vincolanti", en: "Binding rules" },
+    claim: {
+      it: "I modelli più potenti vanno sottoposti a regole vincolanti prima di arrivare sul mercato.",
+      en: "The most powerful models should face binding rules before they reach the market.",
+    },
+    definition: {
+      it: "Favorevole: chiede test, autorizzazioni o moratorie vincolanti prima del rilascio. Condizionata: ammette il rischio ma affida la cautela alla scelta volontaria dell’azienda. Contraria: ritiene sufficiente il mercato o rimanda le regole. Ambigua: nomina il rischio senza indicare un obbligo. Non determinabile: la citazione non risponde alla tesi.",
+      en: "Support: asks for binding tests, authorisations or moratoria before release. Conditional: admits the risk but leaves caution to the company’s own choice. Oppose: sees the market as sufficient, or defers the rules. Ambiguous: names the risk without stating an obligation. Undetermined: the quote does not answer the claim.",
+    },
+    status: "open",
+    since: "2023-02-24",
+  },
+  {
+    id: "thesis-existential-risk",
+    slug: "rischio-esistenziale",
+    themeId: "sentiment",
+    label: { it: "Rischio esistenziale", en: "Existential risk" },
+    claim: {
+      it: "Il rischio di estinzione legato all’IA è una priorità globale, come pandemie e guerra nucleare.",
+      en: "AI extinction risk is a global priority, alongside pandemics and nuclear war.",
+    },
+    definition: {
+      it: "Favorevole: firma o enuncia il rischio esistenziale come priorità globale. Condizionata: lo riconosce ma lo lega a condizioni o a dati ancora incerti. Contraria: lo tratta come scenario remoto o non prioritario. Ambigua: nomina il rischio senza collocarlo tra le priorità. Non determinabile: la citazione non risponde alla tesi.",
+      en: "Support: signs or states existential risk as a global priority. Conditional: recognises it but ties it to conditions or still-uncertain evidence. Oppose: treats it as remote or non-priority. Ambiguous: names the risk without ranking it. Undetermined: the quote does not answer the claim.",
+    },
+    status: "open",
+    since: "2023-02-24",
+  },
+  {
+    id: "thesis-open-source",
+    slug: "open-source",
+    themeId: "sentiment",
+    label: { it: "Open source", en: "Open source" },
+    claim: {
+      it: "Il rilascio in open source rende i modelli più sicuri e l’ecosistema più innovativo.",
+      en: "Releasing models as open source makes them safer and the ecosystem more innovative.",
+    },
+    definition: {
+      it: "Favorevole: lega l’apertura a più sicurezza e più innovazione. Condizionata: apre solo per alcuni modelli o a certe condizioni. Contraria: vede l’apertura come un rischio da limitare. Ambigua: parla di apertura senza collegarla a sicurezza o innovazione. Non determinabile: la citazione non risponde alla tesi.",
+      en: "Support: ties openness to more safety and more innovation. Conditional: opens only some models, or under conditions. Oppose: treats openness as a risk to contain. Ambiguous: mentions openness without linking it to safety or innovation. Undetermined: the quote does not answer the claim.",
+    },
+    status: "open",
+    since: "2023-07-18",
+  },
+];
+
+export const thesisReadings: ThesisReading[] = [
+  // Valutare se i modelli più potenti vanno regolati prima del rilascio.
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-02-altman-agi",
+    stance: "conditional",
+    note: {
+      it: "Cautela dichiarata su creazione e deployment, ma come scelta interna di OpenAI, non come obbligo.",
+      en: "Caution stated over creation and deployment — as OpenAI’s own choice, not an obligation.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-03-musk",
+    stance: "support",
+    note: {
+      it: "Chiede una pausa di sei mesi sull’addestramento: un vincolo prima del rilascio, chiesto ai laboratori.",
+      en: "Calls for a six-month pause on training: a constraint before release, asked of the labs.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-05-altman-senate",
+    stance: "ambiguous",
+    note: {
+      it: "Ammesso il rischio grave; nella citazione non c’è però alcun obbligo chiesto per legge.",
+      en: "The severe risk is admitted, but the quote states no legally binding requirement.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-05-altman",
+    stance: "oppose",
+    note: {
+      it: "Definisce “over-regulating” la bozza di AI Act: il vincolo europeo è il problema, non la soluzione.",
+      en: "Calls the AI Act draft “over-regulating”: the European constraint is framed as the problem.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-07-amodei",
+    stance: "support",
+    note: {
+      it: "Chiede test di sicurezza obbligatori, anche di terze parti, prima del rilascio al pubblico.",
+      en: "Asks for mandatory safety tests, including third parties, before public release.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2023-11-altman-apec",
+    stance: "oppose",
+    note: {
+      it: "“We don’t need heavy regulation here”: regolazione pesante rinviata alle generazioni future.",
+      en: "“We don’t need heavy regulation here”: heavy rules deferred to later generations.",
+    },
+  },
+  {
+    thesisId: "thesis-binding-rules",
+    eventId: "s-2026-02-hassabis-bbc",
+    stance: "support",
+    note: {
+      it: "Chiede ricerca urgente e guardrail abbastanza robusti da tenere i sistemi sotto controllo.",
+      en: "Asks for urgent research and guard rails robust enough to keep systems under control.",
+    },
+  },
+
+  // Valutare se l'apertura dei modelli aumenta sicurezza e innovazione.
+  {
+    thesisId: "thesis-open-source",
+    eventId: "s-2023-07-zuck-llama2",
+    stance: "support",
+    note: {
+      it: "Collega esplicitamente l’apertura a più innovazione e a più sicurezza, via scrutinio diffuso.",
+      en: "Explicitly ties openness to more innovation and more safety, via wider scrutiny.",
+    },
+  },
+  {
+    thesisId: "thesis-open-source",
+    eventId: "s-2024-07-zuck",
+    stance: "support",
+    note: {
+      it: "“Open source AI is the path forward”: l’apertura è presentata come la direzione giusta.",
+      en: "“Open source AI is the path forward”: openness framed as the right direction.",
+    },
+  },
+
+  // Valutare se il rischio di estinzione è una priorità globale.
+  {
+    thesisId: "thesis-existential-risk",
+    eventId: "s-2023-02-altman-agi",
+    stance: "support",
+    note: {
+      it: "“Operate as if these risks are existential”: il rischio di livello esistenziale è trattato come reale.",
+      en: "“Operate as if these risks are existential”: existential-level risk treated as real.",
+    },
+  },
+  {
+    thesisId: "thesis-existential-risk",
+    eventId: "s-2023-05-cais",
+    stance: "support",
+    note: {
+      it: "Firmatario della dichiarazione che mette il rischio di estinzione tra le priorità globali.",
+      en: "Signatory of the statement ranking extinction risk among global priorities.",
+    },
+  },
+  {
+    thesisId: "thesis-existential-risk",
+    eventId: "s-2024-10-amodei",
+    stance: "support",
+    note: {
+      it: "Rischi definiti sottostimati: “how bad the risks could be” non è trattato come ipotesi remota.",
+      en: "Risks called underestimated: “how bad the risks could be” is not treated as remote.",
+    },
+  },
+  {
+    thesisId: "thesis-existential-risk",
+    eventId: "s-2025-01-hassabis",
+    stance: "conditional",
+    note: {
+      it: "“We don’t know yet”: rischio riconosciuto, ma legato a incognite tecniche irrisolte.",
+      en: "“We don’t know yet”: risk acknowledged, but tied to unresolved technical unknowns.",
+    },
+  },
+];
+
+/** Theses attached to a theme, in declaration order. */
+export function thesesForTheme(themeId: string): Thesis[] {
+  return theses.filter((thesis) => thesis.themeId === themeId);
+}
+
+export function getThesis(slug: string): Thesis | undefined {
+  return theses.find((thesis) => thesis.slug === slug);
+}
+
+export function readingsForThesis(thesisId: string): ThesisReading[] {
+  return thesisReadings.filter((reading) => reading.thesisId === thesisId);
+}
+
+/**
  * Merge AI Act context pins into the Sentiment track without duplicating
  * statements already curated on the mood curve (same date + person).
  */
 function mergeContextEvents(
   statements: TimelineEvent[],
-  contextSource: TimelineEvent[],
+  ...contextGroups: TimelineEvent[][]
 ): TimelineEvent[] {
   const statementKey = new Set(
     statements
       .filter((e) => e.type === "statement")
       .map((e) => `${e.date}|${e.personId ?? ""}`),
   );
-  const extras = contextSource.filter((e) => {
-    if (e.type === "statement") {
-      return !statementKey.has(`${e.date}|${e.personId ?? ""}`);
+  const seenIds = new Set(statements.map((e) => e.id));
+  const extras: TimelineEvent[] = [];
+  for (const group of contextGroups) {
+    for (const event of group) {
+      if (seenIds.has(event.id)) continue;
+      if (event.type === "statement") {
+        if (statementKey.has(`${event.date}|${event.personId ?? ""}`)) continue;
+        statementKey.add(`${event.date}|${event.personId ?? ""}`);
+      }
+      seenIds.add(event.id);
+      extras.push(event);
     }
-    return true;
-  });
+  }
   return [...statements, ...extras].sort(
     (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
   );
 }
 
-/** Single live track: sentiment curve + EU rules context on one axis. */
+/**
+ * The lens a pin belongs to. Curated pins predate the lens axis: the form of
+ * the event decides. A statement is a cultural reading of the field, a
+ * declared spend is market, everything else in the curated set is EU policy.
+ */
+export function lensOf(event: TimelineEvent): Lens {
+  if (event.lens) return event.lens;
+  if (event.type === "statement") return "culture";
+  if (event.type === "spending") return "business";
+  return "policy";
+}
+
+/** Every pin under one lens, oldest first. */
+export function eventsForLens(events: TimelineEvent[], lens: Lens): TimelineEvent[] {
+  return events.filter((event) => lensOf(event) === lens);
+}
+
+/**
+ * Single live track: the whole field on one axis, read through five lenses —
+ * models, research, business, culture and policy. The id and slug stay
+ * `sentiment` so existing permalinks and theses keep resolving.
+ */
 export const unifiedTheme: TimelineTheme = {
   ...sentimentTheme,
-  events: mergeContextEvents(sentimentTheme.events, aiActTrack.events),
+  name: { it: "Evoluzione dell'IA", en: "AI evolution" },
+  shortName: "IA",
+  period: { it: "2013 — oggi", en: "2013 — today" },
+  intro: {
+    it: "Come evolve l’IA, letta per lenti: modelli, ricerca, mercato, cultura e politica sullo stesso asse. Ogni segno è un dato con la sua fonte.",
+    en: "How AI evolves, read through lenses: models, research, business, culture and policy on the same axis. Every mark is a datum with its source.",
+  },
+  events: mergeContextEvents(sentimentTheme.events, aiActTrack.events, aiHistoryEvents),
 };
 
 export const timelineThemes: TimelineTheme[] = [unifiedTheme];

@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { hintSentiment } from '@/lib/pipeline/match';
 import type {
   AutoSignal,
   PipelineStore,
@@ -91,9 +92,7 @@ export function signalIdFromUrl(url: string): string {
 }
 
 function capSignals(signals: AutoSignal[]): AutoSignal[] {
-  const pinned = signals.filter(
-    (s) => s.hidden || s.sentimentOverride !== undefined,
-  );
+  const pinned = signals.filter((s) => s.hidden);
   const pinnedIds = new Set(pinned.map((s) => s.id));
   const rest = signals
     .filter((s) => !pinnedIds.has(s.id))
@@ -116,7 +115,6 @@ export function upsertSignals(
         id: prev.id,
         discoveredAt: prev.discoveredAt,
         hidden: prev.hidden,
-        sentimentOverride: prev.sentimentOverride,
       });
       continue;
     }
@@ -137,7 +135,7 @@ export function upsertSignals(
 export function patchSignal(
   store: PipelineStore,
   id: string,
-  patch: { hidden?: boolean; sentimentOverride?: AutoSignal['sentimentOverride'] },
+  patch: { hidden?: boolean },
 ): PipelineStore | null {
   const signals = store.signals ?? [];
   if (!signals.some((s) => s.id === id)) return null;
@@ -149,7 +147,6 @@ export function patchSignal(
       if (s.id !== id) return s;
       const next = { ...s };
       if (patch.hidden !== undefined) next.hidden = patch.hidden;
-      if (patch.sentimentOverride !== undefined) next.sentimentOverride = patch.sentimentOverride;
       return next;
     }),
   };
@@ -166,11 +163,6 @@ export function promoteSignal(
   const existing = store.candidates.find((c) => c.sourceUrl === signal.sourceUrl);
   if (existing) return { store, created: false };
 
-  const tag =
-    signal.sentimentOverride === null
-      ? undefined
-      : (signal.sentimentOverride ?? signal.sentiment);
-
   const candidate: SentimentCandidate = {
     id: candidateIdFromUrl(signal.sourceUrl),
     discoveredAt: new Date().toISOString(),
@@ -182,7 +174,7 @@ export function promoteSignal(
     summary: signal.summary,
     personId: signal.personId,
     actorId: signal.actorId,
-    suggestedSentiment: tag,
+    suggestedSentiment: hintSentiment(`${signal.rawTitle} ${signal.rawSnippet ?? ''}`),
     rawTitle: signal.rawTitle,
     rawSnippet: signal.rawSnippet,
     feedSource: signal.feedSource,

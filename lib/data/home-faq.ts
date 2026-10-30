@@ -12,8 +12,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Uno strumento per seguire il tono pubblico sull’IA — e sullo stesso asse le regole europee e il lobbying. La curva unisce citazioni curate e tono automatico dei titoli; incontri, spese e voti restano contesto con fonte.',
-      en: 'A tool to follow the public tone on AI — and, on the same axis, Europe’s rules and lobbying. The curve joins curated quotes and the automatic tone of headlines; meetings, spend and votes stay as sourced context.',
+      it: 'Segno mette la storia dell’IA su un’unica timeline, letta per lenti: modelli, ricerca, mercato, cultura e politica, dal 2013 a oggi. Ogni segno è un dato con la sua fonte — un comunicato, un registro pubblico, un documento. Il sentiment è una delle letture.',
+      en: 'Segno puts the story of AI on a single timeline, read by lens: models, research, business, culture and policy, from 2013 to today. Every mark is a datum with its source — a press release, a public register, a document. Sentiment is one of the readings.',
     },
   },
   {
@@ -23,8 +23,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'La curva usa le citazioni con tag di tono e, per i giorni recenti, un punto automatico ricavato dai titoli. Nella cronologia trovi anche incontri, spese e passaggi legislativi. Filtri per tipo e persona nella sidebar.',
-      en: 'The curve uses tagged quotes and, for recent days, one automatic point drawn from headlines. The feed also lists meetings, spend and legislative steps. Filter by type and person in the sidebar.',
+      it: 'Sono i cinque modi di leggere la stessa timeline: ogni riga è una lente — modelli, ricerca, mercato, cultura, politica. Puoi mostrarle tutte o isolarne una sola, e filtrare per tipo, azienda, persona e anno dalla sidebar. Ogni segno apre il dato e la sua fonte.',
+      en: 'They are the five ways to read the same timeline: each row is a lens — models, research, business, culture, policy. Show them all or isolate a single one, and filter by type, company, person and year in the sidebar. Every mark opens the datum and its source.',
     },
   },
   {
@@ -34,19 +34,19 @@ export const homeFaqs: FaqItem[] = [
       en: 'Is “sentiment” an objective score?',
     },
     answer: {
-      it: 'No. Sulle citazioni è una lettura editoriale della frase. Sui titoli recenti è una lettura automatica della copertura, con link e senza citazione. In entrambi i casi la curva mostra l’oscillazione, non una misura scientifica.',
-      en: 'No. On quotes it is an editorial reading of the sentence. On recent headlines it is an automatic reading of the coverage, with a link and no quote. Either way the curve shows the swing, not a scientific measure.',
+      it: 'No. È una lettura editoriale delle citazioni verificate, non un punteggio scientifico. Nell’interfaccia compare come una banda sopra la corsia Cultura e mostra come oscilla il tono nel tempo, con la fonte a un click.',
+      en: 'No. It is an editorial reading of verified quotes, not a scientific score. In the interface it appears as a band above the Culture lane and shows how the tone swings over time, with the source one click away.',
     },
   },
   {
     id: 'causation',
     question: {
-      it: 'Dimostrate che il tono (o il lobbying) ha cambiato le leggi?',
-      en: 'Do you prove that tone (or lobbying) changed the laws?',
+      it: 'Dimostrate che c’è un legame di causa tra gli eventi?',
+      en: 'Do you prove a causal link between the events?',
     },
     answer: {
-      it: 'No — e lo diciamo chiaramente. Mettiamo sullo stesso asse fatti verificabili. La vicinanza nel tempo aiuta a leggere pressioni e messaggi; non è prova di causalità.',
-      en: 'No — and we say so clearly. We place verifiable facts on one axis. Temporal proximity helps you read pressure and messaging; it is not proof of causation.',
+      it: 'No — e lo diciamo chiaramente. Mettiamo sullo stesso asse fatti verificabili, in ordine cronologico. La vicinanza nel tempo ti aiuta a leggere un rilascio accanto al paper che gli ha aperto la strada o alla regola che ne è seguita; non è prova di causalità.',
+      en: 'No — and we say so clearly. We place verifiable facts on one axis, in chronological order. Temporal proximity helps you read a release next to the paper that paved its way or the rule that followed it; it is not proof of causation.',
     },
   },
   {
@@ -78,8 +78,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'How can I contribute?',
     },
     answer: {
-      it: 'Condividi la curva e le fonti. Usa la pagina Segnala per errori o pezzi mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
-      en: 'Share the curve and the sources. Use the Report page for errors or missing pieces. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
+      it: 'Condividi la timeline e le fonti. Usa la pagina Segnala per errori o pezzi mancanti. Sostieni Relatronica. Se sei una redazione o un’associazione, scrivici: i dati devono circolare.',
+      en: 'Share the timeline and the sources. Use the Report page for errors or missing pieces. Support Relatronica. If you are a newsroom or an organisation, write to us: the data should circulate.',
     },
   },
 ];

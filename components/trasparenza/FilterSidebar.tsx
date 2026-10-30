@@ -1,19 +1,23 @@
 'use client';
 
-import { Filter, RotateCcw, X } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { EVENT_META, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
-import type {
-  EventType,
-  LobbyActor,
-  LobbyPerson,
-  SentimentTag,
-  TimelineTheme,
+import {
+  ALL_LENSES,
+  LENS_META,
+  type EventType,
+  type Lens,
+  type LobbyActor,
+  type LobbyPerson,
+  type SentimentTag,
+  type Thesis,
+  type TimelineTheme,
 } from '@/lib/data/trasparenza';
 
 type Labels = {
   themeLabel: string;
-  filterBy: string;
+  lensesLabel: string;
   allActors: string;
   allPeople: string;
   actorsLabel: string;
@@ -21,9 +25,14 @@ type Labels = {
   typesLabel: string;
   yearsLabel: string;
   sentimentLabel: string;
+  thesesLabel: string;
+  allTheses: string;
+  readingKey: string;
+  thesisOpen: string;
+  thesisSettled: string;
+  thesisSince: string;
   resetFilters: string;
   eventsCount: string;
-  close: string;
   typeLabel: (type: EventType) => string;
   sentimentTagLabel: (tag: SentimentTag) => string;
 };
@@ -38,12 +47,17 @@ type Props = {
   years: string[];
   filterTypes: EventType[];
   showSentiment: boolean;
+  /** Claims under test, with their reading key */
+  theses: Thesis[];
   selectedActor: string | 'all';
   selectedPerson: string | 'all';
   selectedTypes: EventType[];
   selectedYears: string[];
   selectedSentiments: SentimentTag[];
   allSentimentTags: SentimentTag[];
+  /** Domain lenses kept on the axis. */
+  selectedLenses: Lens[];
+  selectedThesis: string | 'all';
   eventCount: number;
   disclaimer: string;
   labels: Labels;
@@ -52,8 +66,9 @@ type Props = {
   onToggleType: (type: EventType) => void;
   onToggleYear: (year: string) => void;
   onToggleSentiment: (tag: SentimentTag) => void;
+  onToggleLens: (lens: Lens) => void;
+  onThesisChange: (slug: string | 'all') => void;
   onReset: () => void;
-  onClose?: () => void;
   className?: string;
 };
 
@@ -67,12 +82,15 @@ export function FilterSidebar({
   years,
   filterTypes,
   showSentiment,
+  theses,
   selectedActor,
   selectedPerson,
   selectedTypes,
   selectedYears,
   selectedSentiments,
   allSentimentTags,
+  selectedLenses,
+  selectedThesis,
   eventCount,
   disclaimer,
   labels,
@@ -81,37 +99,25 @@ export function FilterSidebar({
   onToggleType,
   onToggleYear,
   onToggleSentiment,
+  onToggleLens,
+  onThesisChange,
   onReset,
-  onClose,
   className = '',
 }: Props) {
+  const activeThesis = theses.find((thesis) => thesis.slug === selectedThesis);
+
   return (
     <aside className={`flex h-full flex-col ${className}`}>
-      <div className="flex items-center justify-between gap-1.5 border-b border-border/50 px-3 py-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <Filter className="h-3 w-3" />
-          {labels.filterBy}
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <RotateCcw className="h-3 w-3" />
-            {labels.resetFilters}
-          </button>
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={labels.close}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+      {/* The shared right panel owns title and close; filters keep their reset. */}
+      <div className="flex items-center justify-end border-b border-border/50 px-3 py-2">
+        <button
+          type="button"
+          onClick={onReset}
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <RotateCcw className="h-3 w-3" />
+          {labels.resetFilters}
+        </button>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-3 py-3">
@@ -147,6 +153,74 @@ export function FilterSidebar({
           </div>
         </FilterSection>
         )}
+
+        {theses.length > 0 && (
+          <FilterSection title={labels.thesesLabel}>
+            <div className="flex flex-wrap gap-1">
+              <Chip
+                active={selectedThesis === 'all'}
+                onClick={() => onThesisChange('all')}
+                label={labels.allTheses}
+              />
+              {theses.map((thesis) => (
+                <Chip
+                  key={thesis.id}
+                  active={selectedThesis === thesis.slug}
+                  onClick={() => onThesisChange(thesis.slug)}
+                  label={thesis.label[locale]}
+                />
+              ))}
+            </div>
+            {activeThesis && (
+              <div className="mt-2 rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2">
+                <p className="text-[12px] font-semibold leading-snug text-foreground">
+                  {activeThesis.claim[locale]}
+                </p>
+                <p className="mt-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                  {activeThesis.status === 'open' ? labels.thesisOpen : labels.thesisSettled}
+                  {' · '}
+                  {labels.thesisSince.replace(
+                    '{date}',
+                    activeThesis.since.split('-').reverse().join('/'),
+                  )}
+                </p>
+                <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {labels.readingKey}
+                </p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
+                  {activeThesis.definition[locale]}
+                </p>
+              </div>
+            )}
+          </FilterSection>
+        )}
+
+        <FilterSection title={labels.lensesLabel}>
+          <div className="flex flex-wrap gap-1">
+            {ALL_LENSES.map((lens) => {
+              const meta = LENS_META[lens];
+              const active = selectedLenses.includes(lens);
+              return (
+                <button
+                  key={lens}
+                  type="button"
+                  onClick={() => onToggleLens(lens)}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                    active
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted/50 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: meta.color, opacity: active ? 1 : 0.5 }}
+                  />
+                  {meta.label[locale]}
+                </button>
+              );
+            })}
+          </div>
+        </FilterSection>
 
         <FilterSection title={labels.actorsLabel}>
           <div className="flex flex-wrap gap-1">

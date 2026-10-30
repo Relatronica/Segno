@@ -6,7 +6,6 @@ import {
   unauthorized,
 } from '@/lib/pipeline/auth';
 import { listCuratedPins } from '@/lib/pipeline/edits';
-import { effectiveSentiment } from '@/lib/pipeline/signals';
 import {
   deleteCandidates,
   loadPipelineStore,
@@ -53,7 +52,6 @@ export async function GET(request: Request) {
       published: store.candidates.filter((c) => c.status === 'published').length,
       rejected: store.candidates.filter((c) => c.status === 'rejected').length,
       signals: signals.length,
-      voting: signals.filter((s) => effectiveSentiment(s)).length,
     },
   });
 }

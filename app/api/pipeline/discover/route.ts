@@ -32,7 +32,6 @@ export async function POST(request: Request) {
     signalsAdded: signaled.added,
     pending: signaled.store.candidates.filter((c) => c.status === 'pending').length,
     signals: signaled.store.signals?.length ?? 0,
-    voting: signaled.store.signals?.filter((s) => s.votes && !s.hidden).length ?? 0,
     total: signaled.store.candidates.length,
     scannedFeeds: discovered.scannedFeeds,
     matchedItems: discovered.matchedItems,

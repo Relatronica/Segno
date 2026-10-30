@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, PanelRight, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Calendar, PanelRight, Search, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
@@ -10,13 +10,20 @@ import {
   unifiedTheme,
   timelineThemes,
   lobbyPeople,
+  ALL_LENSES,
   ALL_SENTIMENT_TAGS,
+  LENS_META,
+  lensOf,
+  readingsForThesis,
+  thesesForTheme,
   type EventType,
+  type Lens,
+  type PositionStance,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
-import { effectiveSentiment, rollupAutoSignals, signalToTimelineEvent } from '@/lib/pipeline/signals';
+import { signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
 import { PRESENT_PIN_ID } from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
@@ -26,12 +33,16 @@ import {
   type TrasparenzaUrlState,
 } from '@/lib/trasparenza/url';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
-import { HorizontalTimeline } from '@/components/trasparenza/HorizontalTimeline';
+import { LaneTimeline, subjectOf } from '@/components/trasparenza/LaneTimeline';
+import {
+  PositionMatrix,
+  type ThesisRow,
+  type ThesisSubject,
+} from '@/components/trasparenza/PositionMatrix';
 import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
 
 /** Offset timeline chrome below the floating header */
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
-const FILTER_PANEL_TOP = 'calc(var(--nav-clearance) + 3.25rem)';
 
 type PersonMap = Record<string, { name: string; shortName: string; role: { it: string; en: string } }>;
 type ActorMap = Record<string, { name: string; shortName: string }>;
@@ -167,11 +178,15 @@ export default function TrasparenzaContent() {
   const [selectedSentiments, setSelectedSentiments] = useState<SentimentTag[]>([
     ...ALL_SENTIMENT_TAGS,
   ]);
+  /** Domain lenses kept on the axis. All of them by default. */
+  const [selectedLenses, setSelectedLenses] = useState<Lens[]>([...ALL_LENSES]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [chartActiveId, setChartActiveId] = useState<string | null>(null);
   const [scrubId, setScrubId] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [feedOpen, setFeedOpen] = useState(false);
+  /** One panel on the right: filters and chronology are its two sections. */
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState<'filters' | 'feed'>('feed');
+  /** Active claim under test. Scopes statements to its recorded readings. */
+  const [selectedThesis, setSelectedThesis] = useState<string | 'all'>('all');
   const [query, setQuery] = useState('');
   /** Set once the query string has been read, so filters are never reset by the first render. */
   const [urlApplied, setUrlApplied] = useState(false);
@@ -193,15 +208,17 @@ export default function TrasparenzaContent() {
     explicitYears.current = Boolean(parsed.years);
     setSelectedYears(parsed.years ?? defaults.current.years);
     setSelectedSentiments(parsed.sentiments ?? [...ALL_SENTIMENT_TAGS]);
+    setSelectedLenses(parsed.lenses ?? [...ALL_LENSES]);
     setQuery(parsed.q ?? '');
+    setSelectedThesis(parsed.thesis ?? 'all');
 
     if (parsed.event) {
       setPendingEvent(parsed.event);
-      setFeedOpen(true);
+      setPanelTab('feed');
+      setPanelOpen(true);
     } else {
       setPendingEvent(null);
       setActiveId(null);
-      setChartActiveId(null);
     }
   }, []);
 
@@ -215,6 +232,14 @@ export default function TrasparenzaContent() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [applyUrlState]);
+
+  /**
+   * Desktop lands with the panel already open. Below `lg` the panel is a
+   * full-screen overlay, so mobile keeps the timeline and opens it on demand.
+   */
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) setPanelOpen(true);
+  }, []);
 
   useEffect(() => {
     if (!urlApplied) return;
@@ -239,8 +264,10 @@ export default function TrasparenzaContent() {
           selectedSentiments.length < ALL_SENTIMENT_TAGS.length
             ? selectedSentiments
             : undefined,
+        lenses: selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined,
         q: query.trim() || undefined,
         event: activeId && !activeId.startsWith('auto-day-') ? activeId : undefined,
+        thesis: selectedThesis !== 'all' ? selectedThesis : undefined,
       });
       const next = `${window.location.pathname}${search}`;
       if (next !== `${window.location.pathname}${window.location.search}`) {
@@ -255,8 +282,10 @@ export default function TrasparenzaContent() {
     selectedTypes,
     selectedYears,
     selectedSentiments,
+    selectedLenses,
     query,
     activeId,
+    selectedThesis,
     track.filterTypes,
     allYears,
   ]);
@@ -276,6 +305,102 @@ export default function TrasparenzaContent() {
   );
 
   const needles = useMemo(() => queryTerms(query), [query]);
+
+  const theses = useMemo(() => thesesForTheme(track.id), [track.id]);
+  const activeThesis = useMemo(
+    () => theses.find((thesis) => thesis.slug === selectedThesis) ?? null,
+    [theses, selectedThesis],
+  );
+
+  /**
+   * Readings recorded on the active thesis, resolved against the published
+   * events. A reading without its quote does not appear: the evidence is the
+   * condition for being on the board.
+   */
+  const thesisReadings = useMemo(() => {
+    if (!activeThesis) return null;
+    const eventsById = new Map(track.events.map((e) => [e.id, e]));
+    return readingsForThesis(activeThesis.id).flatMap((reading) => {
+      const event = eventsById.get(reading.eventId);
+      return event ? [{ event, stance: reading.stance, note: reading.note }] : [];
+    });
+  }, [activeThesis, track.events]);
+
+  const thesisReadingsById = useMemo(
+    () =>
+      thesisReadings
+        ? new Map(thesisReadings.map((reading) => [reading.event.id, reading]))
+        : null,
+    [thesisReadings],
+  );
+
+  /** Board for the matrix: one row per subject, silence listed separately. */
+  const thesisBoard = useMemo(() => {
+    if (!activeThesis || !thesisReadings) return null;
+    const peopleById = new Map(track.people.map((person) => [person.id, person]));
+    const actorsById = new Map(track.actors.map((actor) => [actor.id, actor]));
+
+    const toSubject = (kind: 'person' | 'actor', id: string): ThesisSubject | null => {
+      if (kind === 'person') {
+        const person = peopleById.get(id);
+        if (!person) return null;
+        return {
+          key: `person:${person.id}`,
+          kind: 'person',
+          id: person.id,
+          name: person.name,
+          shortName: person.shortName,
+          avatar: person.avatar,
+        };
+      }
+      const actor = actorsById.get(id);
+      if (!actor) return null;
+      return {
+        key: `actor:${actor.id}`,
+        kind: 'actor',
+        id: actor.id,
+        name: actor.name,
+        shortName: actor.shortName,
+        accent: actor.color,
+      };
+    };
+
+    const byKey = new Map<string, ThesisRow>();
+    for (const reading of thesisReadings) {
+      const subject = subjectOf(reading.event);
+      if (!subject) continue;
+      const meta = toSubject(subject.kind, subject.id);
+      if (!meta) continue;
+      const row = byKey.get(meta.key);
+      if (row) row.readings.push(reading);
+      else byKey.set(meta.key, { subject: meta, readings: [reading] });
+    }
+
+    const rows = [...byKey.values()]
+      .map((row) => ({
+        ...row,
+        readings: [...row.readings].sort((a, b) => a.event.date.localeCompare(b.event.date)),
+      }))
+      .sort(
+        (a, b) =>
+          b.readings.length - a.readings.length ||
+          a.subject.shortName.localeCompare(b.subject.shortName),
+      );
+
+    const silent = [
+      ...track.people.map((person) => toSubject('person', person.id)),
+      ...track.actors.map((actor) => toSubject('actor', actor.id)),
+    ].filter((subject): subject is ThesisSubject => subject !== null && !byKey.has(subject.key));
+
+    return { rows, silent };
+  }, [activeThesis, thesisReadings, track.people, track.actors]);
+
+  const stanceByEventId = useMemo(() => {
+    if (!thesisReadings) return undefined;
+    return Object.fromEntries(
+      thesisReadings.map((reading) => [reading.event.id, reading.stance]),
+    ) as Record<string, PositionStance>;
+  }, [thesisReadings]);
 
   const filtered = useMemo(() => {
     return [...track.events]
@@ -297,6 +422,14 @@ export default function TrasparenzaContent() {
       .filter((e) => {
         if (!e.sentiment) return true;
         return selectedSentiments.includes(e.sentiment);
+      })
+      .filter((e) => selectedLenses.includes(lensOf(e)))
+      .filter((e) => {
+        // A thesis scopes statements to its recorded readings; context pins
+        // stay on the axis, like the person filter above.
+        if (!thesisReadingsById) return true;
+        if (e.type !== 'statement') return true;
+        return thesisReadingsById.has(e.id);
       });
   }, [
     track.events,
@@ -305,16 +438,23 @@ export default function TrasparenzaContent() {
     selectedTypes,
     selectedYears,
     selectedSentiments,
+    selectedLenses,
     needles,
     personMap,
     actorMap,
+    thesisReadingsById,
   ]);
 
+  /**
+   * Diary rows. No tone, so the sentiment filter (a filter on quoted
+   * statements) does not apply: a headline cannot match a stance it lacks.
+   */
   const filteredSignals = useMemo(() => {
     if (!selectedTypes.includes('statement')) return [];
+    // Diary rows are readings of what people say, so they ride the culture
+    // lens: hiding that lens hides them too.
+    if (!selectedLenses.includes('culture')) return [];
     return autoSignals.filter((signal) => {
-      const tag = effectiveSentiment(signal);
-      if (!tag || !selectedSentiments.includes(tag)) return false;
       if (!selectedYears.includes(signal.date.slice(0, 4))) return false;
       if (selectedActor !== 'all' && signal.actorId !== selectedActor) return false;
       if (selectedPerson !== 'all' && signal.personId !== selectedPerson) return false;
@@ -327,25 +467,15 @@ export default function TrasparenzaContent() {
     selectedPerson,
     selectedTypes,
     selectedYears,
-    selectedSentiments,
+    selectedLenses,
     needles,
     personMap,
     actorMap,
   ]);
 
   const autoFeed = useMemo(
-    () =>
-      filteredSignals
-        .map(signalToTimelineEvent)
-        .filter((event): event is TimelineEvent => event !== null),
+    () => filteredSignals.map(signalToTimelineEvent),
     [filteredSignals],
-  );
-
-  const dayRollups = useMemo(() => rollupAutoSignals(filteredSignals), [filteredSignals]);
-
-  const chartEvents = useMemo(
-    () => [...filtered, ...dayRollups],
-    [filtered, dayRollups],
   );
 
   const feedEvents = useMemo(
@@ -356,13 +486,11 @@ export default function TrasparenzaContent() {
   useEffect(() => {
     if (feedEvents.length === 0) {
       setActiveId(null);
-      setChartActiveId(null);
       setScrubId(null);
       return;
     }
     if (activeId && !feedEvents.some((e) => e.id === activeId)) {
       setActiveId(null);
-      setChartActiveId(null);
     }
   }, [feedEvents, activeId]);
 
@@ -400,6 +528,16 @@ export default function TrasparenzaContent() {
     });
   };
 
+  const toggleLens = (lens: Lens) => {
+    setSelectedLenses((prev) => {
+      if (prev.includes(lens)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((x) => x !== lens);
+      }
+      return ALL_LENSES.filter((l) => prev.includes(l) || l === lens);
+    });
+  };
+
   const resetFilters = () => {
     setSelectedActor('all');
     setSelectedPerson('all');
@@ -407,20 +545,17 @@ export default function TrasparenzaContent() {
     explicitYears.current = false;
     setSelectedYears(allYears);
     setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
+    setSelectedLenses([...ALL_LENSES]);
+    setSelectedThesis('all');
     setQuery('');
   };
 
   const typeLabel = (type: EventType) => t.trasparenza.types[type];
   const sentimentTagLabel = (tag: SentimentTag) => t.trasparenza.sentiments[tag];
-
-  const chartIdFor = (id: string) => {
-    const event = feedEvents.find((e) => e.id === id);
-    return event?.origin === 'auto' ? `auto-day-${event.date}` : id;
-  };
+  const stanceLabel = (stance: PositionStance) => t.trasparenza.stances[stance];
 
   const centerOnEvent = (id: string) => {
     setActiveId(id);
-    setChartActiveId(chartIdFor(id));
     setScrubId(null);
     setFocusEventToken((n) => n + 1);
   };
@@ -431,7 +566,6 @@ export default function TrasparenzaContent() {
     if (!feedEvents.some((e) => e.id === pendingEvent)) return;
     centerOnEvent(pendingEvent);
     setPendingEvent(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingEvent, feedEvents]);
 
   const goPrev = () => {
@@ -454,8 +588,7 @@ export default function TrasparenzaContent() {
         goNext();
       }
       if (e.key === 'Escape') {
-        setFiltersOpen(false);
-        setFeedOpen(false);
+        setPanelOpen(false);
         setActiveId(null);
       }
     };
@@ -464,9 +597,11 @@ export default function TrasparenzaContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, filtered]);
 
+  const lensLabel = (lens: Lens) => LENS_META[lens].label[locale];
+
   const filterLabels = {
     themeLabel: t.trasparenza.themeLabel,
-    filterBy: t.trasparenza.filterBy,
+    lensesLabel: t.trasparenza.lensesLabel,
     allActors: t.trasparenza.allActors,
     allPeople: t.trasparenza.allPeople,
     actorsLabel: t.trasparenza.actorsLabel,
@@ -474,47 +609,26 @@ export default function TrasparenzaContent() {
     typesLabel: t.trasparenza.typesLabel,
     yearsLabel: t.trasparenza.yearsLabel,
     sentimentLabel: t.trasparenza.sentimentLabel,
+    thesesLabel: t.trasparenza.thesesLabel,
+    allTheses: t.trasparenza.allTheses,
+    readingKey: t.trasparenza.readingKey,
+    thesisOpen: t.trasparenza.thesisOpen,
+    thesisSettled: t.trasparenza.thesisSettled,
+    thesisSince: t.trasparenza.thesisSince,
     resetFilters: t.trasparenza.resetFilters,
     eventsCount: t.trasparenza.eventsCount,
-    close: t.trasparenza.close,
     typeLabel,
     sentimentTagLabel,
   };
 
   const selectEvent = (id: string) => {
-    if (id.startsWith('auto-day-')) {
-      if (chartActiveId === id) {
-        setActiveId(null);
-        setChartActiveId(null);
-        return;
-      }
-      const date = id.slice('auto-day-'.length);
-      const first = autoFeed.find((event) => event.date === date);
-      setActiveId(first?.id ?? id);
-      setChartActiveId(id);
-      setScrubId(null);
-      setFocusEventToken((n) => n + 1);
-      setFiltersOpen(false);
-      setFeedOpen(true);
-      return;
-    }
     if (activeId === id) {
       setActiveId(null);
-      setChartActiveId(null);
       return;
     }
     centerOnEvent(id);
-    setFiltersOpen(false);
-    setFeedOpen(true);
-  };
-
-  const onFeedScrub = (id: string | null) => {
-    if (!id) {
-      setScrubId(null);
-      return;
-    }
-    const event = feedEvents.find((item) => item.id === id);
-    setScrubId(event?.origin === 'auto' ? `auto-day-${event.date}` : id);
+    setPanelTab('feed');
+    setPanelOpen(true);
   };
 
   const activeFilters =
@@ -522,92 +636,139 @@ export default function TrasparenzaContent() {
     selectedPerson !== 'all' ||
     selectedTypes.length < track.filterTypes.length ||
     selectedYears.length < allYears.length ||
-    selectedSentiments.length < ALL_SENTIMENT_TAGS.length;
+    selectedSentiments.length < ALL_SENTIMENT_TAGS.length ||
+    selectedLenses.length < ALL_LENSES.length ||
+    selectedThesis !== 'all';
 
+  /** Verified quotes: the only pins that carry a tone tag. */
   const moodEvents = useMemo(
-    () => [...filtered.filter((e) => Boolean(e.sentiment)), ...dayRollups],
-    [filtered, dayRollups],
+    () => filtered.filter((e) => Boolean(e.sentiment)),
+    [filtered],
   );
 
-  const activityEvents = useMemo(() => {
-    const samplesByDate = new Map<string, TimelineEvent[]>();
-    for (const event of autoFeed) {
-      const list = samplesByDate.get(event.date) ?? [];
-      if (list.length < 12) list.push(event);
-      samplesByDate.set(event.date, list);
-    }
+  /**
+   * Volume band: verified quotes plus the headline diary.
+   * Only the quotes carry a tone, so the bars show how much was said.
+   */
+  const activityEvents = useMemo(
+    () => [...moodEvents, ...autoFeed],
+    [moodEvents, autoFeed],
+  );
 
-    const weightedAutos = dayRollups.map((rollup) => {
-      const samples = samplesByDate.get(rollup.date) ?? [];
-      if (samples.length === 0) return rollup;
-      return {
-        ...rollup,
-        summary: {
-          it: samples.map((s) => s.title.it).join(' · '),
-          en: samples.map((s) => s.title.en).join(' · '),
-        },
-      };
-    });
-
-    return [
-      ...filtered.filter((e) => Boolean(e.sentiment) && e.origin !== 'auto'),
-      ...weightedAutos,
-    ];
-  }, [filtered, dayRollups, autoFeed]);
-
-  const moodLabels = useMemo(
+  const laneLabels = useMemo(
     () => ({
-      title: t.trasparenza.moodTitle,
+      todayLabel: t.trasparenza.todayLabel,
+      hint: t.trasparenza.lanesHint,
+      volume: t.trasparenza.activity,
+      volumeHint: t.trasparenza.activityHint,
+      sentiment: t.trasparenza.moodTitle,
+      sentimentBlurb: t.trasparenza.moodBlurb,
+      sentimentHint: t.trasparenza.moodHint,
       fear: t.trasparenza.moodFear,
       enthusiasm: t.trasparenza.moodEnthusiasm,
-      hint: t.trasparenza.moodHint,
-      activity: t.trasparenza.activity,
-      activityHint: t.trasparenza.activityHint,
-      activityBarCount: t.trasparenza.activityBarCount,
-      activityBarMore: t.trasparenza.activityBarMore,
     }),
     [t],
   );
 
-  const renderFeed = (opts?: {
-    onPick?: (id: string) => void;
-    onClose?: () => void;
-    className?: string;
-  }) => (
-    <TimelineFeed
-      events={feedEvents}
-      locale={locale}
-      people={personMap}
-      actors={actorMap}
-      personOptions={track.people}
-      selectedPerson={selectedPerson}
-      onPersonChange={setSelectedPerson}
-      allPeopleLabel={t.trasparenza.allPeople}
-      peopleLabel={t.trasparenza.peopleLabel}
-      typeOptions={track.filterTypes}
-      selectedTypes={selectedTypes}
-      onToggleType={toggleType}
-      onResetTypes={() => setSelectedTypes([...track.filterTypes])}
-      typesLabel={t.trasparenza.typesLabel}
-      allTypesLabel={t.trasparenza.allTypes}
-      activeId={activeId}
-      onSelect={opts?.onPick ?? selectEvent}
-      onScrub={onFeedScrub}
-      sentimentLabel={sentimentTagLabel}
-      typeLabel={typeLabel}
-      sentimentNote={t.trasparenza.sentimentNote}
-      autoNote={t.trasparenza.autoNote}
-      autoLabel={t.trasparenza.autoLabel}
-      sourceLabel={t.trasparenza.source}
-      permalinkLabel={t.trasparenza.permalink}
-      permalinkHint={t.trasparenza.permalinkHint}
-      title={t.trasparenza.feedTitle}
-      newestFirstLabel={t.trasparenza.feedNewest}
-      emptyLabel={t.trasparenza.empty}
-      closeLabel={t.trasparenza.close}
-      onClose={opts?.onClose}
-      className={opts?.className ?? 'min-h-0 flex-1'}
-    />
+  /**
+   * The right panel carries both sections. Two separate panels duplicated the
+   * same entry points in the toolbar and let the same filter live in two places.
+   */
+  const renderPanel = (className: string) => (
+    <div className={`flex h-full min-h-0 flex-col ${className}`}>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border/50 px-3 py-2">
+        <div
+          role="tablist"
+          aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
+          className="inline-flex h-8 shrink-0 items-center rounded-md border border-border/50 p-0.5"
+        >
+          {(['filters', 'feed'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={panelTab === tab}
+              onClick={() => setPanelTab(tab)}
+              className={`inline-flex h-full items-center gap-1.5 rounded px-2 text-[13px] font-medium transition-colors ${
+                panelTab === tab
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
+              {tab === 'filters' && activeFilters && panelTab !== 'filters' && (
+                <span className="h-1.5 w-1.5 rounded-full bg-mark" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setPanelOpen(false)}
+          className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={t.trasparenza.close}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {panelTab === 'filters' ? (
+        <FilterSidebar
+          themes={timelineThemes}
+          selectedThemeId={track.id}
+          onThemeChange={switchTheme}
+          locale={locale}
+          actors={track.actors}
+          people={track.people}
+          years={allYears}
+          filterTypes={track.filterTypes}
+          showSentiment={track.showSentiment}
+          selectedActor={selectedActor}
+          selectedPerson={selectedPerson}
+          selectedTypes={selectedTypes}
+          selectedYears={selectedYears}
+          selectedSentiments={selectedSentiments}
+          allSentimentTags={ALL_SENTIMENT_TAGS}
+          selectedLenses={selectedLenses}
+          eventCount={feedEvents.length}
+          disclaimer={track.disclaimer[locale]}
+          labels={filterLabels}
+          onActorChange={setSelectedActor}
+          onPersonChange={setSelectedPerson}
+          onToggleType={toggleType}
+          onToggleYear={toggleYear}
+          onToggleSentiment={toggleSentiment}
+          onToggleLens={toggleLens}
+          onReset={resetFilters}
+          theses={theses}
+          selectedThesis={selectedThesis}
+          onThesisChange={setSelectedThesis}
+          className="min-h-0 flex-1"
+        />
+      ) : (
+        <TimelineFeed
+          events={feedEvents}
+          locale={locale}
+          people={personMap}
+          actors={actorMap}
+          activeId={activeId}
+          onSelect={selectEvent}
+          onScrub={setScrubId}
+          sentimentLabel={sentimentTagLabel}
+          typeLabel={typeLabel}
+          sentimentNote={t.trasparenza.sentimentNote}
+          autoNote={t.trasparenza.autoNote}
+          autoLabel={t.trasparenza.autoLabel}
+          sourceLabel={t.trasparenza.source}
+          permalinkLabel={t.trasparenza.permalink}
+          permalinkHint={t.trasparenza.permalinkHint}
+          newestFirstLabel={t.trasparenza.feedNewest}
+          emptyLabel={t.trasparenza.empty}
+          className="min-h-0 flex-1"
+        />
+      )}
+    </div>
   );
 
   return (
@@ -619,24 +780,23 @@ export default function TrasparenzaContent() {
 
       <section id="timeline" className="relative min-h-0 min-w-0 flex-1">
         <div className="absolute inset-0">
-          <HorizontalTimeline
-            events={chartEvents}
-            mode="chart"
-            moodEvents={moodEvents}
-            activityEvents={activityEvents}
-            moodLabels={moodLabels}
-            actors={actorMap}
+          <LaneTimeline
+            events={filtered}
             people={personMap}
             locale={locale}
-            activeId={chartActiveId}
-            onSelect={selectEvent}
+            activeId={activeId}
             scrubId={scrubId}
+            onSelect={selectEvent}
             emptyLabel={t.trasparenza.empty}
-            dragHint={t.trasparenza.inspectHint}
+            labels={laneLabels}
             typeLabel={typeLabel}
             sentimentLabel={sentimentTagLabel}
+            lensLabel={lensLabel}
+            stanceByEventId={stanceByEventId}
+            stanceLabel={stanceLabel}
+            volumeEvents={activityEvents}
+            moodEvents={moodEvents}
             focusPresent
-            todayLabel={t.trasparenza.todayLabel}
             presentFocusToken={presentFocusToken}
             focusEventToken={focusEventToken}
           />
@@ -646,24 +806,6 @@ export default function TrasparenzaContent() {
             style={{ top: CHROME_TOP }}
           >
             <div className="pointer-events-auto flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((o) => !o)}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium backdrop-blur-md transition-colors ${
-                  filtersOpen
-                    ? 'border-foreground/15 bg-foreground text-background'
-                    : 'border-border/50 bg-background/80 text-foreground hover:bg-background'
-                }`}
-                aria-expanded={filtersOpen}
-                aria-label={t.trasparenza.filterBy}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">{t.trasparenza.filterBy}</span>
-                {activeFilters && !filtersOpen && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-mark" />
-                )}
-              </button>
-
               <div className="relative min-w-0 flex-1 sm:max-w-sm" title={t.trasparenza.searchHint}>
                 <Search
                   className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70"
@@ -706,77 +848,33 @@ export default function TrasparenzaContent() {
 
                 <button
                   type="button"
-                  onClick={() => setFeedOpen((o) => !o)}
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-                    feedOpen
+                  onClick={() => setPanelOpen((o) => !o)}
+                  className={`inline-flex h-9 items-center gap-2 rounded-md px-2.5 transition-colors ${
+                    panelOpen
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground/80 hover:bg-background/70 hover:text-foreground'
                   }`}
-                  aria-expanded={feedOpen}
-                  aria-label={t.trasparenza.feedOpen}
-                  title={t.trasparenza.feedOpen}
+                  aria-expanded={panelOpen}
+                  aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
+                  title={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
                 >
                   <PanelRight className="h-4 w-4" />
+                  {activeFilters && !panelOpen && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-mark" />
+                  )}
                 </button>
               </div>
             </div>
           </div>
-
-          <AnimatePresence>
-            {filtersOpen && (
-              <motion.div
-                className="absolute inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:w-[min(100%-1.5rem,300px)]"
-                style={{ top: FILTER_PANEL_TOP }}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 16 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.4, 0.25, 1] }}
-              >
-                <div className="flex h-full max-h-full flex-col overflow-hidden rounded-t-2xl border border-border/60 bg-background shadow-2xl sm:rounded-2xl sm:bg-background/95 sm:backdrop-blur-xl">
-                  <div className="flex justify-center py-2 sm:hidden" aria-hidden>
-                    <span className="h-1 w-10 rounded-full bg-border" />
-                  </div>
-                  <FilterSidebar
-                    themes={timelineThemes}
-                    selectedThemeId={track.id}
-                    onThemeChange={switchTheme}
-                    locale={locale}
-                    actors={track.actors}
-                    people={track.people}
-                    years={allYears}
-                    filterTypes={track.filterTypes}
-                    showSentiment={track.showSentiment}
-                    selectedActor={selectedActor}
-                    selectedPerson={selectedPerson}
-                    selectedTypes={selectedTypes}
-                    selectedYears={selectedYears}
-                    selectedSentiments={selectedSentiments}
-                    allSentimentTags={ALL_SENTIMENT_TAGS}
-                    eventCount={feedEvents.length}
-                    disclaimer={track.disclaimer[locale]}
-                    labels={filterLabels}
-                    onActorChange={setSelectedActor}
-                    onPersonChange={setSelectedPerson}
-                    onToggleType={toggleType}
-                    onToggleYear={toggleYear}
-                    onToggleSentiment={toggleSentiment}
-                    onReset={resetFilters}
-                    onClose={() => setFiltersOpen(false)}
-                    className="min-h-0 flex-1"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
       </section>
 
-      {/* Desktop feed — docked, collapsible */}
+      {/* Dossier panel — docked on desktop, full screen below it */}
       <AnimatePresence initial={false}>
-        {feedOpen && (
+        {panelOpen && (
           <motion.aside
-            key="desktop-feed"
+            key="desktop-panel"
             className="relative z-20 hidden h-full shrink-0 overflow-hidden border-l border-border/50 bg-background/95 backdrop-blur-xl lg:flex"
             initial={{ width: 0, opacity: 0.6 }}
             animate={{ width: 380, opacity: 1 }}
@@ -784,24 +882,23 @@ export default function TrasparenzaContent() {
             transition={{ type: 'spring', bounce: 0.05, duration: 0.38 }}
           >
             <div className="flex h-full w-[min(100vw,380px)] min-w-[min(100vw,380px)] flex-col">
-              {renderFeed({ onClose: () => setFeedOpen(false) })}
+              {renderPanel('flex-1')}
             </div>
           </motion.aside>
         )}
       </AnimatePresence>
 
-      {/* Mobile feed drawer */}
       <AnimatePresence>
-        {feedOpen && (
+        {panelOpen && (
           <motion.div
-            key="mobile-feed"
+            key="mobile-panel"
             className="absolute inset-0 z-[60] flex flex-col bg-background lg:hidden"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', bounce: 0.08, duration: 0.35 }}
           >
-            {renderFeed({ onClose: () => setFeedOpen(false) })}
+            {renderPanel('flex-1')}
           </motion.div>
         )}
       </AnimatePresence>

@@ -9,7 +9,7 @@ import {
   Gavel,
   type LucideIcon,
 } from 'lucide-react';
-import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
+import type { EventType, PositionStance, SentimentTag } from '@/lib/data/trasparenza';
 import { toMs as toMsDate } from '@/lib/dates';
 
 export const EVENT_META: Record<
@@ -98,6 +98,42 @@ export const SENTIMENT_META: Record<
 };
 
 export { SENTIMENT_FEAR_SCORE } from '@/lib/data/trasparenza';
+
+/**
+ * Colour of a reading on a thesis. Fixed order: support / oppose /
+ * conditional / ambiguous / undetermined, so a shift in position reads as a
+ * change of colour rather than a change of mood.
+ */
+export const STANCE_META: Record<
+  PositionStance,
+  { color: string; bg: string; dot: string }
+> = {
+  support: {
+    color: 'text-emerald-800 dark:text-emerald-300',
+    bg: 'bg-emerald-500/15',
+    dot: '#047857',
+  },
+  oppose: {
+    color: 'text-rose-800 dark:text-rose-300',
+    bg: 'bg-rose-500/15',
+    dot: '#be123c',
+  },
+  conditional: {
+    color: 'text-amber-800 dark:text-amber-300',
+    bg: 'bg-amber-500/15',
+    dot: '#b45309',
+  },
+  ambiguous: {
+    color: 'text-slate-700 dark:text-slate-300',
+    bg: 'bg-slate-500/15',
+    dot: '#475569',
+  },
+  undetermined: {
+    color: 'text-zinc-600 dark:text-zinc-400',
+    bg: 'bg-zinc-500/15',
+    dot: '#a1a1aa',
+  },
+};
 
 export function toMs(date: string): number {
   return toMsDate(date);

@@ -1,6 +1,5 @@
 import Parser from 'rss-parser';
 import { lobbyPeople } from '@/lib/data/trasparenza';
-import { classifyMany, VOTE_THRESHOLD } from '@/lib/pipeline/classify';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
 import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
@@ -123,10 +122,6 @@ function extractImage(
   return undefined;
 }
 
-type SignalDraft = Omit<AutoSignal, 'sentiment' | 'confidence' | 'votes'> & {
-  blob: string;
-};
-
 export async function discoverSentimentCandidates(): Promise<{
   candidates: SentimentCandidate[];
   signals: AutoSignal[];
@@ -144,7 +139,7 @@ export async function discoverSentimentCandidates(): Promise<{
     },
   });
   const found: SentimentCandidate[] = [];
-  const drafts: SignalDraft[] = [];
+  const drafts: AutoSignal[] = [];
   const seen = new Set<string>();
   let matchedItems = 0;
   let rejectedBySource = 0;
@@ -249,7 +244,6 @@ export async function discoverSentimentCandidates(): Promise<{
           sourceTier: classification.tier,
           sourceHost: classification.host,
           ...(imageUrl ? { imageUrl } : {}),
-          blob,
         });
       }
     } catch (err) {
@@ -257,35 +251,9 @@ export async function discoverSentimentCandidates(): Promise<{
     }
   }
 
-  const guesses = await classifyMany(drafts.map((draft) => draft.blob));
-  const signals: AutoSignal[] = drafts.map((draft, index) => {
-    const guess = guesses[index] ?? { confidence: 0 };
-    const votes = Boolean(guess.tag) && guess.confidence >= VOTE_THRESHOLD;
-    return {
-      id: draft.id,
-      discoveredAt: draft.discoveredAt,
-      date: draft.date,
-      sourceUrl: draft.sourceUrl,
-      sourceLabel: draft.sourceLabel,
-      title: draft.title,
-      summary: draft.summary,
-      personId: draft.personId,
-      actorId: draft.actorId,
-      rawTitle: draft.rawTitle,
-      rawSnippet: draft.rawSnippet,
-      feedSource: draft.feedSource,
-      sourceTier: draft.sourceTier,
-      sourceHost: draft.sourceHost,
-      ...(draft.imageUrl ? { imageUrl: draft.imageUrl } : {}),
-      sentiment: guess.tag,
-      confidence: guess.confidence,
-      votes,
-    };
-  });
-
   return {
     candidates: found,
-    signals,
+    signals: drafts,
     scannedFeeds: SENTIMENT_FEEDS.length,
     matchedItems,
     rejectedBySource,

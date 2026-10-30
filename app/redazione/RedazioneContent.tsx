@@ -40,7 +40,6 @@ type Counts = {
   published: number;
   rejected: number;
   signals?: number;
-  voting?: number;
 };
 
 type Desk = 'queue' | 'auto' | 'live' | 'rejected';
@@ -536,22 +535,17 @@ export default function RedazioneContent() {
             labels={{
               hint: t.redazione.signalsHint,
               empty: t.redazione.signalsEmpty,
-              voting: t.redazione.signalsVoting,
-              held: t.redazione.signalsHeld,
               hidden: t.redazione.hidden,
               hide: t.redazione.hide,
               unhide: t.redazione.unhide,
               promote: t.redazione.signalPromote,
               promoted: t.redazione.signalPromoted,
-              tag: t.redazione.sentiment,
-              clear: t.redazione.sentimentNone,
               open: t.redazione.openSource,
               error: t.redazione.saveError,
               today: t.redazione.today,
               yesterday: t.redazione.yesterday,
               itemsCount: t.redazione.itemsCount,
             }}
-            sentimentLabels={t.trasparenza.sentiments}
             onChanged={() => void load()}
           />
         ) : (

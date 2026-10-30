@@ -1,0 +1,807 @@
+'use client';
+
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  ALL_LENSES,
+  LENS_META,
+  SENTIMENT_FEAR_SCORE,
+  formatEventDate,
+  lensOf,
+  type EventType,
+  type Lens,
+  type LobbyPerson,
+  type PositionStance,
+  type SentimentTag,
+  type TimelineEvent,
+} from '@/lib/data/trasparenza';
+import { createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
+import { cn } from '@/lib/utils';
+import { SENTIMENT_META, STANCE_META } from './meta';
+import { PersonAvatar } from './PersonAvatar';
+import { LabMark, hasLabMark } from './LabMark';
+
+/** Row height: tall enough to hold several internal lines of captions. */
+const ROW_H_DESKTOP = 156;
+const ROW_H_MOBILE = 100;
+/** Pitch of the caption lines inside a row. Also the room a 28px face needs. */
+const LINE_H = 32;
+/** Inset from the row edges, so the outermost line never clips. */
+const LANE_PAD_Y = 14;
+/** A caption is worth the ink only if the next mark is at least this far away:
+    wide enough for the longest short name plus its chip. */
+const LABEL_GAP_PX = 112;
+
+/** How many caption lines the row can hold, centred on the rail. */
+function lineCountFor(rowH: number): number {
+  return Math.max(1, Math.floor((rowH - LANE_PAD_Y * 2) / LINE_H));
+}
+
+/** Vertical offset of a caption line from the row centre. */
+function lineDy(line: number, count: number): number {
+  return (line - (count - 1) / 2) * LINE_H;
+}
+/** Statement with no tone tag: the level is there, the editorial tone is not. */
+const NEUTRAL_MARK = '#64748b';
+/** Volume band under the lanes: how much was said, day by day. */
+const VOLUME_H = 34;
+const VOLUME_BAR = 6;
+/** Sentiment band: the tone of verified quotes, as a bipolar curve. Tall
+    enough that the line reads as a shape, not a wobble. */
+const MOOD_H = 64;
+/** Moving window (in days either side) that smooths the tone curve. */
+const MOOD_WINDOW_DAYS = 3;
+const MOOD_UP = '#047857';
+const MOOD_MID = '#94a3b8';
+const MOOD_DOWN = '#991b1b';
+const DAY_MS = 86_400_000;
+/** Statement mark: the person's face. Every other form takes its lane's glyph. */
+const FACE_PX = 28;
+
+export type LaneLabels = {
+  todayLabel: string;
+  hint: string;
+  /** Title of the volume band. */
+  volume: string;
+  volumeHint: string;
+  /** Title of the sentiment band. */
+  sentiment: string;
+  /** One line on what the curve reads, under the title. */
+  sentimentBlurb: string;
+  sentimentHint: string;
+  /** The two halves of the curve, for the tiny legend. */
+  fear: string;
+  enthusiasm: string;
+};
+
+type Props = {
+  events: TimelineEvent[];
+  people: Record<string, LobbyPerson>;
+  locale: 'it' | 'en';
+  activeId: string | null;
+  /** Feed scroll playhead: a moving cursor, no selection. */
+  scrubId?: string | null;
+  onSelect: (id: string) => void;
+  emptyLabel: string;
+  labels: LaneLabels;
+  typeLabel: (id: EventType) => string;
+  sentimentLabel?: (tag: SentimentTag) => string;
+  /** Localised name of a lens, for the row header. */
+  lensLabel?: (lens: Lens) => string;
+  /**
+   * When a thesis is selected: stance per event id. The mark then carries the
+   * position instead of the tone of the quote.
+   */
+  stanceByEventId?: Record<string, PositionStance>;
+  stanceLabel?: (stance: PositionStance) => string;
+  /** Volume series: every voice of the day, drawn in the band under the lanes. */
+  volumeEvents?: TimelineEvent[];
+  /** Verified quotes only: they alone carry a tone, so they alone feed the curve. */
+  moodEvents?: TimelineEvent[];
+  focusPresent?: boolean;
+  /** Bump to re-centre on today (e.g. jump button) */
+  presentFocusToken?: number;
+  /** Bump to centre the lane view on activeId (list/click/keyboard) */
+  focusEventToken?: number;
+};
+
+type LaneMark = {
+  event: TimelineEvent;
+  x: number;
+  /** Which caption line inside the row the mark sits on. */
+  line: number;
+  /** Room for a short caption before the next mark: shown without hover. */
+  room: boolean;
+};
+
+type Lane = {
+  key: string;
+  lens: Lens;
+  name: string;
+  /** One line on what the lane holds, under the name. */
+  blurb: string;
+  accent: string;
+  marks: LaneMark[];
+};
+
+type VolumeBar = { key: string; date: string; x: number; count: number };
+
+/** The subject a pin speaks for: people and companies, statements only. */
+export type EventSubject = { kind: 'person' | 'actor'; id: string };
+
+export function subjectOf(event: TimelineEvent): EventSubject | null {
+  if (event.type !== 'statement') return null;
+  if (event.personId) return { kind: 'person', id: event.personId };
+  if (event.actorId) return { kind: 'actor', id: event.actorId };
+  return null;
+}
+
+/**
+ * A pin reads better with the thing itself than with its form: "Il Consiglio
+ * adotta l'AI Act" says more than "Legislativo". Titles lead with the subject,
+ * then qualify it after a separator ("AI Office: Code of Practice…"), so the
+ * head is the part worth keeping; the chip clips whatever runs long.
+ */
+function shortTitle(title: string): string {
+  return title.split(/[:—–,]/)[0].trim() || title.trim();
+}
+
+/**
+ * The silhouette of a pin is its lane. A shape says which row you are on before
+ * the colour does, and keeps every lane from reading like the one above it:
+ * a tile for the models (which mostly carry their lab's own mark), a spark for
+ * the research, a measure for the market, a square for the institutions, a
+ * round mark for what is said in public.
+ */
+function lensShape(lens: Lens): { clipPath?: string; borderRadius?: string } {
+  switch (lens) {
+    case 'models':
+      return { borderRadius: '3px' };
+    case 'research':
+      return { clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' };
+    case 'business':
+      return { clipPath: 'polygon(50% 0,100% 100%,0 100%)' };
+    case 'policy':
+      return { borderRadius: '2px' };
+    default:
+      return { borderRadius: '9999px' };
+  }
+}
+
+export function LaneTimeline({
+  events,
+  people,
+  locale,
+  activeId,
+  scrubId = null,
+  onSelect,
+  emptyLabel,
+  labels,
+  typeLabel,
+  sentimentLabel,
+  lensLabel,
+  stanceByEventId,
+  stanceLabel,
+  volumeEvents,
+  moodEvents,
+  focusPresent = false,
+  presentFocusToken = 0,
+  focusEventToken = 0,
+}: Props) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const moodGradId = useId().replace(/:/g, '');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [labelW, setLabelW] = useState(168);
+  const [rowH, setRowH] = useState(ROW_H_DESKTOP);
+
+  useEffect(() => {
+    const update = () => {
+      const narrow = window.innerWidth < 640;
+      setLabelW(narrow ? 112 : 168);
+      setRowH(narrow ? ROW_H_MOBILE : ROW_H_DESKTOP);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const lineCount = lineCountFor(rowH);
+
+  const layout = useMemo(() => {
+    const scale = createTimeScale(events.map((e) => e.date), {
+      padLeft: 28,
+      padRight: 48,
+      minWidth: 900,
+    });
+
+    /**
+     * Spread one lane's marks across its caption lines. A mark takes the line
+     * nearest the rail that leaves a full caption's width after the previous
+     * mark on it; only when every line is busy does it settle for the roomiest.
+     * That is what buys captions: the same pins, on separate runs.
+     */
+    const buildMarks = (items: TimelineEvent[]): LaneMark[] => {
+      const marks: LaneMark[] = items
+        .map((event) => ({ event, x: scale.xForDate(event.date), line: 0, room: false }))
+        .sort((a, b) => a.x - b.x || a.event.date.localeCompare(b.event.date));
+
+      const order = Array.from({ length: lineCount }, (_, i) => i).sort(
+        (a, b) => Math.abs(lineDy(a, lineCount)) - Math.abs(lineDy(b, lineCount)) || a - b,
+      );
+      const lastX = Array.from({ length: lineCount }, () => Number.NEGATIVE_INFINITY);
+      for (const mark of marks) {
+        const free = order.find((i) => mark.x - lastX[i] >= LABEL_GAP_PX);
+        const line =
+          free ?? order.reduce((best, i) => (lastX[i] < lastX[best] ? i : best), order[0]);
+        mark.line = line;
+        lastX[line] = mark.x;
+      }
+
+      // Per line: a caption is worth it only where nothing follows within its
+      // width, and where it still fits before the right edge of the scale.
+      const byLine = new Map<number, LaneMark[]>();
+      for (const mark of marks) {
+        const list = byLine.get(mark.line);
+        if (list) list.push(mark);
+        else byLine.set(mark.line, [mark]);
+      }
+      for (const list of byLine.values()) {
+        list.forEach((mark, i) => {
+          const next = list[i + 1];
+          mark.room =
+            (!next || next.x - mark.x >= LABEL_GAP_PX) && mark.x + LABEL_GAP_PX <= scale.width;
+        });
+      }
+      return marks;
+    };
+
+    // One row per story of the field: the lens decides the row and the
+    // silhouette of its marks.
+    const lanes: Lane[] = ALL_LENSES.map((lens) => ({
+      lens,
+      items: events.filter((event) => lensOf(event) === lens),
+    }))
+      .filter((entry) => entry.items.length > 0)
+      .map(({ lens, items }) => ({
+        key: `lens:${lens}`,
+        lens,
+        name: lensLabel?.(lens) ?? LENS_META[lens].label[locale],
+        blurb: LENS_META[lens].blurb[locale],
+        accent: LENS_META[lens].color,
+        marks: buildMarks(items),
+      }));
+
+    // Volume band: one bar per day, oldest first.
+    const buckets = new Map<string, { count: number; xSum: number }>();
+    for (const event of volumeEvents ?? []) {
+      const key = event.date.slice(0, 10);
+      const bucket = buckets.get(key) ?? { count: 0, xSum: 0 };
+      bucket.count += 1;
+      bucket.xSum += scale.xForDate(key);
+      buckets.set(key, bucket);
+    }
+    const volume: VolumeBar[] = [...buckets.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, bucket]) => ({
+        key,
+        date: key,
+        x: bucket.xSum / bucket.count,
+        count: bucket.count,
+      }));
+    const maxVolume = Math.max(1, ...volume.map((bar) => bar.count));
+
+    // Tone curve: a bipolar, smoothed reading of verified quotes only.
+    // Fear pulls the line down, optimism lifts it; silence breaks the line.
+    const dayStats = new Map<string, { fear: number; count: number }>();
+    for (const event of moodEvents ?? []) {
+      if (!event.sentiment) continue;
+      const key = event.date.slice(0, 10);
+      const stat = dayStats.get(key) ?? { fear: 0, count: 0 };
+      stat.fear += SENTIMENT_FEAR_SCORE[event.sentiment];
+      stat.count += 1;
+      dayStats.set(key, stat);
+    }
+    const toDay = (iso: string) =>
+      Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+    const anchors = [...dayStats.entries()]
+      .map(([day, stat]) => ({ day, t: toDay(day), fear: stat.fear, count: stat.count }))
+      .sort((a, b) => a.t - b.t);
+    const points = anchors.map((anchor) => {
+      let fear = 0;
+      let count = 0;
+      for (const other of anchors) {
+        if (Math.abs(other.t - anchor.t) <= MOOD_WINDOW_DAYS * DAY_MS) {
+          fear += other.fear;
+          count += other.count;
+        }
+      }
+      const value = count ? -fear / count : 0;
+      return { day: anchor.day, x: scale.xForDate(anchor.day), value };
+    });
+
+    return {
+      scale,
+      lanes,
+      ticks: timeTicks(scale),
+      volume,
+      maxVolume,
+      moodPoints: points,
+    };
+  }, [events, locale, lensLabel, volumeEvents, moodEvents, lineCount]);
+
+  const { scale, lanes, ticks, volume, maxVolume, moodPoints } = layout;
+  const moodAmp = MOOD_H / 2 - 6;
+  const moodY = (value: number) => MOOD_H / 2 - value * moodAmp;
+  const contentW = labelW + scale.width;
+
+  /** Axis strip height: deep enough that the "today" badge never meets the
+      tick labels, and the gridlines hang from its lower edge. */
+  const AXIS_H = 40;
+  const monthFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+        month: 'short',
+        timeZone: 'UTC',
+      }),
+    [locale],
+  );
+  const tickLabel = (tick: TimeTick) =>
+    tick.kind === 'year'
+      ? tick.date.slice(0, 4)
+      : monthFmt.format(new Date(`${tick.date}T00:00:00Z`));
+
+  /** Centre the given content-x in the viewport. */
+  const scrollToX = useCallback(
+    (x: number, behavior: ScrollBehavior) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const target = labelW + x - el.clientWidth / 2;
+      el.scrollTo({ left: Math.max(0, target), behavior });
+    },
+    [labelW],
+  );
+
+  /**
+   * First paint parks the view on today. The retry loop waits for the scroller
+   * to have real dimensions: React remounts the effect, and a stale DOM width
+   * would centre on the wrong pixel.
+   */
+  const presentCentered = useRef(false);
+  useEffect(() => {
+    if (!focusPresent || presentCentered.current || events.length === 0) return;
+    let raf = 0;
+    let attempts = 0;
+    const tick = () => {
+      const el = scrollerRef.current;
+      if (el && el.clientWidth > 0) {
+        el.scrollLeft = Math.max(0, labelW + scale.todayX - el.clientWidth / 2);
+        presentCentered.current = true;
+        return;
+      }
+      if (attempts++ < 40) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [focusPresent, events.length, labelW, scale.todayX]);
+
+  useEffect(() => {
+    if (presentFocusToken === 0) return;
+    presentCentered.current = true;
+    scrollToX(scale.todayX, 'smooth');
+  }, [presentFocusToken, scrollToX, scale.todayX]);
+
+  useEffect(() => {
+    if (focusEventToken === 0 || !activeId) return;
+    const mark = lanes
+      .flatMap((lane) => lane.marks)
+      .find((m) => m.event.id === activeId);
+    if (mark) scrollToX(mark.x, 'smooth');
+  }, [focusEventToken, activeId, lanes, scrollToX]);
+
+  /** Keep the feed playhead in frame while scrubbing — no selection, only pan. */
+  useEffect(() => {
+    if (!scrubId || scrubId === activeId) return;
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const mark = lanes.flatMap((lane) => lane.marks).find((m) => m.event.id === scrubId);
+    if (!mark) return;
+
+    const contentX = labelW + mark.x;
+    const margin = Math.max(48, el.clientWidth * 0.2);
+    const left = el.scrollLeft + margin;
+    const right = el.scrollLeft + el.clientWidth - margin;
+    if (contentX >= left && contentX <= right) return;
+
+    const target = contentX < left ? contentX - margin : contentX - el.clientWidth + margin;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [scrubId, activeId, lanes, labelW]);
+
+  const scrubMark =
+    scrubId && scrubId !== activeId
+      ? lanes.flatMap((lane) => lane.marks).find((m) => m.event.id === scrubId)
+      : undefined;
+
+  if (events.length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        {emptyLabel}
+      </div>
+    );
+  }
+
+  return (
+    /* Padding clears the floating chrome: the search row, then the axis.
+       Everything else the axis needs lives in the sidebar, not above it. */
+    <div className="relative h-full w-full pt-[calc(var(--nav-clearance)+4.5rem)]">
+      <div
+        ref={scrollerRef}
+        className="h-full overflow-auto overscroll-x-contain"
+        aria-label={labels.hint}
+      >
+        <div className="relative" style={{ width: contentW, minHeight: '100%' }}>
+          {/* Year axis. Sticky to the top: it holds still while the lanes
+              scroll under it, so the time reference is never lost. It still
+              pans with the content horizontally, or the ticks would drift off
+              their columns. The corner carries the legend of the lane glyphs. */}
+          <div
+            className="sticky top-0 z-40 flex items-end border-b border-border/30 bg-background/95 backdrop-blur-sm"
+            style={{ width: contentW, height: AXIS_H }}
+          >
+            <div
+              className="sticky left-0 z-30 flex h-full items-center gap-1.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
+              style={{ width: labelW }}
+            >
+              {ALL_LENSES.map((lens) => (
+                <span
+                  key={lens}
+                  title={LENS_META[lens].label[locale]}
+                  aria-hidden
+                  className="block h-2.5 w-2.5 shrink-0"
+                  style={{ ...lensShape(lens), backgroundColor: LENS_META[lens].color }}
+                />
+              ))}
+            </div>
+            <div className="relative h-full" style={{ width: scale.width }}>
+              {ticks.map((tick) => (
+                <span
+                  key={tick.date}
+                  className={cn(
+                    'absolute bottom-1 -translate-x-1/2 font-mono whitespace-nowrap',
+                    tick.kind === 'year'
+                      ? 'text-[10px] font-medium text-muted-foreground'
+                      : 'text-[9px] text-muted-foreground/55',
+                  )}
+                  style={{ left: tick.x }}
+                >
+                  {tickLabel(tick)}
+                </span>
+              ))}
+              <span
+                className="pointer-events-none absolute top-0.5 z-20 -translate-x-1/2 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-foreground/80"
+                style={{ left: scale.todayX }}
+              >
+                {labels.todayLabel}
+              </span>
+              {scrubMark && (
+                <span
+                  className="pointer-events-none absolute top-0.5 z-20 -translate-x-1/2 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                  style={{ left: scrubMark.x }}
+                >
+                  {formatEventDate(scrubMark.event.date, locale)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Gridlines: years carry the weight, months fill the detail. They
+              stop at the last lane so they never fight with the two bands. */}
+          {ticks.map((tick) => (
+            <div
+              key={`grid-${tick.date}`}
+              aria-hidden
+              className={cn(
+                'pointer-events-none absolute z-0 w-px',
+                tick.kind === 'year' ? 'bg-border/45' : 'bg-border/20',
+              )}
+              style={{ left: labelW + tick.x, top: AXIS_H, height: lanes.length * rowH }}
+            />
+          ))}
+
+          {/* Today, across every lane */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 z-10 w-px bg-foreground/20"
+            style={{ left: labelW + scale.todayX, top: AXIS_H }}
+          />
+
+          {/* Feed playhead: the item in view in the right column */}
+          {scrubMark && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute bottom-0 z-10 w-px bg-foreground/30"
+              style={{ left: labelW + scrubMark.x, top: AXIS_H }}
+            />
+          )}
+
+          {lanes.map((lane) => (
+            <div key={lane.key} className="relative flex" style={{ height: rowH, width: contentW }}>
+              <div
+                className="sticky left-0 z-30 flex h-full flex-col justify-center gap-0.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
+                style={{ width: labelW }}
+              >
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: lane.accent }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight">
+                    {lane.name}
+                  </span>
+                </span>
+                <span className="pl-5 text-[10px] leading-snug text-pretty text-muted-foreground/60">
+                  {lane.blurb}
+                </span>
+              </div>
+
+              <div className="relative h-full" style={{ width: scale.width }}>
+                {/* One internal line per caption run: the rail the marks sit on,
+                    repeated so a spread-out lane still reads as a timeline. The
+                    centre rail carries the lane's colour. */}
+                {Array.from({ length: lineCount }, (_, i) => {
+                  const centre = lineCount % 2 === 1 && i === Math.floor((lineCount - 1) / 2);
+                  return (
+                    <div
+                      key={`rail-${i}`}
+                      aria-hidden
+                      className={cn('absolute inset-x-0 h-px', !centre && 'bg-border/25')}
+                      style={{
+                        top: `calc(50% + ${lineDy(i, lineCount)}px)`,
+                        backgroundColor: centre ? `${lane.accent}44` : undefined,
+                      }}
+                    />
+                  );
+                })}
+                {lane.marks.map((mark) => {
+                  const { event } = mark;
+                  const isActive = activeId === event.id;
+                  const isScrubbed = scrubId === event.id;
+                  const isHot = hoveredId === event.id || isScrubbed;
+                  const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
+                  const isStatement = event.type === 'statement';
+                  const person = event.personId ? people[event.personId] : undefined;
+                  const isFace = isStatement && Boolean(person);
+                  const stance = stanceByEventId?.[event.id];
+                  // Colour carries meaning where there is meaning to carry: the
+                  // stance of a thesis, the tone of a verified quote. Everything
+                  // else wears its lane's colour, so the rows read as families
+                  // and not as one column of identical dots.
+                  const tone = stance
+                    ? STANCE_META[stance].dot
+                    : sentimentMeta?.dot ?? (isStatement ? NEUTRAL_MARK : lane.accent);
+                  // Caption: the person behind a statement, otherwise the head
+                  // of the title itself. The form of the event ("Contesto")
+                  // tells the reader nothing the lane has not said already.
+                  const caption =
+                    isFace && person ? person.shortName : shortTitle(event.title[locale]);
+                  const captionLeft = isFace ? 38 : 28;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => onSelect(event.id)}
+                      onMouseEnter={() => setHoveredId(event.id)}
+                      onMouseLeave={() => setHoveredId((id) => (id === event.id ? null : id))}
+                      onFocus={() => setHoveredId(event.id)}
+                      onBlur={() => setHoveredId((id) => (id === event.id ? null : id))}
+                      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none"
+                      style={{
+                        left: mark.x,
+                        top: `calc(50% + ${lineDy(mark.line, lineCount)}px)`,
+                        width: 36,
+                        height: 36,
+                      }}
+                      aria-pressed={isActive}
+                      aria-label={`${formatEventDate(event.date, locale)} — ${event.title[locale]}`}
+                    >
+                      {isFace && person ? (
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-background"
+                          style={{
+                            width: isActive ? 32 : isHot ? 30 : FACE_PX,
+                            height: isActive ? 32 : isHot ? 30 : FACE_PX,
+                            boxShadow: isActive
+                              ? `0 0 0 2.5px ${tone}, 0 0 12px ${tone}66`
+                              : `0 0 0 ${isHot ? 2 : 1.5}px ${tone}`,
+                          }}
+                        >
+                          <PersonAvatar
+                            person={person}
+                            size="sm"
+                            className={cn('h-full w-full ring-0')}
+                          />
+                        </span>
+                      ) : lane.lens === 'models' && hasLabMark(event.actorId) ? (
+                        // The models lane is where the actor is the story, so
+                        // the pin wears the lab's mark and colour — the fastest
+                        // read of who shipped what across the row.
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        >
+                          <LabMark
+                            actorId={event.actorId}
+                            size={isActive ? 19 : isHot ? 18 : 16}
+                            active={isActive}
+                            hot={isHot}
+                          />
+                        </span>
+                      ) : (
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            width: isActive ? 13 : isHot ? 11 : 10,
+                            height: isActive ? 13 : isHot ? 11 : 10,
+                            backgroundColor: tone,
+                            ...lensShape(lane.lens),
+                            filter: isActive
+                              ? `drop-shadow(0 0 3px ${tone})`
+                              : isHot
+                                ? `drop-shadow(0 0 2px ${tone}aa)`
+                                : undefined,
+                          }}
+                        />
+                      )}
+                      {/* Caption reads without a hover. Clear of the mark, and on
+                          its own chip so the lane rail does not run through the
+                          words. Clipped rather than allowed to reach the next
+                          mark, whatever the name throws at it. */}
+                      {mark.room && (
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] font-medium leading-tight tracking-tight',
+                            isActive ? 'text-foreground' : 'text-muted-foreground/75',
+                          )}
+                          style={{ left: captionLeft, maxWidth: LABEL_GAP_PX - captionLeft + 12 }}
+                        >
+                          {caption}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {lane.marks
+                  .filter((mark) => hoveredId === mark.event.id)
+                  .map((mark) => {
+                    const { event } = mark;
+                    const person = event.personId ? people[event.personId] : undefined;
+                    const sentimentMeta = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
+                    const stance = stanceByEventId?.[event.id];
+                    const detailLabel =
+                      stance && stanceLabel
+                        ? stanceLabel(stance)
+                        : sentimentMeta && sentimentLabel
+                          ? sentimentLabel(event.sentiment as SentimentTag)
+                          : typeLabel(event.type);
+                    return (
+                      <div
+                        key={`tip-${event.id}`}
+                        aria-hidden
+                        className="pointer-events-none absolute z-40 w-[15rem] -translate-x-1/2 -translate-y-full rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                        style={{
+                          left: mark.x,
+                          top: `calc(50% + ${lineDy(mark.line, lineCount) - 14}px)`,
+                        }}
+                      >
+                        <p className="font-mono text-[9px] text-muted-foreground">
+                          {formatEventDate(event.date, locale)}
+                          {' · '}
+                          {detailLabel}
+                          {person ? ` · ${person.shortName}` : ''}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug tracking-tight">
+                          {event.title[locale]}
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          ))}
+
+          {/* Sentiment band: the tone of verified quotes as a bipolar curve.
+              Above the centre line optimism, below it fear; the colour follows
+              the sign. Each point is a real quote-day, the line only joins them. */}
+          {moodPoints.length > 0 && (
+            <div
+              className="relative flex border-t border-border/40"
+              style={{ height: MOOD_H, width: contentW }}
+            >
+              <div
+                className="sticky left-0 z-30 flex h-full flex-col justify-center gap-0.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
+                style={{ width: labelW }}
+                title={labels.sentimentHint}
+              >
+                <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">
+                  {labels.sentiment}
+                </span>
+                <span className="text-[10px] leading-snug text-pretty text-muted-foreground/55">
+                  {labels.sentimentBlurb}
+                </span>
+                <span className="text-[9px] leading-none text-muted-foreground/50">
+                  ↑ {labels.enthusiasm} · ↓ {labels.fear}
+                </span>
+              </div>
+              <div className="relative h-full" style={{ width: scale.width }}>
+                <div aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-border/50" />
+                <svg aria-hidden width={scale.width} height={MOOD_H} className="block">
+                  <defs>
+                    <linearGradient id={moodGradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={MOOD_UP} />
+                      <stop offset="50%" stopColor={MOOD_MID} />
+                      <stop offset="100%" stopColor={MOOD_DOWN} />
+                    </linearGradient>
+                  </defs>
+                  <polyline
+                    fill="none"
+                    stroke={`url(#${moodGradId})`}
+                    strokeWidth={1.5}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    points={moodPoints.map((point) => `${point.x},${moodY(point.value)}`).join(' ')}
+                  />
+                  {moodPoints.map((point) => (
+                    <circle key={point.day} cx={point.x} cy={moodY(point.value)} r={1.6} fill={MOOD_MID}>
+                      <title>{`${formatEventDate(point.day, locale)} · ${point.value.toFixed(2)}`}</title>
+                    </circle>
+                  ))}
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {/* Volume band: how much was said, day by day. Volume only — the tone
+              of a headline is not the stance of the person it mentions. */}
+          <div
+            className="relative flex border-t border-border/40"
+            style={{ height: VOLUME_H, width: contentW }}
+          >
+            <div
+              className="sticky left-0 z-30 flex h-full items-center border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
+              style={{ width: labelW }}
+              title={labels.volumeHint}
+            >
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">
+                {labels.volume}
+              </span>
+            </div>
+            <div className="relative h-full" style={{ width: scale.width }}>
+              <svg aria-hidden width={scale.width} height={VOLUME_H} className="block">
+                {volume.map((bar) => {
+                  const h = Math.max(1.5, (bar.count / maxVolume) * (VOLUME_H - 10));
+                  return (
+                    <rect
+                      key={bar.key}
+                      x={bar.x - VOLUME_BAR / 2}
+                      y={VOLUME_H - 4 - h}
+                      width={VOLUME_BAR}
+                      height={h}
+                      rx={1}
+                      fill={NEUTRAL_MARK}
+                      opacity={0.5}
+                    >
+                      <title>{`${formatEventDate(bar.date, locale)} · ${bar.count}`}</title>
+                    </rect>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

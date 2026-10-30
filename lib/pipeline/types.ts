@@ -58,8 +58,10 @@ export type CuratedPin = {
 };
 
 /**
- * Automatic headline signal. Moves the daily curve sample when `votes` is true.
- * No quote: the source link is the evidence.
+ * Automatic headline signal: an unverified diary row.
+ * It carries no tone of its own and never moves the curve — the tone of a
+ * headline is not the stance of the person it mentions. The source link is
+ * the only evidence it offers, until an editor promotes it with a quote.
  */
 export type AutoSignal = {
   id: string;
@@ -71,11 +73,6 @@ export type AutoSignal = {
   summary: { it: string; en: string };
   personId: string;
   actorId?: string;
-  /** Classifier suggestion. Public curve uses it only when `votes` is true. */
-  sentiment?: SentimentTag;
-  confidence: number;
-  /** Below the confidence floor the item stays in the diary and does not vote. */
-  votes: boolean;
   rawTitle: string;
   rawSnippet?: string;
   feedSource: string;
@@ -83,8 +80,6 @@ export type AutoSignal = {
   sourceHost?: string;
   imageUrl?: string;
   hidden?: boolean;
-  /** Editorial correction. `null` clears the tag so the item stops voting. */
-  sentimentOverride?: SentimentTag | null;
 };
 
 export type PipelineStore = {

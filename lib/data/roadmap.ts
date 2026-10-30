@@ -9,27 +9,27 @@ export type RoadmapPhase = {
 
 export const roadmapPhases: RoadmapPhase[] = [
   {
-    id: 'sentiment',
+    id: 'timeline',
     status: 'done',
     title: {
-      it: 'Sentiment: tono dei leader sull’IA',
-      en: 'Sentiment: leaders’ tone on AI',
+      it: 'Timeline: l’evoluzione dell’IA per lenti',
+      en: 'Timeline: AI’s evolution by lens',
     },
-      description: {
-      it: 'Dichiarazioni pubbliche dal 2021 a oggi — più contesto UE (incontri, spese, voti) sullo stesso asse. Curva solo dal tono; il resto in cronologia.',
-      en: 'Public statements from 2021 to today — plus EU context (meetings, spend, votes) on the same axis. Curve from tone only; the rest in the feed.',
+    description: {
+      it: 'Dal 2013 a oggi: rilasci dei laboratori, ricerca, mercato, cultura e politica su un solo asse. Ogni punto con la sua fonte.',
+      en: 'From 2013 to today: lab releases, research, business, culture and policy on one axis. Every point with its source.',
     },
   },
   {
-    id: 'ai-act',
+    id: 'sentiment',
     status: 'done',
     title: {
-      it: 'Timeline: regole sull’IA in Europa',
-      en: 'Timeline: AI rules in Europe',
+      it: 'Banda del sentiment',
+      en: 'Sentiment band',
     },
     description: {
-      it: 'Incontri, spese dichiarate, passaggi legislativi e sanzioni — ogni punto con fonte e link.',
-      en: 'Meetings, declared spend, legislative steps and sanctions — every pin with source and link.',
+      it: 'Sopra la corsia Cultura, il tono delle citazioni verificate: entusiasmo e timore misurati nel tempo, con la fonte a un click.',
+      en: 'Above the Culture lane, the tone of verified quotes: enthusiasm and fear measured over time, with the source one click away.',
     },
   },
   {
@@ -52,8 +52,8 @@ export const roadmapPhases: RoadmapPhase[] = [
       en: 'Stories for citizens & newsrooms',
     },
     description: {
-      it: 'Sintesi periodiche in italiano sui movimenti di tono più rilevanti — da condividere, non da archiviare.',
-      en: 'Periodic Italian digests of the most relevant tone shifts — meant to share, not to archive.',
+      it: 'Sintesi periodiche in italiano sui passaggi più rilevanti dell’evoluzione dell’IA — da condividere, non da archiviare.',
+      en: 'Periodic Italian digests of the most relevant steps in AI’s evolution — meant to share, not to archive.',
     },
   },
   {

@@ -3,27 +3,18 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  ALL_SENTIMENT_TAGS,
-  lobbyPeople,
-  type SentimentTag,
-} from '@/lib/data/trasparenza';
+import { lobbyPeople } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
-import { effectiveSentiment } from '@/lib/pipeline/signals';
 import type { AutoSignal } from '@/lib/pipeline/types';
 
 export type SignalDeskLabels = {
   hint: string;
   empty: string;
-  voting: string;
-  held: string;
   hidden: string;
   hide: string;
   unhide: string;
   promote: string;
   promoted: string;
-  tag: string;
-  clear: string;
   open: string;
   error: string;
   today: string;
@@ -35,7 +26,6 @@ type Props = {
   signals: AutoSignal[];
   locale: 'it' | 'en';
   labels: SignalDeskLabels;
-  sentimentLabels: Record<SentimentTag, string>;
   onChanged: () => void;
 };
 
@@ -58,7 +48,7 @@ function groupSignals(signals: AutoSignal[]) {
     .map(([date, items]) => ({ date, items }));
 }
 
-export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged }: Props) {
+export function SignalDesk({ signals, locale, labels, onChanged }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const today = localIsoDate();
@@ -121,7 +111,6 @@ export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged
         <div className="mt-6 space-y-3">
           {groups.map((group) => {
             const open = isOpen(group.date);
-            const voting = group.items.filter((s) => effectiveSentiment(s)).length;
             return (
               <section key={group.date} className="border border-border/60 bg-card/30">
                 <button
@@ -139,7 +128,6 @@ export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged
                   <span className="font-serif text-base font-semibold">{dayLabel(group.date)}</span>
                   <span className="ml-auto font-mono text-[11px] text-muted-foreground">
                     {labels.itemsCount.replace('{n}', String(group.items.length))}
-                    {voting > 0 ? ` · ${voting} ${labels.voting.toLowerCase()}` : ''}
                   </span>
                 </button>
 
@@ -147,11 +135,6 @@ export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged
                   <ul className="divide-y divide-border/40 border-t border-border/50">
                     {group.items.map((signal) => {
                       const person = lobbyPeople.find((item) => item.id === signal.personId);
-                      const live = effectiveSentiment(signal);
-                      const selected =
-                        signal.sentimentOverride === null
-                          ? ''
-                          : (signal.sentimentOverride ?? signal.sentiment ?? '');
                       const saving = busy === signal.id;
                       return (
                         <li
@@ -161,15 +144,7 @@ export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged
                           <div className="min-w-0 flex-1">
                             <p className="font-mono text-[11px] text-muted-foreground">
                               {person ? person.shortName : '—'}
-                              {' · '}
-                              {signal.hidden
-                                ? labels.hidden
-                                : live
-                                  ? labels.voting
-                                  : labels.held}
-                              {signal.confidence > 0
-                                ? ` · ${Math.round(signal.confidence * 100)}%`
-                                : ''}
+                              {signal.hidden ? ` · ${labels.hidden}` : ''}
                             </p>
                             <p className="mt-1 text-sm font-medium leading-snug">
                               {signal.title[locale]}
@@ -185,28 +160,6 @@ export function SignalDesk({ signals, locale, labels, sentimentLabels, onChanged
                             </a>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <label className="sr-only" htmlFor={`sig-${signal.id}`}>
-                              {labels.tag}
-                            </label>
-                            <select
-                              id={`sig-${signal.id}`}
-                              className="h-8 rounded-md border border-border bg-background px-2 text-xs"
-                              value={selected}
-                              disabled={saving}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                void patch(signal.id, {
-                                  sentimentOverride: value ? (value as SentimentTag) : null,
-                                });
-                              }}
-                            >
-                              <option value="">{labels.clear}</option>
-                              {ALL_SENTIMENT_TAGS.map((tag) => (
-                                <option key={tag} value={tag}>
-                                  {sentimentLabels[tag]}
-                                </option>
-                              ))}
-                            </select>
                             <Button
                               type="button"
                               variant="outline"
