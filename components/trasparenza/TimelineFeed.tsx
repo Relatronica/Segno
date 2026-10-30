@@ -20,6 +20,20 @@ import { cn } from '@/lib/utils';
 
 type ActorChip = { name: string; color: string };
 
+/**
+ * Where the feed is, expressed so the chart can draw a *continuous* playhead:
+ * the row nearest the focus line, the row after it (older), and how far past
+ * the first we are. The chart interpolates between the two marks, so the line
+ * glides instead of jumping once per day.
+ */
+export type ScrubState = {
+  id: string;
+  /** Feed-order successor (older). Null on the last row. */
+  nextId: string | null;
+  /** Progress from `id`'s row to `nextId`'s row, 0…1. */
+  frac: number;
+};
+
 type Props = {
   events: TimelineEvent[];
   /** Newest → oldest (already sorted by parent) */
@@ -29,7 +43,7 @@ type Props = {
   activeId: string | null;
   onSelect: (id: string) => void;
   /** Feed scroll position → temporal playhead on the chart (no selection) */
-  onScrub?: (eventId: string | null) => void;
+  onScrub?: (state: ScrubState | null) => void;
   sentimentLabel?: (tag: SentimentTag) => string;
   typeLabel?: (type: EventType) => string;
   lensLabel?: (lens: Lens) => string;
@@ -158,23 +172,35 @@ export function TimelineFeed({
     if (!root || events.length === 0) return;
     if (syncLock.current === 'external') return;
 
-    const target = root.scrollTop + FOCUS_OFFSET;
-    let bestId = events[0].id;
-    let bestDist = Infinity;
+    // Rows in feed order (newest → oldest), tied to their offset in the list.
+    const rows: { id: string; top: number }[] = [];
     for (const event of events) {
       const node = itemRefs.current.get(event.id);
-      if (!node) continue;
-      const dist = Math.abs(node.offsetTop - target);
+      if (node) rows.push({ id: event.id, top: node.offsetTop });
+    }
+    if (rows.length === 0) return;
+
+    const target = root.scrollTop + FOCUS_OFFSET;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < rows.length; i++) {
+      const dist = Math.abs(rows[i].top - target);
       if (dist < bestDist) {
         bestDist = dist;
-        bestId = event.id;
+        best = i;
       }
     }
-    if (bestId && bestId !== scrubIdRef.current) {
-      scrubIdRef.current = bestId;
-      setFocusedId(bestId);
-      onScrub?.(bestId);
+
+    const current = rows[best];
+    const next = rows[best + 1];
+    const span = next ? next.top - current.top : 0;
+    const frac = span > 0 ? Math.min(1, Math.max(0, (target - current.top) / span)) : 0;
+
+    if (current.id !== scrubIdRef.current) {
+      scrubIdRef.current = current.id;
+      setFocusedId(current.id);
     }
+    onScrub?.({ id: current.id, nextId: next ? next.id : null, frac });
   };
 
   const onScroll = () => {

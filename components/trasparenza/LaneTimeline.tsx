@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
   ALL_LENSES,
@@ -17,6 +17,7 @@ import {
 } from '@/lib/data/trasparenza';
 import { createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
 import { cn } from '@/lib/utils';
+import type { ScrubState } from './TimelineFeed';
 import { SENTIMENT_META, STANCE_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 import { LabMark, hasLabMark } from './LabMark';
@@ -91,6 +92,12 @@ type Props = {
   onToggleLensCollapsed?: (lens: Lens) => void;
   /** Feed scroll playhead: a moving cursor, no selection. */
   scrubId?: string | null;
+  /**
+   * Live position behind `scrubId`, read on every animation frame. The cursor
+   * is drawn from this ref instead of from state, so scrolling the feed does
+   * not re-render the whole chart once per day.
+   */
+  scrubRef?: RefObject<ScrubState | null>;
   onSelect: (id: string) => void;
   emptyLabel: string;
   labels: LaneLabels;
@@ -193,6 +200,7 @@ export function LaneTimeline({
   collapsedLenses,
   onToggleLensCollapsed,
   scrubId = null,
+  scrubRef,
   onSelect,
   emptyLabel,
   labels,
@@ -212,6 +220,9 @@ export function LaneTimeline({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [labelW, setLabelW] = useState(168);
   const [rowH, setRowH] = useState(ROW_H_DESKTOP);
+  /** Playhead furniture: moved imperatively on each frame, never via state. */
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const update = () => {
@@ -369,6 +380,16 @@ export function LaneTimeline({
   const moodY = (value: number) => MOOD_H / 2 - value * moodAmp;
   const contentW = labelW + scale.width;
 
+  /** Event id → mark x, so the playhead resolves without a flat scan. */
+  const markById = useMemo(() => {
+    const map = new Map<string, LaneMark>();
+    for (const lane of lanes) for (const mark of lane.marks) map.set(mark.event.id, mark);
+    return map;
+  }, [lanes]);
+
+  /** The feed is driving the cursor, and the target row is actually drawn. */
+  const scrubbing = scrubId != null && scrubId !== activeId && markById.has(scrubId);
+
   /** Axis strip height: deep enough that the "today" badge never meets the
       tick labels, and the gridlines hang from its lower edge. */
   const AXIS_H = 40;
@@ -441,28 +462,98 @@ export function LaneTimeline({
     scrollToX(mark.x, 'smooth');
   }, [focusEventToken, activeId, lanes, scrollToX, onToggleLensCollapsed]);
 
-  /** Keep the feed playhead in frame while scrubbing — no selection, only pan. */
+  /**
+   * Feed scroll playhead. One frame loop draws the cursor and follows it: the
+   * x is interpolated between the two marks that bracket the feed position, so
+   * the line slides rather than snapping day by day, and the canvas pans by
+   * easing `scrollLeft` itself — repeated `scrollTo({behavior:'smooth'})` used
+   * to interrupt one another and stutter.
+   */
   useEffect(() => {
-    if (!scrubId || scrubId === activeId) return;
+    const line = playheadRef.current;
+    const chip = chipRef.current;
+    const hide = () => {
+      if (line) line.style.opacity = '0';
+      if (chip) {
+        chip.style.opacity = '0';
+        chip.textContent = '';
+      }
+    };
+    if (!scrubbing) {
+      hide();
+      return;
+    }
+
     const el = scrollerRef.current;
-    if (!el || el.clientWidth === 0) return;
-    const mark = lanes.flatMap((lane) => lane.marks).find((m) => m.event.id === scrubId);
-    if (!mark) return;
+    let raf = 0;
+    /** Last painted x, so a still cursor costs no style writes. */
+    let paintedX: number | null = null;
+    let visible = false;
+    let shownId: string | null = null;
+    /** Last target seen, to tell "the feed is moving" from "the view is still". */
+    let lastTarget: number | null = null;
 
-    const contentX = labelW + mark.x;
-    const margin = Math.max(48, el.clientWidth * 0.2);
-    const left = el.scrollLeft + margin;
-    const right = el.scrollLeft + el.clientWidth - margin;
-    if (contentX >= left && contentX <= right) return;
+    const tick = () => {
+      const state = scrubRef?.current;
+      const x0 = state ? markById.get(state.id)?.x : undefined;
+      if (!state || x0 == null) {
+        if (visible) {
+          hide();
+          visible = false;
+          paintedX = null;
+        }
+        raf = requestAnimationFrame(tick);
+        return;
+      }
 
-    const target = contentX < left ? contentX - margin : contentX - el.clientWidth + margin;
-    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-  }, [scrubId, activeId, lanes, labelW]);
+      // The feed already hands us a continuous position, so the cursor follows
+      // it directly: no easing, no lag behind a fast scroll.
+      const x1 = state.nextId ? markById.get(state.nextId)?.x : undefined;
+      const target = x1 != null ? x0 + state.frac * (x1 - x0) : x0;
 
-  const scrubMark =
-    scrubId && scrubId !== activeId
-      ? lanes.flatMap((lane) => lane.marks).find((m) => m.event.id === scrubId)
-      : undefined;
+      if (!visible) {
+        visible = true;
+        if (line) line.style.opacity = '1';
+        if (chip) chip.style.opacity = '1';
+      }
+      if (paintedX == null || Math.abs(target - paintedX) >= 0.08) {
+        paintedX = target;
+        if (line) line.style.transform = `translateX(${labelW + target}px)`;
+        if (chip) chip.style.transform = `translateX(calc(${target}px - 50%))`;
+      }
+      if (chip && shownId !== state.id) {
+        const mark = markById.get(state.id);
+        if (mark) chip.textContent = formatEventDate(mark.event.date, locale);
+        shownId = state.id;
+      }
+
+      const moving = lastTarget == null || Math.abs(target - lastTarget) >= 0.5;
+      lastTarget = target;
+
+      // Follow the cursor while the feed moves; leave a manual pan alone.
+      if (moving && el && el.clientWidth > 0) {
+        const contentX = labelW + target;
+        const margin = Math.max(56, el.clientWidth * 0.26);
+        const left = el.scrollLeft + margin;
+        const right = el.scrollLeft + el.clientWidth - margin;
+        let goal = el.scrollLeft;
+        if (contentX < left) goal = contentX - margin;
+        else if (contentX > right) goal = contentX - el.clientWidth + margin;
+        if (goal !== el.scrollLeft) {
+          const next = Math.max(0, el.scrollLeft + (goal - el.scrollLeft) * 0.35);
+          el.scrollLeft = Math.abs(goal - next) < 0.6 ? Math.max(0, goal) : next;
+        }
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      hide();
+    };
+  }, [scrubbing, scrubRef, markById, labelW, locale]);
 
   if (events.length === 0) {
     return (
@@ -525,14 +616,12 @@ export function LaneTimeline({
               >
                 {labels.todayLabel}
               </span>
-              {scrubMark && (
-                <span
-                  className="pointer-events-none absolute top-0.5 z-20 -translate-x-1/2 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
-                  style={{ left: scrubMark.x }}
-                >
-                  {formatEventDate(scrubMark.event.date, locale)}
-                </span>
-              )}
+              <span
+                ref={chipRef}
+                aria-hidden
+                className="pointer-events-none absolute top-0.5 z-20 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-muted-foreground opacity-0"
+                style={{ left: 0, willChange: 'transform' }}
+              />
             </div>
           </div>
 
@@ -557,14 +646,14 @@ export function LaneTimeline({
             style={{ left: labelW + scale.todayX, top: AXIS_H }}
           />
 
-          {/* Feed playhead: the item in view in the right column */}
-          {scrubMark && (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute bottom-0 z-10 w-px bg-foreground/30"
-              style={{ left: labelW + scrubMark.x, top: AXIS_H }}
-            />
-          )}
+          {/* Feed playhead: the item in view in the right column. Its x is
+              painted imperatively each frame, so it slides with the scroll. */}
+          <div
+            ref={playheadRef}
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 z-10 w-px bg-foreground/30 opacity-0"
+            style={{ left: 0, top: AXIS_H, willChange: 'transform' }}
+          />
 
           {lanes.map((lane) => (
             <div

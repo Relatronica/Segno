@@ -40,7 +40,7 @@ import {
   type ThesisRow,
   type ThesisSubject,
 } from '@/components/trasparenza/PositionMatrix';
-import { TimelineFeed } from '@/components/trasparenza/TimelineFeed';
+import { TimelineFeed, type ScrubState } from '@/components/trasparenza/TimelineFeed';
 
 /** Offset timeline chrome below the floating header */
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
@@ -199,6 +199,22 @@ export default function TrasparenzaContent() {
   const [collapsedLenses, setCollapsedLenses] = useState<Lens[]>([...DEFAULT_COLLAPSED_LENSES]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scrubId, setScrubId] = useState<string | null>(null);
+  /**
+   * Live feed position for the chart playhead. Written on every scroll frame,
+   * read by `LaneTimeline` on its own frame loop: only the id reaches state, so
+   * a continuous cursor costs no React render per frame.
+   */
+  const scrubRef = useRef<ScrubState | null>(null);
+  /** Last id mirrored into state: the ref carries the per-frame churn instead. */
+  const scrubIdRef = useRef<string | null>(null);
+  const handleScrub = useCallback((state: ScrubState | null) => {
+    scrubRef.current = state;
+    const id = state?.id ?? null;
+    if (id !== scrubIdRef.current) {
+      scrubIdRef.current = id;
+      setScrubId(id);
+    }
+  }, []);
   /** One panel on the right: filters and chronology are its two sections. */
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelTab, setPanelTab] = useState<'filters' | 'feed'>('feed');
@@ -858,7 +874,7 @@ export default function TrasparenzaContent() {
           actors={actorMap}
           activeId={activeId}
           onSelect={selectEvent}
-          onScrub={setScrubId}
+          onScrub={handleScrub}
           sentimentLabel={sentimentTagLabel}
           typeLabel={typeLabel}
           lensLabel={lensLabel}
@@ -895,6 +911,7 @@ export default function TrasparenzaContent() {
             collapsedLenses={collapsedLenses}
             onToggleLensCollapsed={toggleLensCollapsed}
             scrubId={scrubId}
+            scrubRef={scrubRef}
             onSelect={selectEvent}
             emptyLabel={t.trasparenza.empty}
             labels={laneLabels}
