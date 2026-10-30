@@ -24,6 +24,7 @@ export const SITE_KEYWORDS = [
 
 /** Internal paths for the timeline hub and its permalinks. */
 export const paths = {
+  chiSiamo: '/chi-siamo',
   timeline: '/timeline',
   timelineEvento: (id: string) => `/timeline/evento/${encodeURIComponent(id)}`,
   timelinePersona: (id: string) => `/timeline/persona/${encodeURIComponent(id)}`,
@@ -31,6 +32,11 @@ export const paths = {
 } as const;
 
 export const pages = {
+  chiSiamo: {
+    title: 'Chi siamo',
+    description:
+      'Segno è un progetto indipendente di Relatronica: perché lo facciamo, chi c’è dietro, come ci finanziamo e quali limiti ha il metodo.',
+  },
   timeline: {
     title: 'Timeline',
     description:

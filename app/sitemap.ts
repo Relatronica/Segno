@@ -32,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${SITE_URL}${paths.chiSiamo}`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
     ...listPersonSlugs().map((id) => ({
       url: `${SITE_URL}${paths.timelinePersona(id)}`,
       lastModified: now,

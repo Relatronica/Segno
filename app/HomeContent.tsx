@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { SITE_NAME, SITE_URL, paths } from '@/lib/seo';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
+const RELATRONICA_URL = 'https://relatronica.com';
 const LATEST_COUNT = 6;
 
 const homeSnapshot = getHomeSnapshot();
@@ -168,7 +169,15 @@ export default function HomeContent() {
               variants={fadeUp}
               className="font-mono text-xs uppercase tracking-[0.22em] text-mark/80"
             >
-              Segno · {t.home.mastheadOrg}
+              Segno ·{' '}
+              <a
+                href={RELATRONICA_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-4 transition-colors hover:text-mark hover:underline"
+              >
+                {t.home.mastheadOrg}
+              </a>
             </motion.p>
             <motion.h1
               custom={1}
@@ -312,6 +321,14 @@ export default function HomeContent() {
               </div>
             ))}
           </dl>
+
+          <Link
+            href="/chi-siamo"
+            className="mt-10 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+          >
+            {t.home.aboutLink}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 

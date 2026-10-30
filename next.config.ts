@@ -26,8 +26,6 @@ const nextConfig: NextConfig = {
       { source: '/trasparenza', destination: '/timeline', permanent: true },
       { source: '/trasparenza/:path*', destination: '/timeline/:path*', permanent: true },
       { source: '/strumenti', destination: '/', permanent: true },
-      { source: '/chi-siamo', destination: '/segnala', permanent: true },
-      { source: '/chi-siamo/:path*', destination: '/segnala', permanent: true },
       { source: '/news', destination: '/', permanent: true },
       { source: '/percorsi', destination: '/', permanent: true },
       { source: '/percorsi/:path*', destination: '/', permanent: true },

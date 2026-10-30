@@ -5,6 +5,7 @@ const translations = {
     nav: {
       home: 'Home',
       timeline: 'Timeline',
+      chiSiamo: 'Chi siamo',
       segnala: 'Segnala',
       donate: 'Dona',
     },
@@ -39,6 +40,7 @@ const translations = {
       methodTitle: 'Metodo',
       methodSubtitle:
         'Cosa affermiamo e cosa non pretendiamo di dimostrare. Il resto è nella timeline.',
+      aboutLink: 'Chi siamo e come lavoriamo',
       indexTitle: 'Indice dei dati',
       indexSubtitle:
         'Cinque lenti, un solo asse. Apri una lente per leggerne la timeline filtrata.',
@@ -267,6 +269,40 @@ const translations = {
       errorReason: 'Seleziona un motivo di contatto.',
       errorFields: 'Compila tutti i campi richiesti.',
     },
+    chiSiamo: {
+      eyebrow: 'Chi siamo',
+      title: 'Segno mette l’evoluzione dell’IA su un unico asse, con le fonti.',
+      intro:
+        'Segno è un progetto di Relatronica. Raccoglie rilasci dei laboratori, ricerca, mercato, cultura e politica dal 2013 a oggi su un’unica timeline: cinque lenti, un solo racconto, ogni segno con la sua fonte.',
+      whyTitle: 'Perché lo facciamo',
+      whyText1:
+        'L’IA avanza più in fretta di quanto riusciamo a leggerla. Comunicati, paper, investimenti, regole e dichiarazioni arrivano separati, senza un filo che li tenga insieme. Chi vuole capire cosa sta succedendo riparte ogni volta da zero.',
+      whyText2:
+        'Segno costruisce quel filo. Non interpreta al posto tuo e non vende conclusioni: mette fatti verificabili in ordine cronologico, perché il contesto emerga dai fatti stessi. È un’infrastruttura civica prima che un prodotto: serve a chi studia, a chi scrive e a chi decide.',
+      identityTitle: 'Chi c’è dietro',
+      identityText1:
+        'Segno è sviluppato da Relatronica, una realtà indipendente che lavora su design speculativo, civic tech e mappatura della conoscenza. Il suo principio è semplice: il futuro è un progetto collettivo, non una previsione da subire.',
+      identityText2:
+        'Accanto a Segno, Relatronica porta avanti altri progetti — Dubitor, Substrato, Pulse, Academy — tenuti insieme dagli stessi pilastri: tecnologie responsabili, trasparenza e autonomia di giudizio.',
+      identityCta: 'Scopri Relatronica',
+      independenceTitle: 'Indipendenza e finanziamento',
+      independenceText:
+        'Segno non ha sponsor, non mostra pubblicità e non vende i tuoi dati. Il progetto si sostiene con donazioni e, in prospettiva, con la licenza dei dati a redazioni e istituzioni.',
+      independencePoints: {
+        noSponsors: 'Nessuno sponsor decide cosa entra in timeline.',
+        noTracking: 'Nessuna pubblicità basata sul tracciamento, nessuna profilazione.',
+        openSources: 'Fonti sempre citate e linkate, verificabili da chiunque.',
+      },
+      methodTitle: 'Metodo e limiti',
+      methodText1:
+        'Ogni voce è un fatto verificabile, con una fonte primaria o una testata citabile: comunicati, registri pubblici, documenti ottenuti con accesso agli atti. Preferiamo lasciare fuori un dato incerto piuttosto che pubblicarlo senza riscontro.',
+      methodText2:
+        'I fatti stanno sullo stesso asse in ordine cronologico: non dimostriamo rapporti di causa tra un rilascio e la regola che ne è seguita. La vicinanza nel tempo aiuta a leggere, non prova. Il sentiment è una lettura editoriale delle citazioni verificate, non un punteggio oggettivo.',
+      methodCta: 'Leggi il metodo per intero',
+      closingText:
+        'Un errore, una fonte mancante, un dubbio sul metodo? Segnalalo: i dati devono circolare.',
+      closingCta: 'Segnala',
+    },
     footer: {
       description:
         'Entusiasmo e timore sull’IA nelle parole pubbliche dei leader — su una timeline con fonti. Poi, se vuoi, le regole europee.',
@@ -280,6 +316,7 @@ const translations = {
     nav: {
       home: 'Home',
       timeline: 'Timeline',
+      chiSiamo: 'About',
       segnala: 'Report',
       donate: 'Donate',
     },
@@ -313,6 +350,7 @@ const translations = {
       methodTitle: 'Method',
       methodSubtitle:
         'What we assert and what we do not claim to prove. The rest is in the timeline.',
+      aboutLink: 'About and how we work',
       indexTitle: 'Data index',
       indexSubtitle: 'Five lenses, one axis. Open a lens to read its filtered timeline.',
       indexEntries: '{count} entries',
@@ -538,6 +576,40 @@ const translations = {
       errorEmail: 'Please enter a valid email address.',
       errorReason: 'Please select a contact reason.',
       errorFields: 'Please fill in all required fields.',
+    },
+    chiSiamo: {
+      eyebrow: 'About',
+      title: 'Segno puts the evolution of AI on a single sourced axis.',
+      intro:
+        'Segno is a Relatronica project. It gathers lab releases, research, business, culture and policy from 2013 to today on one timeline: five lenses, one story, every mark with its source.',
+      whyTitle: 'Why we do it',
+      whyText1:
+        'AI moves faster than we can read it. Press releases, papers, investments, rules and statements arrive separately, with no thread holding them together. Anyone trying to understand what is happening starts from scratch every time.',
+      whyText2:
+        'Segno builds that thread. It does not interpret for you and does not sell conclusions: it places verifiable facts in chronological order so the context emerges from the facts themselves. It is civic infrastructure before it is a product: built for those who study, write and decide.',
+      identityTitle: 'Who is behind it',
+      identityText1:
+        'Segno is developed by Relatronica, an independent practice working on speculative design, civic tech and knowledge mapping. Its principle is simple: the future is a collective project, not a forecast to endure.',
+      identityText2:
+        'Alongside Segno, Relatronica carries other projects — Dubitor, Substrato, Pulse, Academy — held together by the same pillars: responsible technologies, transparency and independent judgement.',
+      identityCta: 'Discover Relatronica',
+      independenceTitle: 'Independence and funding',
+      independenceText:
+        'Segno has no sponsors, shows no advertising and does not sell your data. The project is sustained by donations and, ahead, by licensing data to newsrooms and institutions.',
+      independencePoints: {
+        noSponsors: 'No sponsor decides what enters the timeline.',
+        noTracking: 'No tracking-based advertising, no profiling.',
+        openSources: 'Sources always cited and linked, verifiable by anyone.',
+      },
+      methodTitle: 'Method and limits',
+      methodText1:
+        'Every entry is a verifiable fact, with a primary source or a citable outlet: press releases, public registers, documents obtained through freedom of information. We would rather leave out an uncertain datum than publish it without support.',
+      methodText2:
+        'Facts sit on the same axis in chronological order: we do not prove causal links between a release and the rule that followed it. Temporal proximity helps you read, it does not prove. Sentiment is an editorial reading of verified quotes, not an objective score.',
+      methodCta: 'Read the full method',
+      closingText:
+        'An error, a missing source, a doubt about the method? Report it: data should circulate.',
+      closingCta: 'Report',
     },
     footer: {
       description:

@@ -952,7 +952,7 @@ export default function TrasparenzaContent() {
         {panelOpen && (
           <motion.div
             key="mobile-panel"
-            className="absolute inset-0 z-[60] flex flex-col bg-background lg:hidden"
+            className="absolute inset-x-0 bottom-0 top-[var(--nav-clearance)] z-40 flex flex-col bg-background lg:hidden"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
