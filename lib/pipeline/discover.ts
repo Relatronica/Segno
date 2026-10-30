@@ -1,11 +1,15 @@
 import Parser from 'rss-parser';
-import { lobbyPeople } from '@/lib/data/trasparenza';
+import { lobbyPeople, type Lens } from '@/lib/data/trasparenza';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
+import { classifyLane } from '@/lib/pipeline/lanes';
 import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
 import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/store';
 import type { AutoSignal, SentimentCandidate } from '@/lib/pipeline/types';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
+
+/** Automatic diary rows are capped per lane, per run. Editorial ones are not. */
+const LANE_SIGNALS_PER_RUN = 8;
 
 function toDate(value?: string): string {
   if (!value) return localIsoDate();
@@ -122,12 +126,34 @@ function extractImage(
   return undefined;
 }
 
+/** Keep only the newest N diary rows for a lane, so one busy day cannot flood it. */
+function capLaneSignals(signals: AutoSignal[]): AutoSignal[] {
+  const byLane = new Map<string, AutoSignal[]>();
+  for (const signal of signals) {
+    const key = signal.lens ?? 'culture';
+    const bucket = byLane.get(key) ?? [];
+    bucket.push(signal);
+    byLane.set(key, bucket);
+  }
+
+  const out: AutoSignal[] = [];
+  for (const bucket of byLane.values()) {
+    out.push(
+      ...bucket
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, LANE_SIGNALS_PER_RUN),
+    );
+  }
+  return out;
+}
+
 export async function discoverSentimentCandidates(): Promise<{
   candidates: SentimentCandidate[];
   signals: AutoSignal[];
   scannedFeeds: number;
   matchedItems: number;
   rejectedBySource: number;
+  laneCounts: Partial<Record<Lens, number>>;
 }> {
   const parser = new Parser({
     timeout: 12000,
@@ -139,79 +165,106 @@ export async function discoverSentimentCandidates(): Promise<{
     },
   });
   const found: SentimentCandidate[] = [];
-  const drafts: AutoSignal[] = [];
+  const cultureSignals: AutoSignal[] = [];
+  const laneSignals: AutoSignal[] = [];
   const seen = new Set<string>();
+  const laneCounts: Partial<Record<Lens, number>> = {};
   let matchedItems = 0;
   let rejectedBySource = 0;
 
-  for (const feed of SENTIMENT_FEEDS) {
-    try {
-      const parsed = await parser.parseURL(feed.url);
-      for (const item of parsed.items ?? []) {
-        const url = (item.link || item.guid || '').trim();
-        if (!url || seen.has(url)) continue;
-        seen.add(url);
+  // Feeds are independent: one slow or broken sweep must not delay the rest.
+  const batches = await Promise.all(
+    SENTIMENT_FEEDS.map(async (feed) => {
+      try {
+        return { feed, parsed: await parser.parseURL(feed.url) };
+      } catch (err) {
+        console.error('[pipeline] feed failed', feed.id, err);
+        return { feed, parsed: null };
+      }
+    }),
+  );
 
-        const title = stripHtml(item.title || '');
-        const html = `${item.content || ''} ${item.summary || ''} ${(item as { description?: string }).description || ''}`;
-        const snippet = stripHtml(
-          item.contentSnippet || item.content || item.summary || '',
-        );
-        const imageUrl = extractImage(item, html);
-        const blob = `${title} ${snippet}`;
-        const match = matchPerson(blob);
-        if (!match) continue;
+  for (const { feed, parsed } of batches) {
+    for (const item of parsed?.items ?? []) {
+      const url = (item.link || item.guid || '').trim();
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
 
-        matchedItems += 1;
+      const title = stripHtml(item.title || '');
+      const html = `${item.content || ''} ${item.summary || ''} ${(item as { description?: string }).description || ''}`;
+      const snippet = stripHtml(item.contentSnippet || item.content || item.summary || '');
+      const imageUrl = extractImage(item, html);
+      const blob = `${title} ${snippet}`;
 
-        const classification = classifySource({ url, title, snippet });
-        if (!classification.accepted) {
-          rejectedBySource += 1;
-          continue;
+      // Person feeds only speak about tracked people; lane feeds speak about events.
+      const match = feed.requiresPerson ? matchPerson(blob) : null;
+      if (feed.requiresPerson && !match) continue;
+
+      matchedItems += 1;
+
+      const classification = classifySource({ url, title, snippet });
+      if (!classification.accepted) {
+        rejectedBySource += 1;
+        continue;
+      }
+
+      let personId = match?.personId;
+      let actorId = match?.actorId;
+      if (feed.requiresPerson && classification.xHandle) {
+        const mapped = OFFICIAL_X_HANDLES[classification.xHandle];
+        if (mapped) {
+          personId = mapped;
+          actorId = lobbyPeople.find((p) => p.id === mapped)?.orgId ?? actorId;
         }
+      }
 
-        let personId = match.personId;
-        let actorId = match.actorId;
-        if (classification.xHandle) {
-          const mapped = OFFICIAL_X_HANDLES[classification.xHandle];
-          if (mapped) {
-            personId = mapped;
-            actorId = lobbyPeople.find((p) => p.id === mapped)?.orgId ?? actorId;
-          }
-        }
+      // Lane feeds are classified from the headline; person feeds stay statements.
+      const lane = feed.requiresPerson
+        ? { lens: feed.lens, type: feed.type, confident: true }
+        : classifyLane({ lens: feed.lens, type: feed.type, title, snippet });
 
-        const sentiment = hintSentiment(blob);
-        const quoteSeed = snippet.length > 40 ? snippet.slice(0, 280) : undefined;
-        const canonicalUrl = classification.xStatusUrl || url;
+      const sentiment = feed.requiresPerson ? hintSentiment(blob) : undefined;
+      const quoteSeed = feed.requiresPerson && snippet.length > 40 ? snippet.slice(0, 280) : undefined;
+      const canonicalUrl = classification.xStatusUrl || url;
+      const date = toDate(item.isoDate || item.pubDate);
+      const sourceLabel = sourceLabelFor(
+        feed.label,
+        classification.host,
+        classification.publisher,
+        classification.xQuoted,
+      );
+      const builtTitle = buildTitle(title || 'Untitled candidate');
 
-        found.push({
-          id: candidateIdFromUrl(canonicalUrl),
-          discoveredAt: new Date().toISOString(),
-          status: 'pending',
-          date: toDate(item.isoDate || item.pubDate),
-          sourceUrl: canonicalUrl,
-          sourceLabel: sourceLabelFor(
-            feed.label,
-            classification.host,
-            classification.publisher,
-            classification.xQuoted,
-          ),
-          title: buildTitle(title || 'Untitled candidate'),
-          summary: buildSummary(snippet, personId),
-          quote: quoteSeed ? { it: quoteSeed, en: quoteSeed } : undefined,
-          personId,
-          actorId,
-          suggestedSentiment: sentiment,
-          rawTitle: title,
-          rawSnippet: snippet || undefined,
-          feedSource: feed.id,
-          sourceTier: classification.tier,
-          sourceHost: classification.host,
-          xQuoted: classification.xQuoted || undefined,
-          xStatusUrl: classification.xStatusUrl,
-          ...(imageUrl ? { imageUrl } : {}),
-        });
+      found.push({
+        id: candidateIdFromUrl(canonicalUrl),
+        discoveredAt: new Date().toISOString(),
+        status: 'pending',
+        date,
+        sourceUrl: canonicalUrl,
+        sourceLabel,
+        title: builtTitle,
+        summary: buildSummary(snippet, personId),
+        quote: quoteSeed ? { it: quoteSeed, en: quoteSeed } : undefined,
+        personId,
+        actorId,
+        lens: lane.lens,
+        type: lane.type,
+        suggestedSentiment: sentiment,
+        rawTitle: title,
+        rawSnippet: snippet || undefined,
+        feedSource: feed.id,
+        sourceTier: classification.tier,
+        sourceHost: classification.host,
+        xQuoted: classification.xQuoted || undefined,
+        xStatusUrl: classification.xStatusUrl,
+        ...(imageUrl ? { imageUrl } : {}),
+      });
 
+      laneCounts[lane.lens] = (laneCounts[lane.lens] ?? 0) + 1;
+
+      if (feed.requiresPerson) {
+        // The diary row exists only for a strict name match: a headline is not
+        // a stance until a quote proves it, and a loose match would fake one.
         const fromHandle = classification.xHandle
           ? OFFICIAL_X_HANDLES[classification.xHandle]
           : undefined;
@@ -223,21 +276,18 @@ export async function discoverSentimentCandidates(): Promise<{
           ? (lobbyPeople.find((p) => p.id === fromHandle)?.orgId ?? actorId)
           : (strict?.actorId ?? actorId);
 
-        drafts.push({
+        cultureSignals.push({
           id: signalIdFromUrl(canonicalUrl),
           discoveredAt: new Date().toISOString(),
-          date: toDate(item.isoDate || item.pubDate),
+          date,
           sourceUrl: canonicalUrl,
-          sourceLabel: sourceLabelFor(
-            feed.label,
-            classification.host,
-            classification.publisher,
-            classification.xQuoted,
-          ),
+          sourceLabel,
           title: buildTitle(title || 'Untitled'),
           summary: signalSummary(snippet),
           personId: signalPersonId,
           actorId: signalActorId,
+          lens: 'culture',
+          type: 'statement',
           rawTitle: title,
           rawSnippet: snippet || undefined,
           feedSource: feed.id,
@@ -245,17 +295,39 @@ export async function discoverSentimentCandidates(): Promise<{
           sourceHost: classification.host,
           ...(imageUrl ? { imageUrl } : {}),
         });
+        continue;
       }
-    } catch (err) {
-      console.error('[pipeline] feed failed', feed.id, err);
+
+      // Lane rows enter the diary only when the headline is recognisably about
+      // that kind of event — no confident read, no automatic pin.
+      if (!lane.confident) continue;
+
+      laneSignals.push({
+        id: signalIdFromUrl(canonicalUrl),
+        discoveredAt: new Date().toISOString(),
+        date,
+        sourceUrl: canonicalUrl,
+        sourceLabel,
+        title: builtTitle,
+        summary: signalSummary(snippet),
+        lens: lane.lens,
+        type: lane.type,
+        rawTitle: title,
+        rawSnippet: snippet || undefined,
+        feedSource: feed.id,
+        sourceTier: classification.tier,
+        sourceHost: classification.host,
+        ...(imageUrl ? { imageUrl } : {}),
+      });
     }
   }
 
   return {
     candidates: found,
-    signals: drafts,
+    signals: [...cultureSignals, ...capLaneSignals(laneSignals)],
     scannedFeeds: SENTIMENT_FEEDS.length,
     matchedItems,
     rejectedBySource,
+    laneCounts,
   };
 }

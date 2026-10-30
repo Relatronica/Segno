@@ -310,6 +310,8 @@ export default function RedazioneContent() {
         date: draft.date ?? current?.date,
         personId: draft.personId ?? current?.personId,
         actorId: draft.actorId ?? current?.actorId,
+        lens: draft.lens ?? current?.lens,
+        type: draft.type ?? current?.type,
       }),
     });
     setSavingId(null);
@@ -823,6 +825,7 @@ export default function RedazioneContent() {
                                 key={row.id}
                                 c={row.candidate}
                                 draft={drafts[row.id] || {}}
+                                locale={locale}
                                 saving={savingId === row.id}
                                 selected={selected.includes(row.id)}
                                 expanded={expandedId === row.id}
@@ -956,6 +959,7 @@ function Thumb({ src, alt }: { src?: string; alt: string }) {
 function CandidateCard({
   c,
   draft,
+  locale,
   saving,
   selected,
   expanded,
@@ -966,6 +970,7 @@ function CandidateCard({
 }: {
   c: SentimentCandidate;
   draft: Partial<SentimentCandidate>;
+  locale: 'it' | 'en';
   saving: boolean;
   selected: boolean;
   expanded: boolean;
@@ -981,6 +986,8 @@ function CandidateCard({
   const sentiment = (draft.suggestedSentiment ?? c.suggestedSentiment) as
     | SentimentTag
     | undefined;
+  const lens = draft.lens ?? c.lens ?? 'culture';
+  const type = draft.type ?? c.type ?? 'statement';
 
   return (
     <article
@@ -1000,7 +1007,8 @@ function CandidateCard({
         <Thumb src={c.imageUrl} alt="" />
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            {c.date} · {c.personId || '—'} · {t.redazione.pipeline} · {c.status}
+            {c.date} · {c.personId || '—'} · {t.redazione.pipeline} · {c.status} ·{' '}
+            {LENS_META[lens].label[locale]} · {t.trasparenza.types[type]}
             {c.sourceTier ? ` · ${c.sourceTier}` : ''}
             {c.xQuoted ? ' · X' : ''}
           </p>
@@ -1070,6 +1078,39 @@ function CandidateCard({
               className={fieldClass}
               placeholder={t.redazione.quotePlaceholder}
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`lens-${c.id}`}>{t.redazione.lens}</Label>
+              <select
+                id={`lens-${c.id}`}
+                value={lens}
+                onChange={(e) => onDraft({ lens: e.target.value as Lens })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                {ALL_LENSES.map((item) => (
+                  <option key={item} value={item}>
+                    {LENS_META[item].label[locale]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`type-${c.id}`}>{t.redazione.eventType}</Label>
+              <select
+                id={`type-${c.id}`}
+                value={type}
+                onChange={(e) => onDraft({ type: e.target.value as EventType })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                {ALL_EVENT_TYPES.map((item) => (
+                  <option key={item} value={item}>
+                    {t.trasparenza.types[item]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">

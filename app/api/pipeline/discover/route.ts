@@ -36,5 +36,6 @@ export async function POST(request: Request) {
     scannedFeeds: discovered.scannedFeeds,
     matchedItems: discovered.matchedItems,
     rejectedBySource: discovered.rejectedBySource,
+    laneCounts: discovered.laneCounts,
   });
 }

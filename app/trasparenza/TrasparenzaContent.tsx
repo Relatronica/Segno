@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, PanelRight, Search, X } from 'lucide-react';
+import { Calendar, PanelRight, RotateCcw, Search, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import { cn } from '@/lib/utils';
 import type { TimelineEvent } from '@/lib/data/trasparenza';
 import {
   unifiedTheme,
@@ -86,7 +87,7 @@ function eventHaystack(
 
 /** Same, for automatic headline signals (no quote). */
 function signalHaystack(signal: AutoSignal, people: PersonMap, actors: ActorMap): string {
-  const person = people[signal.personId];
+  const person = signal.personId ? people[signal.personId] : undefined;
   const actor = signal.actorId ? actors[signal.actorId] : undefined;
   return haystack([
     signal.date,
@@ -469,13 +470,12 @@ export default function TrasparenzaContent() {
   /**
    * Diary rows. No tone, so the sentiment filter (a filter on quoted
    * statements) does not apply: a headline cannot match a stance it lacks.
+   * Each row rides its own lane and type — hiding that lane hides its rows.
    */
   const filteredSignals = useMemo(() => {
-    if (!selectedTypes.includes('statement')) return [];
-    // Diary rows are readings of what people say, so they ride the culture
-    // lens: hiding that lens hides them too.
-    if (!selectedLenses.includes('culture')) return [];
     return autoSignals.filter((signal) => {
+      if (!selectedTypes.includes(signal.type ?? 'statement')) return false;
+      if (!selectedLenses.includes(signal.lens ?? 'culture')) return false;
       if (!selectedYears.includes(signal.date.slice(0, 4))) return false;
       if (selectedActor !== 'all' && signal.actorId !== selectedActor) return false;
       if (selectedPerson !== 'all' && signal.personId !== selectedPerson) return false;
@@ -643,7 +643,6 @@ export default function TrasparenzaContent() {
     thesisOpen: t.trasparenza.thesisOpen,
     thesisSettled: t.trasparenza.thesisSettled,
     thesisSince: t.trasparenza.thesisSince,
-    resetFilters: t.trasparenza.resetFilters,
     eventsCount: t.trasparenza.eventsCount,
     typeLabel,
     sentimentTagLabel,
@@ -659,14 +658,14 @@ export default function TrasparenzaContent() {
     setPanelOpen(true);
   };
 
-  const activeFilters =
-    selectedActor !== 'all' ||
-    selectedPerson !== 'all' ||
-    selectedTypes.length < track.filterTypes.length ||
-    selectedYears.length < allYears.length ||
-    selectedSentiments.length < ALL_SENTIMENT_TAGS.length ||
-    selectedLenses.length < ALL_LENSES.length ||
-    selectedThesis !== 'all';
+  const activeFilterCount =
+    (selectedActor !== 'all' ? 1 : 0) +
+    (selectedPerson !== 'all' ? 1 : 0) +
+    (selectedTypes.length < track.filterTypes.length ? 1 : 0) +
+    (selectedYears.length < allYears.length ? 1 : 0) +
+    (selectedSentiments.length < ALL_SENTIMENT_TAGS.length ? 1 : 0) +
+    (selectedLenses.length < ALL_LENSES.length ? 1 : 0) +
+    (selectedThesis !== 'all' ? 1 : 0);
 
   /** Verified quotes: the only pins that carry a tone tag. */
   const moodEvents = useMemo(
@@ -710,7 +709,7 @@ export default function TrasparenzaContent() {
         <div
           role="tablist"
           aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
-          className="inline-flex h-8 shrink-0 items-center rounded-md border border-border/50 p-0.5"
+          className="inline-flex h-9 shrink-0 items-center rounded-md border border-border/50 p-0.5"
         >
           {(['filters', 'feed'] as const).map((tab) => (
             <button
@@ -719,28 +718,48 @@ export default function TrasparenzaContent() {
               role="tab"
               aria-selected={panelTab === tab}
               onClick={() => setPanelTab(tab)}
-              className={`inline-flex h-full items-center gap-1.5 rounded px-2 text-[13px] font-medium transition-colors ${
+              className={`inline-flex h-full items-center gap-1.5 rounded px-2.5 text-[13px] font-medium transition-colors ${
                 panelTab === tab
                   ? 'bg-foreground text-background'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
-              {tab === 'filters' && activeFilters && panelTab !== 'filters' && (
-                <span className="h-1.5 w-1.5 rounded-full bg-mark" />
+              {tab === 'filters' && activeFilterCount > 0 && (
+                <span
+                  className={cn(
+                    'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
+                    panelTab === 'filters' ? 'bg-background/25 text-background' : 'bg-mark text-background',
+                  )}
+                >
+                  {activeFilterCount}
+                </span>
               )}
             </button>
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setPanelOpen(false)}
-          className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label={t.trasparenza.close}
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="ml-auto flex items-center gap-1">
+          {panelTab === 'filters' && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex h-8 items-center gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t.trasparenza.resetFilters}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setPanelOpen(false)}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={t.trasparenza.close}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {panelTab === 'filters' ? (
@@ -770,7 +789,6 @@ export default function TrasparenzaContent() {
           onToggleYear={toggleYear}
           onToggleSentiment={toggleSentiment}
           onToggleLens={toggleLens}
-          onReset={resetFilters}
           theses={theses}
           selectedThesis={selectedThesis}
           onThesisChange={setSelectedThesis}
@@ -787,13 +805,16 @@ export default function TrasparenzaContent() {
           onScrub={setScrubId}
           sentimentLabel={sentimentTagLabel}
           typeLabel={typeLabel}
+          lensLabel={lensLabel}
           sentimentNote={t.trasparenza.sentimentNote}
           autoNote={t.trasparenza.autoNote}
           autoLabel={t.trasparenza.autoLabel}
           sourceLabel={t.trasparenza.source}
           permalinkLabel={t.trasparenza.permalink}
           permalinkHint={t.trasparenza.permalinkHint}
-          newestFirstLabel={t.trasparenza.feedNewest}
+          todayLabel={t.trasparenza.todayLabel}
+          yesterdayLabel={t.trasparenza.yesterdayLabel}
+          countLabel={t.trasparenza.eventsCount}
           emptyLabel={t.trasparenza.empty}
           className="min-h-0 flex-1"
         />
@@ -881,18 +902,29 @@ export default function TrasparenzaContent() {
                 <button
                   type="button"
                   onClick={() => setPanelOpen((o) => !o)}
-                  className={`inline-flex h-9 items-center gap-2 rounded-md px-2.5 transition-colors ${
+                  className={cn(
+                    'inline-flex h-9 items-center gap-2 rounded-md border px-2.5 text-[13px] font-medium transition-colors',
                     panelOpen
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground/80 hover:bg-background/70 hover:text-foreground'
-                  }`}
+                      ? 'border-foreground/20 bg-foreground text-background'
+                      : 'border-border/50 bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground',
+                  )}
                   aria-expanded={panelOpen}
                   aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
                   title={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
                 >
                   <PanelRight className="h-4 w-4" />
-                  {activeFilters && !panelOpen && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-mark" />
+                  <span className="hidden sm:inline">
+                    {panelTab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
+                  </span>
+                  {activeFilterCount > 0 && (
+                    <span
+                      className={cn(
+                        'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
+                        panelOpen ? 'bg-background/25 text-background' : 'bg-mark text-background',
+                      )}
+                    >
+                      {activeFilterCount}
+                    </span>
                   )}
                 </button>
               </div>

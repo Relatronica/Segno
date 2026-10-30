@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Link2 } from 'lucide-react';
+import { ExternalLink, Link2, type LucideIcon } from 'lucide-react';
 import {
   formatAmount,
   formatEventDate,
+  lensOf,
+  LENS_META,
   type LobbyPerson,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
-import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
+import type { EventType, Lens, SentimentTag } from '@/lib/data/trasparenza';
+import { localIsoDate, offsetIsoDate } from '@/lib/dates';
 import { EVENT_META, SENTIMENT_META } from './meta';
+import { LabMark, hasLabMark } from './LabMark';
 import { PersonAvatar } from './PersonAvatar';
 import { paths } from '@/lib/seo';
 import { cn } from '@/lib/utils';
@@ -28,6 +32,7 @@ type Props = {
   onScrub?: (eventId: string | null) => void;
   sentimentLabel?: (tag: SentimentTag) => string;
   typeLabel?: (type: EventType) => string;
+  lensLabel?: (lens: Lens) => string;
   sentimentNote?: string;
   /** Shown instead of sentimentNote on automatic headline pins */
   autoNote?: string;
@@ -36,7 +41,10 @@ type Props = {
   /** Label for the internal permalink to the single-event page */
   permalinkLabel?: string;
   permalinkHint?: string;
-  newestFirstLabel: string;
+  todayLabel: string;
+  yesterdayLabel: string;
+  /** `{count}` placeholder for the per-day counter */
+  countLabel: string;
   emptyLabel: string;
   className?: string;
 };
@@ -51,6 +59,48 @@ function sourceHost(url: string) {
   }
 }
 
+/** Newest → oldest is already guaranteed by the parent, so insertion order holds. */
+function groupByDay(events: TimelineEvent[]): { date: string; items: TimelineEvent[] }[] {
+  const map = new Map<string, TimelineEvent[]>();
+  for (const event of events) {
+    const key = event.date.slice(0, 10);
+    const list = map.get(key) ?? [];
+    list.push(event);
+    map.set(key, list);
+  }
+  return [...map.entries()].map(([date, items]) => ({ date, items }));
+}
+
+/**
+ * One round marker per row, the same size everywhere. Who is speaking wins: a
+ * face, then the lab's own mark, then the event icon on the lane's tint — so
+ * identity reads at a glance without a card-sized media box.
+ */
+function FeedBadge({
+  person,
+  actorId,
+  laneColor,
+  TypeIcon,
+}: {
+  person?: LobbyPerson;
+  actorId?: string;
+  laneColor: string;
+  TypeIcon: LucideIcon;
+}) {
+  if (person) return <PersonAvatar person={person} size="sm" />;
+  if (hasLabMark(actorId)) return <LabMark actorId={actorId} size={24} round />;
+
+  return (
+    <span
+      aria-hidden
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-1 ring-border/40"
+      style={{ backgroundColor: `${laneColor}1f`, color: laneColor }}
+    >
+      <TypeIcon className="h-3 w-3" />
+    </span>
+  );
+}
+
 export function TimelineFeed({
   events,
   locale,
@@ -61,13 +111,16 @@ export function TimelineFeed({
   onScrub,
   sentimentLabel,
   typeLabel,
+  lensLabel,
   sentimentNote,
   autoNote,
   autoLabel,
   sourceLabel,
   permalinkLabel,
   permalinkHint,
-  newestFirstLabel,
+  todayLabel,
+  yesterdayLabel,
+  countLabel,
   emptyLabel,
   className = '',
 }: Props) {
@@ -75,6 +128,10 @@ export function TimelineFeed({
   const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
   const syncLock = useRef<'external' | 'self' | null>(null);
   const scrollRaf = useRef(0);
+
+  const today = localIsoDate();
+  const yesterday = offsetIsoDate(-1);
+  const groups = groupByDay(events);
 
   useEffect(() => {
     if (!activeId) return;
@@ -125,15 +182,14 @@ export function TimelineFeed({
     scrollRaf.current = requestAnimationFrame(pickFocused);
   };
 
+  const dayLabel = (date: string) => {
+    if (date === today) return todayLabel;
+    if (date === yesterday) return yesterdayLabel;
+    return formatEventDate(date, locale);
+  };
+
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
-      {/* The shared right panel owns title and close; the feed states its order. */}
-      <div className="shrink-0 border-b border-border/40 px-3 py-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-          {newestFirstLabel}
-        </p>
-      </div>
-
       <div
         ref={scrollerRef}
         onScroll={onScroll}
@@ -142,213 +198,216 @@ export function TimelineFeed({
         {events.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">{emptyLabel}</p>
         ) : (
-          <ul className="relative pb-8">
-            {events.map((event) => {
-              const person = event.personId ? people[event.personId] : undefined;
-              const actor = event.actorId ? actors[event.actorId] : undefined;
-              const active = event.id === activeId;
-              /** Under the timeline playhead but not selected: a lighter echo. */
-              const focused = !active && event.id === focusedId;
-              const sentimentMeta = event.sentiment
-                ? SENTIMENT_META[event.sentiment]
-                : null;
-              const typeMeta = EVENT_META[event.type];
-              const TypeIcon = typeMeta.icon;
-              const onCurve = Boolean(event.sentiment);
-              const note = event.origin === 'auto' ? autoNote : sentimentNote;
-              const body = event.detail?.[locale] ?? event.summary[locale];
-
-              return (
-                <li
-                  key={event.id}
-                  ref={(node) => {
-                    if (node) itemRefs.current.set(event.id, node);
-                    else itemRefs.current.delete(event.id);
-                  }}
-                  className={cn(
-                    'border-b border-border/30 transition-colors',
-                    active
-                      ? 'bg-mark-muted/40'
-                      : focused
-                        ? 'bg-mark-muted/20'
-                        : 'hover:bg-muted/25',
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onSelect(event.id)}
-                    className="flex w-full gap-3 px-3 py-3 text-left"
-                    aria-expanded={active}
-                    aria-current={active ? 'true' : undefined}
+          <div className="relative pb-8">
+            {groups.map((group) => (
+              <section key={group.date}>
+                <header className="sticky top-0 z-10 flex items-baseline gap-2 border-b border-border/40 bg-background/95 px-3 py-2 backdrop-blur">
+                  <time
+                    dateTime={group.date}
+                    className="text-[13px] font-semibold tracking-tight text-foreground"
                   >
-                    <span className="relative mt-0.5 shrink-0">
-                      {person ? (
-                        <PersonAvatar person={person} size="md" />
-                      ) : (
-                        <span
-                          className={cn(
-                            'inline-flex h-8 w-8 items-center justify-center rounded-full ring-1 ring-border/40',
-                            typeMeta.bg,
-                            typeMeta.color,
-                          )}
-                        >
-                          <TypeIcon className="h-3.5 w-3.5" />
-                        </span>
-                      )}
-                      <span
-                        className={cn(
-                          'absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-background',
-                          onCurve ? '' : typeMeta.bg,
-                        )}
-                        style={
-                          onCurve
-                            ? { backgroundColor: sentimentMeta?.dot ?? '#64748b' }
-                            : undefined
-                        }
-                        aria-hidden
-                      />
-                    </span>
+                    {dayLabel(group.date)}
+                  </time>
+                  <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {countLabel.replace('{count}', String(group.items.length))}
+                  </span>
+                </header>
 
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <time
-                          dateTime={event.date}
-                          className="text-[13px] font-medium tabular-nums text-foreground"
-                        >
-                          {formatEventDate(event.date, locale)}
-                        </time>
-                        {person && (
-                          <span className="truncate text-[12px] text-muted-foreground">
-                            {person.shortName}
-                          </span>
+                <ul>
+                  {group.items.map((event) => {
+                    const person = event.personId ? people[event.personId] : undefined;
+                    const actor = event.actorId ? actors[event.actorId] : undefined;
+                    const active = event.id === activeId;
+                    /** Under the timeline playhead but not selected: a lighter echo. */
+                    const focused = !active && event.id === focusedId;
+                    const sentimentMeta = event.sentiment
+                      ? SENTIMENT_META[event.sentiment]
+                      : null;
+                    const typeMeta = EVENT_META[event.type];
+                    const TypeIcon = typeMeta.icon;
+                    const lens = lensOf(event);
+                    const laneColor = LENS_META[lens].color;
+                    const note = event.origin === 'auto' ? autoNote : sentimentNote;
+                    const body = event.detail?.[locale] ?? event.summary[locale];
+
+                    return (
+                      <li
+                        key={event.id}
+                        ref={(node) => {
+                          if (node) itemRefs.current.set(event.id, node);
+                          else itemRefs.current.delete(event.id);
+                        }}
+                        className={cn(
+                          'border-b border-border/30 transition-colors',
+                          active
+                            ? 'bg-mark-muted/40'
+                            : focused
+                              ? 'bg-mark-muted/20'
+                              : '',
                         )}
-                        {event.sentiment && sentimentLabel && (
-                          <span className="ml-auto inline-flex shrink-0 items-center gap-1">
-                            {event.origin === 'auto' && autoLabel && (
-                              <span className="rounded px-1.5 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                {autoLabel}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onSelect(event.id)}
+                          className={cn(
+                            'relative flex w-full gap-3 px-3 py-3 text-left',
+                            !active && !focused && 'hover:bg-muted/25',
+                          )}
+                          aria-expanded={active}
+                          aria-current={active ? 'true' : undefined}
+                        >
+                          <span
+                            aria-hidden
+                            className="absolute inset-y-2 left-0 w-[3px] rounded-r-full"
+                            style={{ backgroundColor: laneColor }}
+                          />
+
+                          <FeedBadge
+                            person={person}
+                            actorId={event.actorId}
+                            laneColor={laneColor}
+                            TypeIcon={TypeIcon}
+                          />
+
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: laneColor }}
+                              />
+                              <span className="truncate">
+                                {lensLabel ? lensLabel(lens) : LENS_META[lens].label[locale]}
                               </span>
-                            )}
+                              {typeLabel && (
+                                <>
+                                  <span aria-hidden>·</span>
+                                  <span className="truncate">{typeLabel(event.type)}</span>
+                                </>
+                              )}
+                              {event.origin === 'auto' && autoLabel && (
+                                <>
+                                  <span aria-hidden>·</span>
+                                  <span className="truncate">{autoLabel}</span>
+                                </>
+                              )}
+                              {event.sentiment && sentimentLabel && sentimentMeta && (
+                                <span
+                                  className={cn(
+                                    'ml-auto shrink-0 rounded px-1.5 py-px font-mono text-[10px] font-medium',
+                                    sentimentMeta.bg,
+                                    sentimentMeta.color,
+                                  )}
+                                >
+                                  {sentimentLabel(event.sentiment)}
+                                </span>
+                              )}
+                            </span>
+
                             <span
                               className={cn(
-                                'rounded px-1.5 py-px font-mono text-[10px] font-medium',
-                                sentimentMeta?.bg,
-                                sentimentMeta?.color,
+                                'mt-1 block text-[13px] leading-snug',
+                                active ? 'font-medium text-foreground' : 'text-foreground/90',
                               )}
                             >
-                              {sentimentLabel(event.sentiment)}
+                              {event.title[locale]}
                             </span>
-                          </span>
-                        )}
-                        {!event.sentiment && typeLabel && (
-                          <span
-                            className={cn(
-                              'ml-auto inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px font-mono text-[10px] font-medium',
-                              typeMeta.bg,
-                              typeMeta.color,
+
+                            {!active && (
+                              <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-muted-foreground">
+                                {event.summary[locale]}
+                              </span>
                             )}
-                          >
-                            <TypeIcon className="h-2.5 w-2.5" />
-                            {typeLabel(event.type)}
                           </span>
+                        </button>
+
+                        {active && (
+                          <div className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-12 duration-200">
+                            {person && (
+                              <p className="text-[12px] leading-snug text-muted-foreground">
+                                <span className="font-medium text-foreground/80">
+                                  {person.name}
+                                </span>
+                                {person.role[locale] ? ` · ${person.role[locale]}` : ''}
+                              </p>
+                            )}
+
+                            {actor && (
+                              <p className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{ backgroundColor: actor.color }}
+                                />
+                                {actor.name}
+                              </p>
+                            )}
+
+                            {event.sentiment && note && (
+                              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                {note}
+                              </p>
+                            )}
+
+                            {event.quote && (
+                              <blockquote className="border-l-2 border-mark/35 pl-2.5 text-[13px] italic leading-relaxed text-foreground/90">
+                                “{event.quote[locale]}”
+                              </blockquote>
+                            )}
+
+                            <p className="text-[13px] leading-relaxed text-muted-foreground">
+                              {body}
+                            </p>
+
+                            {event.amountEur != null && (
+                              <p
+                                className={cn(
+                                  'font-mono text-sm font-semibold',
+                                  event.type === 'sanction'
+                                    ? 'text-red-800 dark:text-red-300'
+                                    : 'text-amber-800 dark:text-amber-300',
+                                )}
+                              >
+                                {event.type === 'sanction' ? '' : '~ '}
+                                {formatAmount(event.amountEur, locale)}
+                              </p>
+                            )}
+
+                            <a
+                              href={event.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex max-w-full items-start gap-1.5 text-[12px] text-foreground underline-offset-4 hover:underline"
+                            >
+                              <span className="min-w-0">
+                                <span className="font-medium">
+                                  {sourceLabel}: {event.sourceLabel[locale]}
+                                </span>
+                                <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground no-underline">
+                                  {sourceHost(event.sourceUrl)}
+                                </span>
+                              </span>
+                              <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />
+                            </a>
+
+                            {permalinkLabel && (
+                              <a
+                                href={paths.trasparenzaEvento(event.id)}
+                                title={permalinkHint}
+                                className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                              >
+                                <Link2 className="h-3 w-3 shrink-0" />
+                                {permalinkLabel}
+                              </a>
+                            )}
+                          </div>
                         )}
-                      </span>
-
-                      <span
-                        className={cn(
-                          'mt-1 block text-[13px] leading-snug',
-                          active
-                            ? 'font-medium text-foreground'
-                            : 'text-foreground/85',
-                        )}
-                      >
-                        {event.title[locale]}
-                      </span>
-                    </span>
-                  </button>
-
-                  {active && (
-                    <div className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-3.5 pl-[3.25rem] duration-200">
-                      {person && (
-                        <p className="text-[12px] leading-snug text-muted-foreground">
-                          <span className="font-medium text-foreground/80">{person.name}</span>
-                          {person.role[locale] ? ` · ${person.role[locale]}` : ''}
-                        </p>
-                      )}
-
-                      {actor && (
-                        <p className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ backgroundColor: actor.color }}
-                          />
-                          {actor.name}
-                        </p>
-                      )}
-
-                      {event.sentiment && note && (
-                        <p className="text-[11px] leading-relaxed text-muted-foreground">
-                          {note}
-                        </p>
-                      )}
-
-                      {event.quote && (
-                        <blockquote className="border-l-2 border-mark/35 pl-2.5 text-[13px] italic leading-relaxed text-foreground/90">
-                          “{event.quote[locale]}”
-                        </blockquote>
-                      )}
-
-                      <p className="text-[13px] leading-relaxed text-muted-foreground">
-                        {body}
-                      </p>
-
-                      {event.amountEur != null && (
-                        <p
-                          className={cn(
-                            'font-mono text-sm font-semibold',
-                            event.type === 'sanction'
-                              ? 'text-red-800 dark:text-red-300'
-                              : 'text-amber-800 dark:text-amber-300',
-                          )}
-                        >
-                          {event.type === 'sanction' ? '' : '~ '}
-                          {formatAmount(event.amountEur, locale)}
-                        </p>
-                      )}
-
-                      <a
-                        href={event.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex max-w-full items-start gap-1.5 text-[12px] text-foreground underline-offset-4 hover:underline"
-                      >
-                        <span className="min-w-0">
-                          <span className="font-medium">
-                            {sourceLabel}: {event.sourceLabel[locale]}
-                          </span>
-                          <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground no-underline">
-                            {sourceHost(event.sourceUrl)}
-                          </span>
-                        </span>
-                        <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />
-                      </a>
-
-                      {permalinkLabel && (
-                        <a
-                          href={paths.trasparenzaEvento(event.id)}
-                          title={permalinkHint}
-                          className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                        >
-                          <Link2 className="h-3 w-3 shrink-0" />
-                          {permalinkLabel}
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
       </div>
     </div>

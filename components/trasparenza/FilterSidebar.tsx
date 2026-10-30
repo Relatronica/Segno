@@ -1,6 +1,5 @@
 'use client';
 
-import { RotateCcw } from 'lucide-react';
 import { EVENT_META, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 import {
@@ -31,7 +30,6 @@ type Labels = {
   thesisOpen: string;
   thesisSettled: string;
   thesisSince: string;
-  resetFilters: string;
   eventsCount: string;
   typeLabel: (type: EventType) => string;
   sentimentTagLabel: (tag: SentimentTag) => string;
@@ -68,7 +66,6 @@ type Props = {
   onToggleSentiment: (tag: SentimentTag) => void;
   onToggleLens: (lens: Lens) => void;
   onThesisChange: (slug: string | 'all') => void;
-  onReset: () => void;
   className?: string;
 };
 
@@ -101,25 +98,12 @@ export function FilterSidebar({
   onToggleSentiment,
   onToggleLens,
   onThesisChange,
-  onReset,
   className = '',
 }: Props) {
   const activeThesis = theses.find((thesis) => thesis.slug === selectedThesis);
 
   return (
     <aside className={`flex h-full flex-col ${className}`}>
-      {/* The shared right panel owns title and close; filters keep their reset. */}
-      <div className="flex items-center justify-end border-b border-border/50 px-3 py-2">
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <RotateCcw className="h-3 w-3" />
-          {labels.resetFilters}
-        </button>
-      </div>
-
       <div className="flex-1 space-y-4 overflow-y-auto px-3 py-3">
         {themes.length > 1 && (
         <FilterSection title={labels.themeLabel}>

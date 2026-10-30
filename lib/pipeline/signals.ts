@@ -15,13 +15,14 @@ export function signalsForPublic(store: PipelineStore): AutoSignal[] {
 
 /**
  * One feed row of the unverified diary. No quote, no tone, no curve vertex:
- * the headline only says that someone was mentioned, not what they stand for.
+ * the headline only says that something happened, not what it stands for.
  */
 export function signalToTimelineEvent(signal: AutoSignal): TimelineEvent {
   return {
     id: signal.id,
     date: signal.date,
-    type: 'statement',
+    type: signal.type ?? 'statement',
+    lens: signal.lens,
     origin: 'auto',
     actorId: signal.actorId,
     personId: signal.personId,
@@ -29,5 +30,6 @@ export function signalToTimelineEvent(signal: AutoSignal): TimelineEvent {
     summary: signal.summary,
     sourceLabel: signal.sourceLabel,
     sourceUrl: signal.sourceUrl,
+    imageUrl: signal.imageUrl,
   };
 }

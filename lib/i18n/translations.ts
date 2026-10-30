@@ -136,6 +136,7 @@ const translations = {
       moodHint: 'Curva: solo citazioni verificate · marker = contesto UE',
       liveBadge: 'Live',
       todayLabel: 'Oggi',
+      yesterdayLabel: 'Ieri',
       jumpToToday: 'Vai a oggi',
       activity: 'Volume',
       activityHint:
@@ -144,7 +145,6 @@ const translations = {
       activityBarMore: '+{count} altre',
       inspectHint: 'Clicca un punto per aprire la fonte.',
       feedTitle: 'Cronologia',
-      feedNewest: 'Dal più recente',
       feedOpen: 'Lista',
       searchLabel: 'Cerca',
       searchPlaceholder: 'Cerca dichiarazioni, persone, fonti…',
@@ -471,6 +471,7 @@ const translations = {
       moodHint: 'Curve: verified quotes only · markers = EU context',
       liveBadge: 'Live',
       todayLabel: 'Today',
+      yesterdayLabel: 'Yesterday',
       jumpToToday: 'Jump to today',
       activity: 'Volume',
       activityHint:
@@ -478,8 +479,7 @@ const translations = {
       activityBarCount: '{count} voices',
       activityBarMore: '+{count} more',
       inspectHint: 'Click a point to open the source.',
-      feedTitle: 'Feed',
-      feedNewest: 'Newest first',
+      feedTitle: 'History',
       feedOpen: 'List',
       searchLabel: 'Search',
       searchPlaceholder: 'Search statements, people, sources…',

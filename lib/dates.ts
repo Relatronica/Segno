@@ -19,3 +19,10 @@ export function toMs(date: string): number {
 export function clampIsoToToday(date: string, today = localIsoDate()): string {
   return date > today ? today : date;
 }
+
+/** Calendar date `days` away from today, local timezone, as YYYY-MM-DD. */
+export function offsetIsoDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return localIsoDate(d);
+}

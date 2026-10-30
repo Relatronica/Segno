@@ -162,10 +162,12 @@ type Props = {
   size: number;
   active?: boolean;
   hot?: boolean;
+  /** Circle instead of the default rounded tile. */
+  round?: boolean;
 };
 
 /** A lab's badge: its colour as a tile, its mark as ink. */
-export function LabMark({ actorId, size, active = false, hot = false }: Props) {
+export function LabMark({ actorId, size, active = false, hot = false, round = false }: Props) {
   const glyph = GLYPHS[actorId];
   if (!glyph) return null;
   const color = COLOR_BY_ACTOR.get(actorId) ?? '#475569';
@@ -176,7 +178,7 @@ export function LabMark({ actorId, size, active = false, hot = false }: Props) {
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.26),
+        borderRadius: round ? size / 2 : Math.round(size * 0.26),
         backgroundColor: color,
         filter: active
           ? `drop-shadow(0 0 3px ${color})`

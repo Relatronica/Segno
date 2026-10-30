@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { lobbyPeople } from '@/lib/data/trasparenza';
+import { lobbyPeople, LENS_META } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
 import type { AutoSignal } from '@/lib/pipeline/types';
 
@@ -135,6 +135,7 @@ export function SignalDesk({ signals, locale, labels, onChanged }: Props) {
                   <ul className="divide-y divide-border/40 border-t border-border/50">
                     {group.items.map((signal) => {
                       const person = lobbyPeople.find((item) => item.id === signal.personId);
+                      const laneLabel = LENS_META[signal.lens ?? 'culture'].label[locale];
                       const saving = busy === signal.id;
                       return (
                         <li
@@ -143,7 +144,7 @@ export function SignalDesk({ signals, locale, labels, onChanged }: Props) {
                         >
                           <div className="min-w-0 flex-1">
                             <p className="font-mono text-[11px] text-muted-foreground">
-                              {person ? person.shortName : '—'}
+                              {person ? person.shortName : laneLabel}
                               {signal.hidden ? ` · ${labels.hidden}` : ''}
                             </p>
                             <p className="mt-1 text-sm font-medium leading-snug">

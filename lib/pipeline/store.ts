@@ -237,7 +237,14 @@ export function promoteSignal(
     summary: signal.summary,
     personId: signal.personId,
     actorId: signal.actorId,
-    suggestedSentiment: hintSentiment(`${signal.rawTitle} ${signal.rawSnippet ?? ''}`),
+    lens: signal.lens,
+    type: signal.type,
+    // A headline has no tone of its own: the hint stays in the culture lane,
+    // where a quote is expected to back it up.
+    suggestedSentiment:
+      (signal.lens ?? 'culture') === 'culture'
+        ? hintSentiment(`${signal.rawTitle} ${signal.rawSnippet ?? ''}`)
+        : undefined,
     rawTitle: signal.rawTitle,
     rawSnippet: signal.rawSnippet,
     feedSource: signal.feedSource,
@@ -348,6 +355,8 @@ export function updateCandidateStatus(
       | 'personId'
       | 'actorId'
       | 'date'
+      | 'lens'
+      | 'type'
       | 'reviewNote'
     >
   >,

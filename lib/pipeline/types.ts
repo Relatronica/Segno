@@ -21,6 +21,13 @@ export type SentimentCandidate = {
   quote?: { it: string; en: string };
   personId?: string;
   actorId?: string;
+  /**
+   * Lane and event type the discovery run assigned. Culture statements are the
+   * default; every other lane has to be declared, because the lane is what
+   * decides where the pin lands once published.
+   */
+  lens?: Lens;
+  type?: EventType;
   suggestedSentiment?: SentimentTag;
   rawTitle: string;
   rawSnippet?: string;
@@ -73,8 +80,12 @@ export type AutoSignal = {
   sourceLabel: { it: string; en: string };
   title: { it: string; en: string };
   summary: { it: string; en: string };
-  personId: string;
+  /** Absent when the row is about an event, not about a tracked person. */
+  personId?: string;
   actorId?: string;
+  /** Lane and type of the diary row; defaults to a culture statement. */
+  lens?: Lens;
+  type?: EventType;
   rawTitle: string;
   rawSnippet?: string;
   feedSource: string;
@@ -121,12 +132,16 @@ export type PipelineStore = {
 
 export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent | null {
   if (c.status !== 'published' && c.status !== 'approved') return null;
-  if (!c.sourceUrl || !c.quote?.en) return null;
+  if (!c.sourceUrl) return null;
+  // Tone needs a verified quote. A release, a round of funding or a law
+  // carries no stance, so it may go live without one.
+  if (c.suggestedSentiment && !c.quote?.en?.trim()) return null;
 
   return {
     id: c.id.startsWith('pipe-') ? c.id : `pipe-${c.id}`,
     date: c.date,
-    type: 'statement',
+    type: c.type ?? 'statement',
+    lens: c.lens,
     actorId: c.actorId,
     personId: c.personId,
     sentiment: c.suggestedSentiment,
@@ -135,6 +150,7 @@ export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent |
     quote: c.quote,
     sourceLabel: c.sourceLabel,
     sourceUrl: c.sourceUrl,
+    imageUrl: c.imageUrl,
   };
 }
 

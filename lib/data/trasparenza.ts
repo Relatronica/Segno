@@ -156,6 +156,8 @@ export type TimelineEvent = {
   sourceLabel: LocaleText;
   /** Stable public URL — required for every event */
   sourceUrl: string;
+  /** Source thumbnail, when the feed provides one. Automatic rows only. */
+  imageUrl?: string;
 };
 
 export type TimelineTheme = {

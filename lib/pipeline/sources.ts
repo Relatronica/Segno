@@ -25,6 +25,18 @@ export const AUTHORITATIVE_HOSTS: Record<string, SourceTier> = {
   'ai.meta.com': 'primary',
   'x.ai': 'primary',
   'tesla.com': 'primary',
+  'mistral.ai': 'primary',
+  'huggingface.co': 'primary',
+  'research.google': 'primary',
+  'arxiv.org': 'primary',
+
+  // Primary — institutions that write or enforce the rules
+  'europa.eu': 'primary',
+  'whitehouse.gov': 'primary',
+  'congress.gov': 'primary',
+  'nist.gov': 'primary',
+  'ftc.gov': 'primary',
+  'gov.uk': 'primary',
 
   // Secondary — wire / quality press (EU + global)
   'reuters.com': 'secondary',
@@ -54,6 +66,8 @@ export const AUTHORITATIVE_HOSTS: Record<string, SourceTier> = {
   'businessinsider.com': 'secondary',
   'theinformation.com': 'secondary',
   'restofworld.org': 'secondary',
+  'nature.com': 'secondary',
+  'science.org': 'secondary',
 };
 
 /** Google News publisher labels → host */
@@ -118,27 +132,93 @@ export const OFFICIAL_X_HANDLES: Record<string, string> = {
   sundarpichai: 'pichai',
 };
 
-/** Domains used in Google News site: filters */
-export const SEARCH_SITE_FILTER = [
-  'reuters.com',
-  'apnews.com',
-  'bloomberg.com',
-  'ft.com',
-  'wsj.com',
-  'nytimes.com',
-  'politico.eu',
-  'politico.com',
-  'theguardian.com',
-  'techcrunch.com',
-  'theverge.com',
-  'openai.com',
-  'anthropic.com',
-  'blog.google',
-  'nvidia.com',
-  'microsoft.com',
-  'about.meta.com',
-  'x.ai',
-].join(' OR site:');
+/**
+ * Domains used in Google News `site:` filters, one group per lane. A lane feed
+ * only sees sources able to carry that lane's evidence: a release is best
+ * served by the lab's own blog, a law by the institution that wrote it.
+ */
+export const SITE_GROUPS = {
+  /** Statements and quotes by tracked people. */
+  culture: [
+    'reuters.com',
+    'apnews.com',
+    'bloomberg.com',
+    'ft.com',
+    'wsj.com',
+    'nytimes.com',
+    'politico.eu',
+    'politico.com',
+    'theguardian.com',
+    'techcrunch.com',
+    'theverge.com',
+    'openai.com',
+    'anthropic.com',
+    'blog.google',
+    'nvidia.com',
+    'microsoft.com',
+    'about.meta.com',
+    'x.ai',
+  ],
+  /** Frontier systems and releases. */
+  models: [
+    'openai.com',
+    'anthropic.com',
+    'blog.google',
+    'deepmind.google',
+    'ai.meta.com',
+    'x.ai',
+    'mistral.ai',
+    'huggingface.co',
+    'reuters.com',
+    'techcrunch.com',
+    'theverge.com',
+  ],
+  /** Techniques and results, before they become product. */
+  research: [
+    'arxiv.org',
+    'nature.com',
+    'science.org',
+    'deepmind.google',
+    'research.google',
+    'ai.meta.com',
+    'openai.com',
+    'reuters.com',
+    'techcrunch.com',
+  ],
+  /** Money: funding, valuations, infrastructure spend. */
+  business: [
+    'reuters.com',
+    'bloomberg.com',
+    'ft.com',
+    'wsj.com',
+    'cnbc.com',
+    'techcrunch.com',
+    'theinformation.com',
+    'axios.com',
+    'semafor.com',
+  ],
+  /** Rules written, and rules enforced. */
+  policy: [
+    'reuters.com',
+    'apnews.com',
+    'politico.eu',
+    'politico.com',
+    'euractiv.com',
+    'theguardian.com',
+    'ft.com',
+    'europa.eu',
+    'whitehouse.gov',
+    'congress.gov',
+    'gov.uk',
+  ],
+} as const;
+
+export type SiteGroup = keyof typeof SITE_GROUPS;
+
+/** Google News boolean fragment: `site:a OR site:b OR …` */
+export function siteFilter(group: SiteGroup): string {
+  return SITE_GROUPS[group].map((host) => `site:${host}`).join(' OR ');
+}
 
 export function normalizeHost(hostname: string): string {
   return hostname.replace(/^www\./i, '').toLowerCase();

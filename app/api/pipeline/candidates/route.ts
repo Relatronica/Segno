@@ -15,7 +15,14 @@ import {
   updateManyCandidateStatus,
 } from '@/lib/pipeline/store';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
-import { ALL_SENTIMENT_TAGS, type SentimentTag } from '@/lib/data/trasparenza';
+import {
+  ALL_LENSES,
+  ALL_SENTIMENT_TAGS,
+  type EventType,
+  type Lens,
+  type SentimentTag,
+} from '@/lib/data/trasparenza';
+import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
 import { clampIsoToToday } from '@/lib/dates';
 
 export const runtime = 'nodejs';
@@ -70,6 +77,8 @@ type PatchBody = {
   personId?: string;
   actorId?: string;
   date?: string;
+  lens?: Lens;
+  type?: EventType;
   reviewNote?: string;
 };
 
@@ -131,11 +140,20 @@ export async function PATCH(request: Request) {
   ) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
   }
+  if (body.lens && !(ALL_LENSES as string[]).includes(body.lens)) {
+    return NextResponse.json({ error: 'invalid_lens' }, { status: 400 });
+  }
+  if (body.type && !(ALL_EVENT_TYPES as string[]).includes(body.type)) {
+    return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
+  }
 
-  // Publishing requires a quote — editorial bar
+  // Editorial bar: a pin that carries a tone must show the quote it reads that
+  // tone from. A release, a round of funding or a law carries no tone, so it
+  // may go live on its source alone.
+  const nextSentiment = body.suggestedSentiment ?? current.suggestedSentiment;
   if (nextStatus === 'published' || nextStatus === 'approved') {
     const quote = body.quote ?? current.quote;
-    if (!quote?.en?.trim()) {
+    if (nextSentiment && !quote?.en?.trim()) {
       return NextResponse.json({ error: 'quote_required' }, { status: 400 });
     }
   }
@@ -148,6 +166,8 @@ export async function PATCH(request: Request) {
     personId: body.personId,
     actorId: body.actorId,
     date: body.date ? clampIsoToToday(body.date) : body.date,
+    lens: body.lens,
+    type: body.type,
     reviewNote: body.reviewNote,
   });
 
