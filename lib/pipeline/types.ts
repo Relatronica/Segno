@@ -1,4 +1,6 @@
 import type {
+  EventType,
+  Lens,
   LocaleText,
   SentimentTag,
   TimelineEvent,
@@ -82,6 +84,30 @@ export type AutoSignal = {
   hidden?: boolean;
 };
 
+/**
+ * Pin written by hand in the newsroom. Unlike a candidate it needs no
+ * moderation step: it is born editorial, with its lens and type chosen by the
+ * editor, and it is the only pin that can live outside the culture lane.
+ */
+export type CreatedEvent = {
+  id: string;
+  createdAt: string;
+  updatedAt?: string;
+  date: string;
+  type: EventType;
+  lens: Lens;
+  actorId?: string;
+  personId?: string;
+  title: LocaleText;
+  summary: LocaleText;
+  detail?: LocaleText;
+  quote?: LocaleText;
+  sentiment?: SentimentTag;
+  amountEur?: number;
+  sourceLabel: LocaleText;
+  sourceUrl: string;
+};
+
 export type PipelineStore = {
   updatedAt: string;
   candidates: SentimentCandidate[];
@@ -89,6 +115,8 @@ export type PipelineStore = {
   signals?: AutoSignal[];
   edits?: Record<string, TimelineEventEdit>;
   hiddenIds?: string[];
+  /** Hand-written pins, kept apart from the discovered queue. */
+  createdEvents?: CreatedEvent[];
 };
 
 export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent | null {
@@ -107,5 +135,26 @@ export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent |
     quote: c.quote,
     sourceLabel: c.sourceLabel,
     sourceUrl: c.sourceUrl,
+  };
+}
+
+/** A hand-written pin as it appears on the public timeline. */
+export function createdToTimelineEvent(e: CreatedEvent): TimelineEvent {
+  return {
+    id: e.id,
+    date: e.date,
+    type: e.type,
+    lens: e.lens,
+    origin: 'editorial',
+    actorId: e.actorId,
+    personId: e.personId,
+    title: e.title,
+    summary: e.summary,
+    detail: e.detail,
+    quote: e.quote,
+    sentiment: e.sentiment,
+    amountEur: e.amountEur,
+    sourceLabel: e.sourceLabel,
+    sourceUrl: e.sourceUrl,
   };
 }

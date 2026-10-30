@@ -8,6 +8,7 @@ import {
 import { listCuratedPins } from '@/lib/pipeline/edits';
 import {
   deleteCandidates,
+  listCreatedEvents,
   loadPipelineStore,
   savePipelineStore,
   updateCandidateStatus,
@@ -46,12 +47,14 @@ export async function GET(request: Request) {
     candidates,
     signals,
     curated: listCuratedPins(store),
+    manual: listCreatedEvents(store),
     counts: {
       pending: store.candidates.filter((c) => c.status === 'pending').length,
       approved: store.candidates.filter((c) => c.status === 'approved').length,
       published: store.candidates.filter((c) => c.status === 'published').length,
       rejected: store.candidates.filter((c) => c.status === 'rejected').length,
       signals: signals.length,
+      manual: (store.createdEvents ?? []).length,
     },
   });
 }

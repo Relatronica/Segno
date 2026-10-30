@@ -4,6 +4,7 @@ import path from 'path';
 import { hintSentiment } from '@/lib/pipeline/match';
 import type {
   AutoSignal,
+  CreatedEvent,
   PipelineStore,
   SentimentCandidate,
   TimelineEventEdit,
@@ -21,6 +22,7 @@ const emptyStore = (): PipelineStore => ({
   signals: [],
   edits: {},
   hiddenIds: [],
+  createdEvents: [],
 });
 
 function normalizeStore(store: PipelineStore): PipelineStore {
@@ -29,6 +31,7 @@ function normalizeStore(store: PipelineStore): PipelineStore {
     signals: store.signals ?? [],
     edits: store.edits ?? {},
     hiddenIds: store.hiddenIds ?? [],
+    createdEvents: store.createdEvents ?? [],
   };
 }
 
@@ -89,6 +92,66 @@ export function candidateIdFromUrl(url: string): string {
 export function signalIdFromUrl(url: string): string {
   const hash = createHash('sha256').update(url).digest('hex').slice(0, 12);
   return `sig-${hash}`;
+}
+
+/** Hand-written pins are keyed on their source, so a url can only ever make one. */
+export function createdEventIdFromUrl(url: string): string {
+  const hash = createHash('sha256').update(url.trim()).digest('hex').slice(0, 12);
+  return `man-${hash}`;
+}
+
+export function listCreatedEvents(store: PipelineStore): CreatedEvent[] {
+  return [...(store.createdEvents ?? [])].sort((a, b) =>
+    b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+  );
+}
+
+export function createEvent(
+  store: PipelineStore,
+  data: Omit<CreatedEvent, 'id' | 'createdAt' | 'updatedAt'>,
+): { store: PipelineStore; event: CreatedEvent } | null {
+  const id = createdEventIdFromUrl(data.sourceUrl);
+  if ((store.createdEvents ?? []).some((e) => e.id === id)) return null;
+
+  const now = new Date().toISOString();
+  const event: CreatedEvent = { ...data, id, createdAt: now };
+  return {
+    store: {
+      ...store,
+      updatedAt: now,
+      createdEvents: [event, ...(store.createdEvents ?? [])],
+    },
+    event,
+  };
+}
+
+export function patchCreatedEvent(
+  store: PipelineStore,
+  id: string,
+  patch: Partial<Omit<CreatedEvent, 'id' | 'createdAt'>>,
+): PipelineStore | null {
+  const list = store.createdEvents ?? [];
+  if (!list.some((e) => e.id === id)) return null;
+
+  const now = new Date().toISOString();
+  return {
+    ...store,
+    updatedAt: now,
+    createdEvents: list.map((e) =>
+      e.id === id ? { ...e, ...patch, id, createdAt: e.createdAt, updatedAt: now } : e,
+    ),
+  };
+}
+
+export function deleteCreatedEvent(store: PipelineStore, id: string): PipelineStore | null {
+  const list = store.createdEvents ?? [];
+  if (!list.some((e) => e.id === id)) return null;
+
+  return {
+    ...store,
+    updatedAt: new Date().toISOString(),
+    createdEvents: list.filter((e) => e.id !== id),
+  };
 }
 
 function capSignals(signals: AutoSignal[]): AutoSignal[] {

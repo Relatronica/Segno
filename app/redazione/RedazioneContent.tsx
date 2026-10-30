@@ -13,6 +13,8 @@ import {
   EyeOff,
   Loader2,
   LogOut,
+  Pencil,
+  Plus,
   RefreshCw,
   Save,
   Trash2,
@@ -25,12 +27,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
+  ALL_LENSES,
   ALL_SENTIMENT_TAGS,
+  LENS_META,
+  lobbyActors,
   lobbyPeople,
+  type EventType,
+  type Lens,
   type LocaleText,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
-import type { AutoSignal, CuratedPin, SentimentCandidate } from '@/lib/pipeline/types';
+import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
+import type {
+  AutoSignal,
+  CreatedEvent,
+  CuratedPin,
+  SentimentCandidate,
+} from '@/lib/pipeline/types';
 import { SignalDesk } from '@/app/redazione/SignalDesk';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +53,7 @@ type Counts = {
   published: number;
   rejected: number;
   signals?: number;
+  manual?: number;
 };
 
 type Desk = 'queue' | 'auto' | 'live' | 'rejected';
@@ -53,6 +67,29 @@ type CuratedDraft = {
   personId?: string;
 };
 
+/** Everything the hand-written pin form edits, in flat strings. */
+type ManualDraft = {
+  id?: string;
+  date: string;
+  lens: Lens;
+  type: EventType;
+  titleIt: string;
+  titleEn: string;
+  summaryIt: string;
+  summaryEn: string;
+  detailIt: string;
+  detailEn: string;
+  quoteIt: string;
+  quoteEn: string;
+  sentiment: SentimentTag | '';
+  personId: string;
+  actorId: string;
+  amountEur: string;
+  sourceLabelIt: string;
+  sourceLabelEn: string;
+  sourceUrl: string;
+};
+
 type QueueRow = {
   kind: 'pipeline';
   id: string;
@@ -62,7 +99,8 @@ type QueueRow = {
 
 type TimelineRow =
   | QueueRow
-  | { kind: 'curated'; id: string; date: string; pin: CuratedPin };
+  | { kind: 'curated'; id: string; date: string; pin: CuratedPin }
+  | { kind: 'manual'; id: string; date: string; event: CreatedEvent };
 
 const PRESENT_PIN_ID = 'e-2026-09-today';
 
@@ -73,6 +111,53 @@ function yesterdayIso(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return localIsoDate(d);
+}
+
+function emptyManualDraft(): ManualDraft {
+  return {
+    date: localIsoDate(),
+    lens: 'policy',
+    type: 'milestone',
+    titleIt: '',
+    titleEn: '',
+    summaryIt: '',
+    summaryEn: '',
+    detailIt: '',
+    detailEn: '',
+    quoteIt: '',
+    quoteEn: '',
+    sentiment: '',
+    personId: '',
+    actorId: '',
+    amountEur: '',
+    sourceLabelIt: '',
+    sourceLabelEn: '',
+    sourceUrl: '',
+  };
+}
+
+function draftFromEvent(e: CreatedEvent): ManualDraft {
+  return {
+    id: e.id,
+    date: e.date,
+    lens: e.lens,
+    type: e.type,
+    titleIt: e.title.it,
+    titleEn: e.title.en,
+    summaryIt: e.summary.it,
+    summaryEn: e.summary.en,
+    detailIt: e.detail?.it ?? '',
+    detailEn: e.detail?.en ?? '',
+    quoteIt: e.quote?.it ?? '',
+    quoteEn: e.quote?.en ?? '',
+    sentiment: e.sentiment ?? '',
+    personId: e.personId ?? '',
+    actorId: e.actorId ?? '',
+    amountEur: e.amountEur ? String(e.amountEur) : '',
+    sourceLabelIt: e.sourceLabel.it,
+    sourceLabelEn: e.sourceLabel.en,
+    sourceUrl: e.sourceUrl,
+  };
 }
 
 function groupByDay<T extends { date: string }>(rows: T[]): { date: string; items: T[] }[] {
@@ -100,6 +185,10 @@ export default function RedazioneContent() {
   const [candidates, setCandidates] = useState<SentimentCandidate[]>([]);
   const [signals, setSignals] = useState<AutoSignal[]>([]);
   const [curated, setCurated] = useState<CuratedPin[]>([]);
+  const [manual, setManual] = useState<CreatedEvent[]>([]);
+  const [manualDraft, setManualDraft] = useState<ManualDraft | null>(null);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [confirmManualDelete, setConfirmManualDelete] = useState(false);
   const [counts, setCounts] = useState<Counts | null>(null);
   const [filter, setFilter] = useState<Desk>('queue');
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
@@ -128,11 +217,13 @@ export default function RedazioneContent() {
         candidates: SentimentCandidate[];
         signals?: AutoSignal[];
         curated?: CuratedPin[];
+        manual?: CreatedEvent[];
         counts: Counts;
       };
       setCandidates(data.candidates);
       setSignals(data.signals ?? []);
       setCurated(data.curated ?? []);
+      setManual(data.manual ?? []);
       setCounts(data.counts);
       setAuthed(true);
     } catch {
@@ -169,6 +260,8 @@ export default function RedazioneContent() {
     setCandidates([]);
     setSignals([]);
     setCurated([]);
+    setManual([]);
+    setManualDraft(null);
     setSelected([]);
   };
 
@@ -278,6 +371,89 @@ export default function RedazioneContent() {
     await load();
   };
 
+  const saveManual = async () => {
+    if (!manualDraft) return;
+    const draft = manualDraft;
+    if (!/^https?:\/\/\S+$/i.test(draft.sourceUrl.trim())) {
+      setMessage(t.redazione.sourceRequired);
+      return;
+    }
+    if (!draft.titleIt.trim() || !draft.summaryIt.trim()) {
+      setMessage(t.redazione.requiredFields);
+      return;
+    }
+    if (draft.sentiment && !draft.quoteIt.trim() && !draft.quoteEn.trim()) {
+      setMessage(t.redazione.sentimentNeedsQuote);
+      return;
+    }
+
+    setMessage(null);
+    setManualSaving(true);
+    const res = await fetch('/api/pipeline/events', {
+      method: draft.id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: draft.id,
+        date: draft.date,
+        lens: draft.lens,
+        type: draft.type,
+        title: { it: draft.titleIt, en: draft.titleEn },
+        summary: { it: draft.summaryIt, en: draft.summaryEn },
+        detail: { it: draft.detailIt, en: draft.detailEn },
+        quote: { it: draft.quoteIt, en: draft.quoteEn },
+        sentiment: draft.sentiment || null,
+        personId: draft.personId,
+        actorId: draft.actorId,
+        amountEur: draft.amountEur,
+        sourceLabel: { it: draft.sourceLabelIt, en: draft.sourceLabelEn },
+        sourceUrl: draft.sourceUrl.trim(),
+      }),
+    });
+    setManualSaving(false);
+
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+      const code = payload?.error;
+      setMessage(
+        code === 'duplicate_source'
+          ? t.redazione.duplicateSource
+          : code === 'sentiment_needs_quote'
+            ? t.redazione.sentimentNeedsQuote
+            : draft.id
+              ? t.redazione.saveError
+              : t.redazione.createError,
+      );
+      return;
+    }
+
+    setManualDraft(null);
+    setMessage(t.redazione.saved);
+    await load();
+  };
+
+  const deleteManual = async (id: string) => {
+    if (!confirmManualDelete) {
+      setConfirmManualDelete(true);
+      return;
+    }
+    setManualSaving(true);
+    setMessage(null);
+    const res = await fetch('/api/pipeline/events', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setManualSaving(false);
+    setConfirmManualDelete(false);
+    if (!res.ok) {
+      setMessage(t.redazione.saveError);
+      return;
+    }
+    setManualDraft((current) => (current?.id === id ? null : current));
+    setMessage(t.redazione.deletedPin);
+    await load();
+  };
+
   const bulkReject = async () => {
     if (selected.length === 0) return;
     setBulkBusy(true);
@@ -349,8 +525,16 @@ export default function RedazioneContent() {
       date: curatedDrafts[pin.event.id]?.date ?? pin.event.date,
       pin,
     }));
-    return [...curatedRows, ...published].sort((a, b) => b.date.localeCompare(a.date));
-  }, [candidates, curated, drafts, curatedDrafts]);
+    const manualRows: TimelineRow[] = manual.map((event) => ({
+      kind: 'manual' as const,
+      id: event.id,
+      date: event.date,
+      event,
+    }));
+    return [...curatedRows, ...manualRows, ...published].sort((a, b) =>
+      b.date.localeCompare(a.date),
+    );
+  }, [candidates, curated, manual, drafts, curatedDrafts]);
 
   const rows: TimelineRow[] = useMemo(() => {
     if (filter === 'live') return timelineRows;
@@ -415,8 +599,8 @@ export default function RedazioneContent() {
     ? counts.pending + counts.approved
     : candidates.filter((c) => c.status === 'pending' || c.status === 'approved').length;
   const liveCount = counts
-    ? counts.published + curated.length
-    : candidates.filter((c) => c.status === 'published').length + curated.length;
+    ? counts.published + curated.length + manual.length
+    : candidates.filter((c) => c.status === 'published').length + curated.length + manual.length;
   const rejectedCount = counts?.rejected ?? candidates.filter((c) => c.status === 'rejected').length;
   const signalsCount = counts?.signals ?? signals.length;
 
@@ -474,6 +658,17 @@ export default function RedazioneContent() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setMessage(null);
+              setConfirmManualDelete(false);
+              setManualDraft(emptyManualDraft());
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            {t.redazione.newPin}
+          </Button>
           <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
             {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {t.redazione.runDiscover}
@@ -484,6 +679,22 @@ export default function RedazioneContent() {
           </Button>
         </div>
       </div>
+
+      {manualDraft && (
+        <ManualForm
+          draft={manualDraft}
+          locale={locale}
+          saving={manualSaving}
+          confirmDelete={confirmManualDelete}
+          onChange={(next) => setManualDraft((current) => ({ ...current!, ...next }))}
+          onSave={() => void saveManual()}
+          onCancel={() => {
+            setManualDraft(null);
+            setConfirmManualDelete(false);
+          }}
+          onDelete={(id) => void deleteManual(id)}
+        />
+      )}
 
       <nav
         className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
@@ -605,25 +816,42 @@ export default function RedazioneContent() {
 
                     {open && (
                       <div className="space-y-3 border-t border-border/50 px-3 py-3">
-                        {group.items.map((row) =>
-                          row.kind === 'pipeline' ? (
-                            <CandidateCard
-                              key={row.id}
-                              c={row.candidate}
-                              draft={drafts[row.id] || {}}
-                              saving={savingId === row.id}
-                              selected={selected.includes(row.id)}
-                              expanded={expandedId === row.id}
-                              onToggleSelect={() => toggleSelected(row.id)}
-                              onToggleExpand={() =>
-                                setExpandedId((current) => (current === row.id ? null : row.id))
-                              }
-                              onDraft={(next) =>
-                                setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
-                              }
-                              onPatch={patch}
-                            />
-                          ) : (
+                        {group.items.map((row) => {
+                          if (row.kind === 'pipeline') {
+                            return (
+                              <CandidateCard
+                                key={row.id}
+                                c={row.candidate}
+                                draft={drafts[row.id] || {}}
+                                saving={savingId === row.id}
+                                selected={selected.includes(row.id)}
+                                expanded={expandedId === row.id}
+                                onToggleSelect={() => toggleSelected(row.id)}
+                                onToggleExpand={() =>
+                                  setExpandedId((current) => (current === row.id ? null : row.id))
+                                }
+                                onDraft={(next) =>
+                                  setDrafts((d) => ({ ...d, [row.id]: { ...d[row.id], ...next } }))
+                                }
+                                onPatch={patch}
+                              />
+                            );
+                          }
+                          if (row.kind === 'manual') {
+                            return (
+                              <ManualRow
+                                key={row.id}
+                                event={row.event}
+                                locale={locale}
+                                onEdit={() => {
+                                  setMessage(null);
+                                  setConfirmManualDelete(false);
+                                  setManualDraft(draftFromEvent(row.event));
+                                }}
+                              />
+                            );
+                          }
+                          return (
                             <CuratedCard
                               key={row.id}
                               pin={row.pin}
@@ -642,8 +870,8 @@ export default function RedazioneContent() {
                               }
                               onSave={saveCurated}
                             />
-                          ),
-                        )}
+                          );
+                        })}
                       </div>
                     )}
                   </section>
@@ -1162,5 +1390,328 @@ function CuratedCard({
         </div>
       )}
     </article>
+  );
+}
+
+function ManualRow({
+  event,
+  locale,
+  onEdit,
+}: {
+  event: CreatedEvent;
+  locale: 'it' | 'en';
+  onEdit: () => void;
+}) {
+  const t = useT();
+  return (
+    <article className="border border-border/60 bg-card/40 p-4 sm:p-5">
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {event.date} · {event.personId || '—'} · {t.redazione.manual} ·{' '}
+            {LENS_META[event.lens].label[locale]} · {t.trasparenza.types[event.type]}
+          </p>
+          <h3 className="mt-1 text-base font-semibold tracking-tight">{event.title[locale]}</h3>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.summary[locale]}</p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <a
+            href={event.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-mark hover:underline"
+          >
+            {t.redazione.openSource}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
+            <Pencil className="h-4 w-4" />
+            {t.redazione.expand}
+          </Button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ManualForm({
+  draft,
+  locale,
+  saving,
+  confirmDelete,
+  onChange,
+  onSave,
+  onCancel,
+  onDelete,
+}: {
+  draft: ManualDraft;
+  locale: 'it' | 'en';
+  saving: boolean;
+  confirmDelete: boolean;
+  onChange: (next: Partial<ManualDraft>) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onDelete: (id: string) => void;
+}) {
+  const t = useT();
+  const hasQuote = Boolean(draft.quoteIt.trim() || draft.quoteEn.trim());
+
+  return (
+    <section className="mt-8 border border-foreground/30 bg-card/40 p-4 sm:p-6">
+      <h2 className="font-serif text-xl font-semibold tracking-tight">
+        {draft.id ? t.redazione.editPin : t.redazione.newPin}
+      </h2>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="m-date">{t.redazione.date}</Label>
+          <Input
+            id="m-date"
+            type="date"
+            max={localIsoDate()}
+            value={draft.date}
+            onChange={(e) => onChange({ date: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-lens">{t.redazione.lens}</Label>
+          <select
+            id="m-lens"
+            value={draft.lens}
+            onChange={(e) => onChange({ lens: e.target.value as Lens })}
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          >
+            {ALL_LENSES.map((lens) => (
+              <option key={lens} value={lens}>
+                {LENS_META[lens].label[locale]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-type">{t.redazione.eventType}</Label>
+          <select
+            id="m-type"
+            value={draft.type}
+            onChange={(e) => onChange({ type: e.target.value as EventType })}
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          >
+            {ALL_EVENT_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t.trasparenza.types[type]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-title-it">{t.redazione.titleIt}</Label>
+          <Input
+            id="m-title-it"
+            value={draft.titleIt}
+            onChange={(e) => onChange({ titleIt: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-title-en">{t.redazione.titleEn}</Label>
+          <Input
+            id="m-title-en"
+            value={draft.titleEn}
+            onChange={(e) => onChange({ titleEn: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-summary-it">{t.redazione.summaryIt}</Label>
+          <textarea
+            id="m-summary-it"
+            rows={3}
+            value={draft.summaryIt}
+            onChange={(e) => onChange({ summaryIt: e.target.value })}
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-summary-en">{t.redazione.summaryEn}</Label>
+          <textarea
+            id="m-summary-en"
+            rows={3}
+            value={draft.summaryEn}
+            onChange={(e) => onChange({ summaryEn: e.target.value })}
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-detail-it">{t.redazione.detailIt}</Label>
+          <textarea
+            id="m-detail-it"
+            rows={2}
+            value={draft.detailIt}
+            onChange={(e) => onChange({ detailIt: e.target.value })}
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-detail-en">{t.redazione.detailEn}</Label>
+          <textarea
+            id="m-detail-en"
+            rows={2}
+            value={draft.detailEn}
+            onChange={(e) => onChange({ detailEn: e.target.value })}
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-quote-it">{t.redazione.quoteIt}</Label>
+          <textarea
+            id="m-quote-it"
+            rows={3}
+            value={draft.quoteIt}
+            onChange={(e) => onChange({ quoteIt: e.target.value })}
+            className={fieldClass}
+            placeholder={t.redazione.quotePlaceholder}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-quote-en">{t.redazione.quoteEn}</Label>
+          <textarea
+            id="m-quote-en"
+            rows={3}
+            value={draft.quoteEn}
+            onChange={(e) => onChange({ quoteEn: e.target.value })}
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="m-person">{t.redazione.person}</Label>
+          <select
+            id="m-person"
+            value={draft.personId}
+            onChange={(e) => onChange({ personId: e.target.value })}
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          >
+            <option value="">{t.redazione.personNone}</option>
+            {lobbyPeople.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-actor">{t.redazione.actor}</Label>
+          <select
+            id="m-actor"
+            value={draft.actorId}
+            onChange={(e) => onChange({ actorId: e.target.value })}
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          >
+            <option value="">{t.redazione.actorNone}</option>
+            {lobbyActors.map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-sentiment">{t.redazione.sentiment}</Label>
+          <select
+            id="m-sentiment"
+            value={draft.sentiment}
+            disabled={!hasQuote}
+            onChange={(e) =>
+              onChange({ sentiment: (e.target.value || '') as SentimentTag | '' })
+            }
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm disabled:opacity-50"
+          >
+            <option value="">{t.redazione.sentimentNone}</option>
+            {ALL_SENTIMENT_TAGS.map((tag) => (
+              <option key={tag} value={tag}>
+                {t.trasparenza.sentiments[tag]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-amount">{t.redazione.amount}</Label>
+          <Input
+            id="m-amount"
+            type="number"
+            min={0}
+            step={1}
+            value={draft.amountEur}
+            onChange={(e) => onChange({ amountEur: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-source">{t.redazione.sourceUrl}</Label>
+          <Input
+            id="m-source"
+            type="url"
+            value={draft.sourceUrl}
+            onChange={(e) => onChange({ sourceUrl: e.target.value })}
+            placeholder="https://…"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="m-src-it">{t.redazione.sourceLabelIt}</Label>
+          <Input
+            id="m-src-it"
+            value={draft.sourceLabelIt}
+            onChange={(e) => onChange({ sourceLabelIt: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-src-en">{t.redazione.sourceLabelEn}</Label>
+          <Input
+            id="m-src-en"
+            value={draft.sourceLabelEn}
+            onChange={(e) => onChange({ sourceLabelEn: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Button type="button" onClick={onSave} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {draft.id ? t.redazione.save : t.redazione.createPin}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
+          {t.redazione.cancel}
+        </Button>
+        {draft.id && (
+          <Button
+            type="button"
+            variant={confirmDelete ? 'destructive' : 'outline'}
+            className="ml-auto"
+            onClick={() => onDelete(draft.id as string)}
+            disabled={saving}
+          >
+            <Trash2 className="h-4 w-4" />
+            {confirmDelete ? t.redazione.deletePinConfirm : t.redazione.deletePin}
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }

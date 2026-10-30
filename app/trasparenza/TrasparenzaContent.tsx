@@ -110,6 +110,7 @@ export default function TrasparenzaContent() {
 
   const [themeId] = useState(unifiedTheme.id);
   const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
+  const [createdEvents, setCreatedEvents] = useState<TimelineEvent[]>([]);
   const [autoSignals, setAutoSignals] = useState<AutoSignal[]>([]);
   const [edits, setEdits] = useState<Record<string, TimelineEventEdit>>({});
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -125,6 +126,7 @@ export default function TrasparenzaContent() {
           (
             data: {
               events?: TimelineEvent[];
+              createdEvents?: TimelineEvent[];
               signals?: AutoSignal[];
               edits?: Record<string, TimelineEventEdit>;
               hiddenIds?: string[];
@@ -132,6 +134,7 @@ export default function TrasparenzaContent() {
           ) => {
             if (cancelled || !data) return;
             setPipelineEvents(data.events ?? []);
+            setCreatedEvents(data.createdEvents ?? []);
             setAutoSignals(data.signals ?? []);
             setEdits(data.edits ?? {});
             setHiddenIds(data.hiddenIds ?? []);
@@ -167,8 +170,12 @@ export default function TrasparenzaContent() {
       if (hidden.has(e.id)) continue;
       byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
     }
+    for (const e of createdEvents) {
+      if (hidden.has(e.id)) continue;
+      byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
+    }
     return { ...base, events: [...byId.values()] };
-  }, [themeId, pipelineEvents, edits, hiddenIds]);
+  }, [themeId, pipelineEvents, createdEvents, edits, hiddenIds]);
 
   const allYears = useMemo(() => {
     const years = [

@@ -11,7 +11,11 @@ import {
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalsForPublic, signalToTimelineEvent } from '@/lib/pipeline/signals';
 import { loadPipelineStore } from '@/lib/pipeline/store';
-import { candidateToTimelineEvent, type PipelineStore } from '@/lib/pipeline/types';
+import {
+  candidateToTimelineEvent,
+  createdToTimelineEvent,
+  type PipelineStore,
+} from '@/lib/pipeline/types';
 import { PRESENT_PIN_ID } from './constants';
 
 export type EventOrigin = 'editorial' | 'auto';
@@ -77,10 +81,12 @@ function curatedEvents(store: PipelineStore): TimelineEvent[] {
 }
 
 function publishedEvents(store: PipelineStore): TimelineEvent[] {
-  return store.candidates
+  const published = store.candidates
     .filter((candidate) => candidate.status === 'published')
     .map(candidateToTimelineEvent)
     .filter((event): event is TimelineEvent => event !== null);
+  const manual = (store.createdEvents ?? []).map(createdToTimelineEvent);
+  return [...published, ...manual];
 }
 
 function autoEvents(store: PipelineStore): TimelineEvent[] {
