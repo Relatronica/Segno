@@ -575,7 +575,26 @@ export default function TrasparenzaContent() {
     setSelectedLenses([...ALL_LENSES]);
     setCollapsedLenses([...DEFAULT_COLLAPSED_LENSES]);
     setSelectedThesis('all');
-    setQuery('');
+  };
+
+  /**
+   * Search sits in the panel header, so the toolbar only opens the panel and
+   * hands the caret over. Both panels stay mounted (desktop + mobile): focus
+   * the visible field, retrying while the panel animates in.
+   */
+  const openSearch = () => {
+    setPanelOpen(true);
+    const focusField = (attempt: number) => {
+      const field = [...document.querySelectorAll<HTMLInputElement>('[data-search-field]')].find(
+        (el) => el.offsetParent !== null,
+      );
+      if (field) {
+        field.select();
+        return;
+      }
+      if (attempt < 12) requestAnimationFrame(() => focusField(attempt + 1));
+    };
+    requestAnimationFrame(() => focusField(0));
   };
 
   const typeLabel = (type: EventType) => t.trasparenza.types[type];
@@ -705,60 +724,97 @@ export default function TrasparenzaContent() {
    */
   const renderPanel = (className: string) => (
     <div className={`flex h-full min-h-0 flex-col ${className}`}>
-      <div className="flex shrink-0 items-center gap-2 border-b border-border/50 px-3 py-2">
-        <div
-          role="tablist"
-          aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
-          className="inline-flex h-9 shrink-0 items-center rounded-md border border-border/50 p-0.5"
-        >
-          {(['filters', 'feed'] as const).map((tab) => (
+      <div className="shrink-0 border-b border-border/50">
+        <div className="flex items-center gap-2 px-3 pb-1.5 pt-2">
+          <div
+            role="tablist"
+            aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
+            className="inline-flex h-9 shrink-0 items-center rounded-md border border-border/50 p-0.5"
+          >
+            {(['filters', 'feed'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={panelTab === tab}
+                onClick={() => setPanelTab(tab)}
+                className={`inline-flex h-full items-center gap-1.5 rounded px-2.5 text-[13px] font-medium transition-colors ${
+                  panelTab === tab
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
+                {tab === 'filters' && activeFilterCount > 0 && (
+                  <span
+                    className={cn(
+                      'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
+                      panelTab === 'filters'
+                        ? 'bg-background/25 text-background'
+                        : 'bg-mark text-background',
+                    )}
+                  >
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="ml-auto flex items-center gap-1">
+            {panelTab === 'filters' && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex h-8 items-center gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <RotateCcw className="h-3 w-3" />
+                {t.trasparenza.resetFilters}
+              </button>
+            )}
+
             <button
-              key={tab}
               type="button"
-              role="tab"
-              aria-selected={panelTab === tab}
-              onClick={() => setPanelTab(tab)}
-              className={`inline-flex h-full items-center gap-1.5 rounded px-2.5 text-[13px] font-medium transition-colors ${
-                panelTab === tab
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              onClick={() => setPanelOpen(false)}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={t.trasparenza.close}
             >
-              {tab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
-              {tab === 'filters' && activeFilterCount > 0 && (
-                <span
-                  className={cn(
-                    'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
-                    panelTab === 'filters' ? 'bg-background/25 text-background' : 'bg-mark text-background',
-                  )}
-                >
-                  {activeFilterCount}
-                </span>
-              )}
+              <X className="h-4 w-4" />
             </button>
-          ))}
+          </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
-          {panelTab === 'filters' && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex h-8 items-center gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <RotateCcw className="h-3 w-3" />
-              {t.trasparenza.resetFilters}
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setPanelOpen(false)}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label={t.trasparenza.close}
-          >
-            <X className="h-4 w-4" />
-          </button>
+        {/* Global search: trims the lanes and the list alike, hence the shared header. */}
+        <div className="px-3 pb-2">
+          <div className="relative" title={t.trasparenza.searchHint}>
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70"
+              aria-hidden
+            />
+            <input
+              data-search-field
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                /* Results live in the chronology: never type into a dead end. */
+                if (panelTab === 'filters') setPanelTab('feed');
+              }}
+              placeholder={t.trasparenza.searchPlaceholder}
+              aria-label={t.trasparenza.searchLabel}
+              className="h-9 w-full rounded-md border border-border/50 bg-background pl-8 pr-8 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/25 [&::-webkit-search-cancel-button]:appearance-none"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label={t.trasparenza.searchClear}
+                className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -858,76 +914,65 @@ export default function TrasparenzaContent() {
             className="pointer-events-none absolute inset-x-0 z-30 px-2.5 sm:px-4"
             style={{ top: CHROME_TOP }}
           >
-            <div className="pointer-events-auto flex items-center gap-1.5">
-              <div className="relative min-w-0 flex-1 sm:max-w-sm" title={t.trasparenza.searchHint}>
-                <Search
-                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70"
-                  aria-hidden
-                />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t.trasparenza.searchPlaceholder}
-                  aria-label={t.trasparenza.searchLabel}
-                  className="h-10 w-full rounded-md border border-border/50 bg-background/80 pl-8 pr-8 text-sm text-foreground outline-none backdrop-blur-md transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/25 focus:bg-background [&::-webkit-search-cancel-button]:appearance-none"
-                />
+            <div className="pointer-events-auto ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                onClick={openSearch}
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground/80 transition-colors hover:bg-background/70 hover:text-foreground"
+                aria-label={t.trasparenza.searchLabel}
+                title={t.trasparenza.searchHint}
+              >
+                <Search className="h-4 w-4" />
                 {query && (
-                  <button
-                    type="button"
-                    onClick={() => setQuery('')}
-                    aria-label={t.trasparenza.searchClear}
-                    className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                  <span
+                    aria-hidden
+                    className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-mark"
+                  />
                 )}
-              </div>
+              </button>
 
-              <div className="ml-auto flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveId(null);
-                    setScrubId(null);
-                    setPresentFocusToken((n) => n + 1);
-                  }}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground/80 transition-colors hover:bg-background/70 hover:text-foreground"
-                  aria-label={t.trasparenza.jumpToToday}
-                  title={t.trasparenza.jumpToToday}
-                >
-                  <Calendar className="h-4 w-4" />
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveId(null);
+                  setScrubId(null);
+                  setPresentFocusToken((n) => n + 1);
+                }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground/80 transition-colors hover:bg-background/70 hover:text-foreground"
+                aria-label={t.trasparenza.jumpToToday}
+                title={t.trasparenza.jumpToToday}
+              >
+                <Calendar className="h-4 w-4" />
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setPanelOpen((o) => !o)}
-                  className={cn(
-                    'inline-flex h-9 items-center gap-2 rounded-md border px-2.5 text-[13px] font-medium transition-colors',
-                    panelOpen
-                      ? 'border-foreground/20 bg-foreground text-background'
-                      : 'border-border/50 bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground',
-                  )}
-                  aria-expanded={panelOpen}
-                  aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
-                  title={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
-                >
-                  <PanelRight className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {panelTab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
+              <button
+                type="button"
+                onClick={() => setPanelOpen((o) => !o)}
+                className={cn(
+                  'inline-flex h-9 items-center gap-2 rounded-md border px-2.5 text-[13px] font-medium transition-colors',
+                  panelOpen
+                    ? 'border-foreground/20 bg-foreground text-background'
+                    : 'border-border/50 bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground',
+                )}
+                aria-expanded={panelOpen}
+                aria-label={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
+                title={`${t.trasparenza.filterBy} · ${t.trasparenza.feedTitle}`}
+              >
+                <PanelRight className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {panelTab === 'filters' ? t.trasparenza.filterBy : t.trasparenza.feedTitle}
+                </span>
+                {activeFilterCount > 0 && (
+                  <span
+                    className={cn(
+                      'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
+                      panelOpen ? 'bg-background/25 text-background' : 'bg-mark text-background',
+                    )}
+                  >
+                    {activeFilterCount}
                   </span>
-                  {activeFilterCount > 0 && (
-                    <span
-                      className={cn(
-                        'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
-                        panelOpen ? 'bg-background/25 text-background' : 'bg-mark text-background',
-                      )}
-                    >
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-              </div>
+                )}
+              </button>
             </div>
           </div>
         </div>
