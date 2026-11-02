@@ -7,12 +7,14 @@ import {
   formatEventDate,
   lensOf,
   LENS_META,
+  MODALITY_META,
+  orderedModalities,
   type LobbyPerson,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
 import type { EventType, Lens, SentimentTag } from '@/lib/data/trasparenza';
 import { localIsoDate, offsetIsoDate } from '@/lib/dates';
-import { EVENT_META, SENTIMENT_META } from './meta';
+import { EVENT_META, MODALITY_ICON, SENTIMENT_META } from './meta';
 import { LabMark, hasLabMark } from './LabMark';
 import { PersonAvatar } from './PersonAvatar';
 import { paths } from '@/lib/seo';
@@ -255,6 +257,9 @@ export function TimelineFeed({
                     const laneColor = LENS_META[lens].color;
                     const note = event.origin === 'auto' ? autoNote : sentimentNote;
                     const body = event.detail?.[locale] ?? event.summary[locale];
+                    const modalities = event.modalities?.length
+                      ? orderedModalities(event.modalities)
+                      : null;
 
                     return (
                       <li
@@ -316,6 +321,27 @@ export function TimelineFeed({
                                   <span aria-hidden>·</span>
                                   <span className="truncate">{autoLabel}</span>
                                 </>
+                              )}
+                              {/* Glyphs only: the row is already a line of
+                                  words, and the names repeat on hover. */}
+                              {modalities && (
+                                <span className="flex shrink-0 items-center gap-1 text-muted-foreground/60">
+                                  {modalities.map((modality) => {
+                                    const ModalityIcon = MODALITY_ICON[modality];
+                                    return (
+                                      <ModalityIcon
+                                        key={modality}
+                                        className="h-3 w-3"
+                                        aria-hidden
+                                      />
+                                    );
+                                  })}
+                                  <span className="sr-only">
+                                    {modalities
+                                      .map((modality) => MODALITY_META[modality].label[locale])
+                                      .join(', ')}
+                                  </span>
+                                </span>
                               )}
                               {event.sentiment && sentimentLabel && sentimentMeta && (
                                 <span

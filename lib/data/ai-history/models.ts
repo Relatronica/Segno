@@ -9,6 +9,13 @@ import type { TimelineEvent } from "../trasparenza";
  * - The date is the public announcement or release date, never a review date.
  * - No tone, no ranking, no "most powerful ever" unless the lab itself claims
  *   it and the claim is attributed.
+ * - `modalities` lists the channels the system reads and produces, as declared
+ *   or documented when it shipped: text, image, video, audio, code. It is the
+ *   interface, not the merit — a model can be excellent and still text-only.
+ *   `code` enters when the release declares code among the system's purposes,
+ *   not only when the model exists for code alone: how well it writes code is
+ *   measured in the capabilities lane, what it was shipped to do is recorded
+ *   here.
  */
 export const modelEvents: TimelineEvent[] = [
   {
@@ -19,6 +26,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI presents a 117M-parameter decoder-only Transformer: unsupervised generative pre-training, then per-task fine-tuning.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/language-unsupervised/",
+    modalities: ["text"],
   },
   {
     id: "h-2019-02-14-gpt-2", date: "2019-02-14", type: "milestone", lens: "models", actorId: "openai",
@@ -28,6 +36,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces GPT-2 (1.5B parameters) and releases only the small version, citing misuse risk.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/better-language-models/",
+    modalities: ["text"],
   },
   {
     id: "h-2020-05-28-gpt-3", date: "2020-05-28", type: "milestone", lens: "models", actorId: "openai",
@@ -37,6 +46,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI publishes GPT-3, 175B parameters, showing the model performs new tasks from a few prompt examples without fine-tuning.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/language-models-are-few-shot-learners/",
+    modalities: ["text"],
   },
   {
     id: "h-2021-01-05-dall-e", date: "2021-01-05", type: "milestone", lens: "models", actorId: "openai",
@@ -46,6 +56,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI shows DALL·E, a 12B-parameter GPT-3 variant that generates images from text descriptions.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/dall-e/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2021-08-10-codex", date: "2021-08-10", type: "milestone", lens: "models", actorId: "openai",
@@ -55,6 +66,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases Codex, a 12B-parameter model translating natural language into code and powering GitHub Copilot.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/openai-codex/",
+    modalities: ["text", "code"],
   },
   {
     id: "h-2022-04-04-palm", date: "2022-04-04", type: "milestone", lens: "models", actorId: "google",
@@ -64,6 +76,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces PaLM, a 540B-parameter dense model trained with the Pathways system.",
     },
     sourceLabel: { it: "Google AI Blog", en: "Google AI Blog" }, sourceUrl: "https://ai.googleblog.com/2022/04/pathways-language-model-palm-scaling-to.html",
+    modalities: ["text"],
   },
   {
     id: "h-2022-04-06-dall-e-2", date: "2022-04-06", type: "milestone", lens: "models", actorId: "openai",
@@ -73,6 +86,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces DALL·E 2, text-to-image generation at 1024×1024, with initially limited access.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/dall-e-2/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2022-08-22-stable-diffusion", date: "2022-08-22", type: "milestone", lens: "models", actorId: "stability",
@@ -82,6 +96,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Stability AI publishes Stable Diffusion weights under OpenRAIL-M, making image generation runnable locally.",
     },
     sourceLabel: { it: "Stability AI", en: "Stability AI" }, sourceUrl: "https://stability.ai/blog/stable-diffusion-public-release",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2022-09-21-whisper", date: "2022-09-21", type: "milestone", lens: "models", actorId: "openai",
@@ -91,6 +106,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI open-sources Whisper, a speech recognition model trained on 680,000 hours of multilingual audio.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/whisper/",
+    modalities: ["text", "audio"],
   },
   {
     id: "h-2022-11-30-chatgpt", date: "2022-11-30", type: "milestone", lens: "models", actorId: "openai",
@@ -100,6 +116,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI opens ChatGPT as a free research preview: a conversational interface over a GPT-3.5 family model.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/chatgpt/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-02-06-bard", date: "2023-02-06", type: "milestone", lens: "models", actorId: "google",
@@ -109,6 +126,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Bard, an experimental conversational service built on a lightweight LaMDA version.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/ai/bard-google-ai-search-updates/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-02-07-bing-copilot", date: "2023-02-07", type: "milestone", lens: "models", actorId: "microsoft",
@@ -118,6 +136,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Microsoft previews Bing and Edge with a generative assistant, presented as a copilot for the web.",
     },
     sourceLabel: { it: "Microsoft", en: "Microsoft" }, sourceUrl: "https://blogs.microsoft.com/blog/2023/02/07/reinventing-search-with-a-new-ai-powered-bing-and-edge-your-copilot-for-the-web/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-02-24-llama-1", date: "2023-02-24", type: "milestone", lens: "models", actorId: "meta",
@@ -127,6 +146,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta gives researchers a foundation model family up to 65B parameters, under a research-only licence.",
     },
     sourceLabel: { it: "Meta AI", en: "Meta AI" }, sourceUrl: "https://ai.meta.com/blog/large-language-model-llama-meta-ai/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-03-14-claude-1", date: "2023-03-14", type: "milestone", lens: "models", actorId: "anthropic",
@@ -136,6 +156,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic launches Claude via chat and API, plus the lighter Claude Instant.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/introducing-claude",
+    modalities: ["text"],
   },
   {
     id: "h-2023-03-14-gpt-4", date: "2023-03-14", type: "milestone", lens: "models", actorId: "openai",
@@ -145,6 +166,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces GPT-4, a multimodal model accepting text and images; the technical report claims professional-level results on simulated exams.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-4/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2023-07-11-claude-2", date: "2023-07-11", type: "milestone", lens: "models", actorId: "anthropic",
@@ -154,6 +176,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic ships Claude 2 with longer responses and a public beta site, extending access to the US and UK.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-2",
+    modalities: ["text"],
   },
   {
     id: "h-2023-07-18-llama-2", date: "2023-07-18", type: "milestone", lens: "models", actorId: "meta",
@@ -163,6 +186,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta and Microsoft release Llama 2, an open family from 7B to 70B parameters, allowing commercial use.",
     },
     sourceLabel: { it: "Meta", en: "Meta" }, sourceUrl: "https://about.fb.com/news/2023/07/llama-2/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-09-20-dall-e-3", date: "2023-09-20", type: "milestone", lens: "models", actorId: "openai",
@@ -172,6 +196,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces DALL·E 3, built natively into ChatGPT with improved prompt fidelity.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/dall-e-3/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2023-09-27-mistral-7b", date: "2023-09-27", type: "milestone", lens: "models", actorId: "mistral",
@@ -181,6 +206,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Mistral AI releases Mistral 7B under Apache 2.0: a 7.3B-parameter model that beats Llama 2 13B on the company’s own benchmarks.",
     },
     sourceLabel: { it: "Mistral AI", en: "Mistral AI" }, sourceUrl: "https://mistral.ai/news/announcing-mistral-7b/",
+    modalities: ["text"],
   },
   {
     id: "h-2023-11-03-grok-1", date: "2023-11-03", type: "milestone", lens: "models", actorId: "xai",
@@ -190,6 +216,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "xAI announces Grok, its first conversational model, seeded to a small set of users in the United States.",
     },
     sourceLabel: { it: "xAI", en: "xAI" }, sourceUrl: "https://x.ai/blog/grok",
+    modalities: ["text"],
   },
   {
     id: "h-2023-12-06-gemini-1", date: "2023-12-06", type: "milestone", lens: "models", actorId: "google",
@@ -199,6 +226,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Gemini 1.0, its first natively multimodal family, in Ultra, Pro and Nano sizes.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/ai/google-gemini-ai/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2023-12-11-mixtral-8x7b", date: "2023-12-11", type: "milestone", lens: "models", actorId: "mistral",
@@ -208,6 +236,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Mistral AI releases Mixtral 8x7B under Apache 2.0: a sparse mixture-of-experts architecture beating Llama 2 70B on the company’s own benchmarks.",
     },
     sourceLabel: { it: "Mistral AI", en: "Mistral AI" }, sourceUrl: "https://mistral.ai/news/mixtral-of-experts",
+    modalities: ["text"],
   },
   {
     id: "h-2024-02-15-gemini-1-5", date: "2024-02-15", type: "milestone", lens: "models", actorId: "google",
@@ -217,6 +246,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Gemini 1.5 and a context window of up to one million tokens.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2024-02-15-sora-preview", date: "2024-02-15", type: "milestone", lens: "models", actorId: "openai",
@@ -226,6 +256,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI reveals Sora, a text-to-video model generating up to one minute of footage, as a research preview.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/video-generation-models-as-world-simulators/",
+    modalities: ["text", "video"],
   },
   {
     id: "h-2024-02-26-mistral-large", date: "2024-02-26", type: "milestone", lens: "models", actorId: "mistral",
@@ -235,6 +266,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Mistral AI launches Mistral Large and the Le Chat assistant, with distribution through Azure.",
     },
     sourceLabel: { it: "Mistral AI", en: "Mistral AI" }, sourceUrl: "https://mistral.ai/news/mistral-large/",
+    modalities: ["text"],
   },
   {
     id: "h-2024-03-04-claude-3", date: "2024-03-04", type: "milestone", lens: "models", actorId: "anthropic",
@@ -244,6 +276,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic announces Claude 3 in Haiku, Sonnet and Opus tiers, all multimodal with vision.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-3-family",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2024-04-18-llama-3", date: "2024-04-18", type: "milestone", lens: "models", actorId: "meta",
@@ -253,6 +286,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta releases Llama 3 in 8B and 70B sizes.",
     },
     sourceLabel: { it: "Meta AI", en: "Meta AI" }, sourceUrl: "https://ai.meta.com/blog/meta-llama-3/",
+    modalities: ["text"],
   },
   {
     id: "h-2024-05-13-gpt-4o", date: "2024-05-13", type: "milestone", lens: "models", actorId: "openai",
@@ -262,6 +296,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces GPT-4o: one model for audio, vision and text in real time, available without a subscription.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/hello-gpt-4o/",
+    modalities: ["text", "image", "audio"],
   },
   {
     id: "h-2024-05-14-veo-imagen-3", date: "2024-05-14", type: "milestone", lens: "models", actorId: "google",
@@ -271,6 +306,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Veo, a 1080p video generation model, together with the Imagen 3 image model.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/ai/google-generative-ai-veo-imagen-3/",
+    modalities: ["text", "image", "video"],
   },
   {
     id: "h-2024-06-20-claude-3-5-sonnet", date: "2024-06-20", type: "milestone", lens: "models", actorId: "anthropic",
@@ -280,6 +316,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic launches Claude 3.5 Sonnet, claimed to outperform Claude 3 Opus at lower cost, plus the Artifacts feature.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-3-5-sonnet",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2024-07-23-llama-3-1", date: "2024-07-23", type: "milestone", lens: "models", actorId: "meta",
@@ -289,6 +326,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta releases Llama 3.1 up to 405B parameters, with a 128K-token context.",
     },
     sourceLabel: { it: "Meta AI", en: "Meta AI" }, sourceUrl: "https://ai.meta.com/blog/meta-llama-3-1/",
+    modalities: ["text"],
   },
   {
     id: "h-2024-09-12-openai-o1", date: "2024-09-12", type: "milestone", lens: "models", actorId: "openai",
@@ -298,6 +336,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI introduces o1-preview and o1-mini, a model series that works through a reasoning chain before answering.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-openai-o1-preview/",
+    modalities: ["text"],
   },
   {
     id: "h-2024-10-22-claude-3-5-computer-use", date: "2024-10-22", type: "milestone", lens: "models", actorId: "anthropic",
@@ -307,6 +346,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic updates Claude 3.5 Sonnet, introduces Claude 3.5 Haiku and ships computer use experimentally, letting the model control cursor and keyboard.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/3-5-models-and-computer-use",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2024-12-09-sora-turbo", date: "2024-12-09", type: "milestone", lens: "models", actorId: "openai",
@@ -316,6 +356,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI makes Sora Turbo available at sora.com to ChatGPT Plus and Pro users in the US and most countries.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/sora-is-here/",
+    modalities: ["text", "video"],
   },
   {
     id: "h-2024-12-11-gemini-2", date: "2024-12-11", type: "milestone", lens: "models", actorId: "google",
@@ -325,6 +366,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google DeepMind introduces Gemini 2.0 Flash, with native image and audio output and tool use.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/google-deepmind/google-gemini-ai-update-december-2024/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2024-12-16-veo-2", date: "2024-12-16", type: "milestone", lens: "models", actorId: "google",
@@ -334,6 +376,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google DeepMind announces Veo 2, a video generation model up to 4K resolution with improved physical realism, alongside an updated Imagen 3.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/google-labs/video-image-generation-update-december-2024/",
+    modalities: ["text", "image", "video"],
   },
   {
     id: "h-2024-12-26-deepseek-v3", date: "2024-12-26", type: "milestone", lens: "models", actorId: "deepseek",
@@ -343,6 +386,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "DeepSeek releases V3: 671B parameters with a mixture-of-experts architecture, 37B active per token, open weights.",
     },
     sourceLabel: { it: "DeepSeek", en: "DeepSeek" }, sourceUrl: "https://www.deepseek.com/en/news/deepseek-v3/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-01-20-deepseek-r1", date: "2025-01-20", type: "milestone", lens: "models", actorId: "deepseek",
@@ -352,6 +396,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "DeepSeek publishes R1, an open-weights reasoning model under the MIT licence, claimed competitive with OpenAI o1.",
     },
     sourceLabel: { it: "DeepSeek", en: "DeepSeek" }, sourceUrl: "https://www.deepseek.com/en/news/deepseek-r1/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-01-23-operator", date: "2025-01-23", type: "milestone", lens: "models", actorId: "openai",
@@ -361,6 +406,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI previews Operator, an agent built on a Computer-Using Agent model that carries out web tasks through its own browser.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-operator/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-01-31-o3-mini", date: "2025-01-31", type: "milestone", lens: "models", actorId: "openai",
@@ -370,6 +416,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases o3-mini, the first reasoning model available to free ChatGPT users.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/openai-o3-mini/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-02-02-deep-research", date: "2025-02-02", type: "milestone", lens: "models", actorId: "openai",
@@ -379,6 +426,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases deep research, a mode powered by an o3 model tuned to run multi-step web research and return sourced reports.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-deep-research/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-02-17-grok-3", date: "2025-02-17", type: "milestone", lens: "models", actorId: "xai",
@@ -388,6 +436,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "xAI introduces Grok 3 and Grok 3 mini, trained on the Colossus cluster.",
     },
     sourceLabel: { it: "xAI", en: "xAI" }, sourceUrl: "https://x.ai/news/grok-3",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-02-24-claude-3-7-sonnet", date: "2025-02-24", type: "milestone", lens: "models", actorId: "anthropic",
@@ -397,6 +446,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic launches Claude 3.7 Sonnet, its first hybrid model with configurable extended thinking, alongside Claude Code.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-3-7-sonnet",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2025-02-27-gpt-4-5", date: "2025-02-27", type: "milestone", lens: "models", actorId: "openai",
@@ -406,6 +456,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases a research preview of GPT-4.5, its largest conversational model at the time.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-4-5/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-03-25-gemini-2-5-pro", date: "2025-03-25", type: "milestone", lens: "models", actorId: "google",
@@ -415,6 +466,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google DeepMind releases Gemini 2.5 Pro Experimental, a reasoning model claimed top of the LMArena leaderboard at launch.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2025-04-05-llama-4", date: "2025-04-05", type: "milestone", lens: "models", actorId: "meta",
@@ -424,6 +476,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta releases Llama 4 Scout and Maverick, multimodal mixture-of-experts models with up to 10M-token context.",
     },
     sourceLabel: { it: "Meta AI", en: "Meta AI" }, sourceUrl: "https://ai.meta.com/blog/llama-4-multimodal-intelligence/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-04-14-gpt-4-1", date: "2025-04-14", type: "milestone", lens: "models", actorId: "openai",
@@ -433,6 +486,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI launches GPT-4.1, mini and nano via API only, with up to a 1M-token context.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-4-1/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-04-16-o3", date: "2025-04-16", type: "milestone", lens: "models", actorId: "openai",
@@ -442,6 +496,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases o3 and o4-mini, with full tool access inside their answers.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-o3-and-o4-mini/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-04-29-qwen3", date: "2025-04-29", type: "milestone", lens: "models", actorId: "qwen",
@@ -451,6 +506,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Alibaba releases Qwen3, an open-weights family that unifies reasoning and fast response in one model, with dense and mixture-of-experts variants.",
     },
     sourceLabel: { it: "Qwen", en: "Qwen" }, sourceUrl: "https://qwenlm.github.io/blog/qwen3/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-05-20-veo-3", date: "2025-05-20", type: "milestone", lens: "models", actorId: "google",
@@ -460,6 +516,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Veo 3 at I/O: it generates video with synchronised audio and dialogue.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/products/generative-media-models-io-2025/",
+    modalities: ["text", "video", "audio"],
   },
   {
     id: "h-2025-05-22-claude-4", date: "2025-05-22", type: "milestone", lens: "models", actorId: "anthropic",
@@ -469,6 +526,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic introduces Claude Opus 4 and Claude Sonnet 4, hybrid models aimed at coding, agents and reasoning.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-4",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2025-07-09-grok-4", date: "2025-07-09", type: "milestone", lens: "models", actorId: "xai",
@@ -478,6 +536,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "xAI announces Grok 4, a reasoning model using extra test-time compute and tool access, presented in a livestream.",
     },
     sourceLabel: { it: "xAI", en: "xAI" }, sourceUrl: "https://x.ai/news/grok-4",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-07-11-kimi-k2", date: "2025-07-11", type: "milestone", lens: "models",
@@ -487,6 +546,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Moonshot AI releases Kimi K2, a one-trillion-parameter mixture-of-experts model (32B active) with open weights, trained for agentic use.",
     },
     sourceLabel: { it: "Moonshot AI", en: "Moonshot AI" }, sourceUrl: "https://moonshotai.github.io/Kimi-K2/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-08-05-gpt-oss", date: "2025-08-05", type: "milestone", lens: "models", actorId: "openai",
@@ -496,6 +556,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI publishes gpt-oss-120b and gpt-oss-20b, open-weights reasoning models under the Apache 2.0 licence.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-oss/",
+    modalities: ["text"],
   },
   {
     id: "h-2025-08-05-genie-3", date: "2025-08-05", type: "milestone", lens: "models", actorId: "google",
@@ -505,6 +566,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google DeepMind introduces Genie 3, a world model generating interactive environments at 720p and 24 frames per second, explorable in real time.",
     },
     sourceLabel: { it: "Google DeepMind", en: "Google DeepMind" }, sourceUrl: "https://deepmind.google/discover/blog/genie-3-a-new-frontier-for-world-models/",
+    modalities: ["text", "video"],
   },
   {
     id: "h-2025-08-07-gpt-5", date: "2025-08-07", type: "milestone", lens: "models", actorId: "openai",
@@ -514,6 +576,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI launches GPT-5, a single system with built-in reasoning, available to all ChatGPT users and via API.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-5/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-09-29-claude-sonnet-4-5", date: "2025-09-29", type: "milestone", lens: "models", actorId: "anthropic",
@@ -523,6 +586,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Sonnet 4.5, aimed at coding and agents, with claimed gains in computer use and long-horizon tasks.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-sonnet-4-5",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2025-09-30-sora-2", date: "2025-09-30", type: "milestone", lens: "models", actorId: "openai",
@@ -532,6 +596,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases Sora 2 with synchronised dialogue in a new standalone app.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/sora-2/",
+    modalities: ["text", "video", "audio"],
   },
   {
     id: "h-2025-11-12-gpt-5-1", date: "2025-11-12", type: "milestone", lens: "models", actorId: "openai",
@@ -541,6 +606,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI updates the GPT-5 series with GPT-5.1 Instant and Thinking.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-5-1/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2025-11-18-gemini-3", date: "2025-11-18", type: "milestone", lens: "models", actorId: "google",
@@ -550,6 +616,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google previews Gemini 3 Pro across its products, with a Deep Think reasoning mode.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/products/gemini/gemini-3/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2025-11-24-claude-opus-4-5", date: "2025-11-24", type: "milestone", lens: "models", actorId: "anthropic",
@@ -559,6 +626,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 4.5, aimed at coding, agents and computer use, at lower cost.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-opus-4-5",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2025-12-11-gpt-5-2", date: "2025-12-11", type: "milestone", lens: "models", actorId: "openai",
@@ -568,6 +636,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases GPT-5.2, aimed at professional work and long-running agents.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-5-2/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-01-12-claude-cowork", date: "2026-01-12", type: "milestone", lens: "models", actorId: "anthropic",
@@ -577,6 +646,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic previews Cowork, an interface extending Claude Code to non-coding office work, with access to files and applications.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://claude.com/blog/cowork-research-preview",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-02-05-claude-opus-4-6", date: "2026-02-05", type: "milestone", lens: "models", actorId: "anthropic",
@@ -586,6 +656,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 4.6, aimed at coding, agents and long tasks, with an extended context.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-opus-4-6",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2026-02-05-gpt-5-3-codex", date: "2026-02-05", type: "milestone", lens: "models", actorId: "openai",
@@ -595,6 +666,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases GPT-5.3-Codex, a model aimed at agentic programming and integrated into Codex.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-5-3-codex/",
+    modalities: ["text", "code"],
   },
   {
     id: "h-2026-02-12-glm-5", date: "2026-02-12", type: "milestone", lens: "models",
@@ -604,6 +676,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Z.ai (Zhipu AI) releases GLM-5, a 744B-parameter mixture-of-experts model (40B active) with open weights under the MIT licence.",
     },
     sourceLabel: { it: "Z.ai", en: "Z.ai" }, sourceUrl: "https://z.ai/blog/glm-5",
+    modalities: ["text"],
   },
   {
     id: "h-2026-02-19-gemini-3-1-pro", date: "2026-02-19", type: "milestone", lens: "models", actorId: "google",
@@ -613,6 +686,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google releases Gemini 3.1 Pro, a Gemini 3 series update aimed at complex reasoning and coding tasks.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-pro/",
+    modalities: ["text", "image", "video", "audio", "code"],
   },
   {
     id: "h-2026-03-05-gpt-5-4", date: "2026-03-05", type: "milestone", lens: "models", actorId: "openai",
@@ -622,6 +696,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases GPT-5.4 in Thinking and Pro versions, with native computer use through a graphical interface.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-5-4/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-04-07-claude-mythos-preview", date: "2026-04-07", type: "milestone", lens: "models", actorId: "anthropic",
@@ -631,6 +706,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic previews Claude Mythos, a model focused on cybersecurity, as part of the Glasswing project.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://red.anthropic.com/2026/mythos-preview/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-04-08-muse-spark", date: "2026-04-08", type: "milestone", lens: "models", actorId: "meta",
@@ -640,6 +716,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Meta introduces Muse Spark, the first model from Meta Superintelligence Labs, rolling out across some of the company's products.",
     },
     sourceLabel: { it: "Meta", en: "Meta" }, sourceUrl: "https://about.fb.com/news/2026/04/introducing-muse-spark-meta-superintelligence-labs/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-04-16-claude-opus-4-7", date: "2026-04-16", type: "milestone", lens: "models", actorId: "anthropic",
@@ -649,6 +726,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 4.7, with claimed improvements in coding, agents and long-horizon tasks.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-opus-4-7",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2026-04-23-gpt-5-5", date: "2026-04-23", type: "milestone", lens: "models", actorId: "openai",
@@ -658,6 +736,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases GPT-5.5, plus a Pro version, aimed at reasoning, coding and agents.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-5-5/",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2026-04-24-deepseek-v4", date: "2026-04-24", type: "milestone", lens: "models", actorId: "deepseek",
@@ -667,6 +746,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "DeepSeek previews the V4 family, with mixture-of-experts Pro and Flash variants, open weights under the MIT licence and up to a 1M-token context.",
     },
     sourceLabel: { it: "DeepSeek", en: "DeepSeek" }, sourceUrl: "https://deepseek.com/en/news/v4-preview/",
+    modalities: ["text"],
   },
   {
     id: "h-2026-05-19-gemini-3-5-flash", date: "2026-05-19", type: "milestone", lens: "models", actorId: "google",
@@ -676,6 +756,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Gemini 3.5 Flash at I/O 2026, the first model in the 3.5 series, aimed at speed and action execution.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-5/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2026-05-28-claude-opus-4-8", date: "2026-05-28", type: "milestone", lens: "models", actorId: "anthropic",
@@ -685,6 +766,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 4.8, an Opus 4 series update aimed at coding and agents.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-opus-4-8",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2026-06-09-claude-fable-5-mythos-5", date: "2026-06-09", type: "milestone", lens: "models", actorId: "anthropic",
@@ -694,6 +776,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic announces Claude Fable 5 and Claude Mythos 5, two versions of the same model: the first fully safeguarded, the second restricted to cyberdefenders through Project Glasswing.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-fable-5-mythos-5",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-06-30-claude-sonnet-5", date: "2026-06-30", type: "milestone", lens: "models", actorId: "anthropic",
@@ -703,6 +786,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Sonnet 5, the default model for Free and Pro plans on claude.ai.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-sonnet-5",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-07-09-gpt-5-6", date: "2026-07-09", type: "milestone", lens: "models", actorId: "openai",
@@ -712,6 +796,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI makes GPT-5.6 available in three configurations, Sol, Terra and Luna, sharing a context of about one million tokens.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-5-6/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-07-16-kimi-k3", date: "2026-07-16", type: "milestone", lens: "models",
@@ -721,6 +806,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Moonshot AI announces Kimi K3, a very large mixture-of-experts model, with open weights published in the following days.",
     },
     sourceLabel: { it: "Moonshot AI", en: "Moonshot AI" }, sourceUrl: "https://www.kimi.com/news/kimi-k3",
+    modalities: ["text"],
   },
   {
     id: "h-2026-07-24-claude-opus-5", date: "2026-07-24", type: "milestone", lens: "models", actorId: "anthropic",
@@ -730,6 +816,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 5, the new top of the Claude family for coding, agents and reasoning.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-opus-5",
+    modalities: ["text", "image", "code"],
   },
   {
     id: "h-2026-09-01-claude-fable-5-1-mythos-5-1", date: "2026-09-01", type: "milestone", lens: "models", actorId: "anthropic",
@@ -739,6 +826,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic updates the Fable and Mythos lines with 5.1 versions.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-09-03-gpt-6-astra", date: "2026-09-03", type: "milestone", lens: "models", actorId: "openai",
@@ -748,6 +836,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI announces GPT-6 Astra, introduced with a system card and initially rolling out to a limited set of organisations.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-6-astra/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-09-10-deepseek-v4-1-flash", date: "2026-09-10", type: "milestone", lens: "models", actorId: "deepseek",
@@ -757,6 +846,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "DeepSeek releases V4.1-Flash, a 552B-parameter mixture-of-experts model with reduced activation per token.",
     },
     sourceLabel: { it: "DeepSeek", en: "DeepSeek" }, sourceUrl: "https://www.deepseek.com/en/news/deepseek-v4-1-flash/",
+    modalities: ["text"],
   },
   {
     id: "h-2026-09-22-claude-opus-5-5", date: "2026-09-22", type: "milestone", lens: "models", actorId: "anthropic",
@@ -766,6 +856,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Opus 5.5, an update to the Opus 5 series.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/claude-opus-5-5",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-09-28-claude-sonnet-5-5", date: "2026-09-28", type: "milestone", lens: "models", actorId: "anthropic",
@@ -775,6 +866,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Sonnet 5.5, an update to the Sonnet 5 series.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/news/claude-sonnet-5-5",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-09-29-gpt-6-1-sol", date: "2026-09-29", type: "milestone", lens: "models", actorId: "openai",
@@ -784,6 +876,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "At DevDay OpenAI introduces GPT-6.1 Sol, an update to GPT-6 Sol with performance claimed close to GPT-6 Astra at a lower cost per token.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/introducing-gpt-6-1-sol/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-10-07-gpt-6", date: "2026-10-07", type: "milestone", lens: "models", actorId: "openai",
@@ -793,6 +886,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI begins rolling out GPT-6 in Sol and Luna variants to all ChatGPT users, together with a new interface called Intelligent UI.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/gpt-6-for-everyone/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-10-07-claude-haiku-5-5", date: "2026-10-07", type: "milestone", lens: "models", actorId: "anthropic",
@@ -802,6 +896,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Anthropic releases Claude Haiku 5.5, the small model of the Claude 5.5 family, built for high-volume, low-cost tasks.",
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/claude-haiku-5-5",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-10-13-gemini-4-argon", date: "2026-10-13", type: "milestone", lens: "models", actorId: "google",
@@ -811,6 +906,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Gemini 4 Argon, the first model in the Gemini 4 series, made available through the API, the app and Search.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-argon/",
+    modalities: ["text", "image", "video", "audio"],
   },
   {
     id: "h-2026-10-26-gpt-6-1-terra", date: "2026-10-26", type: "milestone", lens: "models", actorId: "openai",
@@ -820,6 +916,7 @@ export const modelEvents: TimelineEvent[] = [
       en: "OpenAI releases GPT-6.1 Terra, a middle tier between Sol and Luna with fast and effective computer use.",
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/products/release-notes/",
+    modalities: ["text", "image"],
   },
   {
     id: "h-2026-10-28-gemini-4-carbon", date: "2026-10-28", type: "milestone", lens: "models", actorId: "google",
@@ -829,5 +926,6 @@ export const modelEvents: TimelineEvent[] = [
       en: "Google announces Gemini 4 Carbon, a model aimed at long-horizon agentic tasks and cybersecurity, with initial access limited to defenders through the Fairwind programme.",
     },
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/",
+    modalities: ["text", "image", "video", "audio"],
   },
 ];

@@ -7,9 +7,14 @@ import {
   Landmark,
   Megaphone,
   Gavel,
+  Type,
+  Image as ImageIcon,
+  Video,
+  AudioLines,
+  Code,
   type LucideIcon,
 } from 'lucide-react';
-import type { EventType, PositionStance, SentimentTag } from '@/lib/data/trasparenza';
+import type { EventType, Modality, PositionStance, SentimentTag } from '@/lib/data/trasparenza';
 import { toMs as toMsDate } from '@/lib/dates';
 
 export const EVENT_META: Record<
@@ -64,6 +69,15 @@ export const EVENT_META: Record<
     dot: '#991b1b',
     lane: 'down',
   },
+};
+
+/** Modality glyphs. Labels stay in the data layer; only the icon lives here. */
+export const MODALITY_ICON: Record<Modality, LucideIcon> = {
+  text: Type,
+  image: ImageIcon,
+  video: Video,
+  audio: AudioLines,
+  code: Code,
 };
 
 export const SENTIMENT_META: Record<

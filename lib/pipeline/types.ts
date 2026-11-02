@@ -2,6 +2,7 @@ import type {
   EventType,
   Lens,
   LocaleText,
+  Modality,
   SentimentTag,
   TimelineEvent,
 } from '@/lib/data/trasparenza';
@@ -93,6 +94,11 @@ export type AutoSignal = {
   sourceHost?: string;
   imageUrl?: string;
   hidden?: boolean;
+  /**
+   * What the system reads and produces, when the headline states it plainly.
+   * Never inferred: a title alone does not say "audio".
+   */
+  modalities?: Modality[];
 };
 
 /**

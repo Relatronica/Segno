@@ -31,5 +31,6 @@ export function signalToTimelineEvent(signal: AutoSignal): TimelineEvent {
     sourceLabel: signal.sourceLabel,
     sourceUrl: signal.sourceUrl,
     imageUrl: signal.imageUrl,
+    modalities: signal.modalities,
   };
 }

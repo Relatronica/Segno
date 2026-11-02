@@ -18,7 +18,11 @@ import {
   LENS_META,
   ALL_CAPABILITY_DOMAINS,
   CAPABILITY_DOMAIN_META,
+  ALL_MODALITIES,
+  MODALITY_META,
+  orderedModalities,
   type CapabilityDomain,
+  type Modality,
   SENTIMENT_FEAR_SCORE,
   formatEventDate,
   lensOf,
@@ -32,7 +36,7 @@ import {
 import { ZOOM_LEVELS, createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
 import { cn } from '@/lib/utils';
 import type { ScrubState } from './TimelineFeed';
-import { SENTIMENT_META, STANCE_META } from './meta';
+import { MODALITY_ICON, SENTIMENT_META, STANCE_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 import { LabMark, hasLabMark } from './LabMark';
 
@@ -66,6 +70,18 @@ function lineCountFor(rowH: number, lineH: number, lanePadY: number): number {
 function lineDy(line: number, count: number, lineH: number): number {
   return (line - (count - 1) / 2) * lineH;
 }
+
+/**
+ * Modality filter, models lane only. A pin with no modalities recorded is never
+ * hidden: the field is being annotated over time, and letting the filter hide
+ * the unannotated ones would empty the lane on the first toggle.
+ */
+function passesModalityFilter(event: TimelineEvent, enabled: Set<Modality>): boolean {
+  if (enabled.size === ALL_MODALITIES.length) return true;
+  if (!event.modalities?.length) return true;
+  return event.modalities.some((modality) => enabled.has(modality));
+}
+
 /** Statement with no tone tag: the level is there, the editorial tone is not. */
 const NEUTRAL_MARK = '#64748b';
 /** Volume band under the lanes: how much was said, day by day. */
@@ -413,6 +429,9 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     () => new Set(ALL_CAPABILITY_DOMAINS),
   );
   const [hoveredLegendDomain, setHoveredLegendDomain] = useState<CapabilityDomain | null>(null);
+  const [enabledModalities, setEnabledModalities] = useState<Set<Modality>>(
+    () => new Set(ALL_MODALITIES),
+  );
 
   const toggleDomain = (domain: CapabilityDomain, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -430,6 +449,24 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
       return next;
     });
   };
+
+  const toggleModality = (modality: Modality, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEnabledModalities((prev) => {
+      const next = new Set(prev);
+      if (next.has(modality)) {
+        if (next.size > 1) {
+          next.delete(modality);
+        } else {
+          return new Set(ALL_MODALITIES);
+        }
+      } else {
+        next.add(modality);
+      }
+      return next;
+    });
+  };
+
   /** Playhead furniture: moved imperatively on each frame, never via state. */
   const playheadRef = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLSpanElement>(null);
@@ -517,10 +554,16 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     };
 
     // One row per story of the field: the lens decides the row and the
-    // silhouette of its marks.
+    // silhouette of its marks. The modality filter is applied here rather than
+    // at render, so the surviving pins re-pack their caption lines instead of
+    // leaving gaps where the hidden ones used to be.
     const lanes: Lane[] = ALL_LENSES.map((lens) => ({
       lens,
-      items: events.filter((event) => lensOf(event) === lens),
+      items: events.filter(
+        (event) =>
+          lensOf(event) === lens &&
+          (lens !== 'models' || passesModalityFilter(event, enabledModalities)),
+      ),
     }))
       .filter((entry) => entry.items.length > 0)
       .map(({ lens, items }) => {
@@ -639,6 +682,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     zoom,
     lineH,
     labelGap,
+    enabledModalities,
   ]);
 
   const { scale, lanes, lanesHeight, ticks, volume, moodPoints } = layout;
@@ -1112,6 +1156,58 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                     )}
                   </div>
                 )}
+                {/* Modality filter, models lane only. Desktop only: in the narrow
+                    column the pills would wrap past the row and spill into the
+                    next lane. Touch readers get the modality from the feed and
+                    the record page instead. */}
+                {!lane.collapsed && lane.lens === 'models' && (
+                  <div className="mt-2 hidden flex-wrap items-center gap-1 pl-5 sm:flex">
+                    {ALL_MODALITIES.map((modality) => {
+                      const active = enabledModalities.has(modality);
+                      const meta = MODALITY_META[modality];
+                      const ModalityIcon = MODALITY_ICON[modality];
+                      return (
+                        <button
+                          key={modality}
+                          type="button"
+                          onClick={(e) => toggleModality(modality, e)}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono tl-fs-9 transition-all cursor-pointer select-none',
+                            active
+                              ? 'border-border/60 bg-background text-foreground shadow-xs'
+                              : 'border-transparent bg-muted/30 text-muted-foreground/45 hover:text-muted-foreground/75',
+                          )}
+                          title={
+                            active
+                              ? locale === 'it'
+                                ? `Clicca per nascondere ${meta.label.it}`
+                                : `Click to hide ${meta.label.en}`
+                              : locale === 'it'
+                                ? `Clicca per mostrare ${meta.label.it}`
+                                : `Click to show ${meta.label.en}`
+                          }
+                        >
+                          <ModalityIcon className="h-3 w-3 shrink-0" aria-hidden />
+                          <span className={cn(!active && 'line-through opacity-60')}>
+                            {meta.label[locale]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {enabledModalities.size < ALL_MODALITIES.length && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEnabledModalities(new Set(ALL_MODALITIES));
+                        }}
+                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
+                      >
+                        {locale === 'it' ? 'Mostra tutte' : 'Show all'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="relative h-full" style={{ width: scale.width }}>
@@ -1466,6 +1562,21 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                                 · {capDomainMeta.label[locale]}
                               </span>
                             )}
+                          </div>
+                        )}
+                        {/* What the model reads and produces. Icons carry no
+                            colour: the lane's palette is spoken for. */}
+                        {event.modalities && event.modalities.length > 0 && (
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono tl-fs-9 text-muted-foreground/80">
+                            {orderedModalities(event.modalities).map((modality) => {
+                              const ModalityIcon = MODALITY_ICON[modality];
+                              return (
+                                <span key={modality} className="inline-flex items-center gap-1">
+                                  <ModalityIcon className="h-3 w-3 shrink-0" aria-hidden />
+                                  {MODALITY_META[modality].label[locale]}
+                                </span>
+                              );
+                            })}
                           </div>
                         )}
                         {isCapLane && event.capabilityScores && (

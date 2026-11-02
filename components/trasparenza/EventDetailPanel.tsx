@@ -8,13 +8,15 @@ import {
   formatAmount,
   formatEventDate,
   lobbyPeople,
+  MODALITY_META,
+  orderedModalities,
   type LocaleText,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
 import { paths } from '@/lib/seo';
 import { buildTrasparenzaSearch } from '@/lib/trasparenza/url';
 import { cn } from '@/lib/utils';
-import { EVENT_META, SENTIMENT_META } from './meta';
+import { EVENT_META, MODALITY_ICON, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 
 type Props = {
@@ -43,6 +45,7 @@ export function EventDetailPanel({ event, theme }: Props) {
   const Icon = meta.icon;
   const sentiment = event.sentiment ? SENTIMENT_META[event.sentiment] : null;
   const isAuto = event.origin === 'auto';
+  const modalities = event.modalities?.length ? orderedModalities(event.modalities) : null;
   const timelineHref = `${paths.timeline}${buildTrasparenzaSearch({ event: event.id })}`;
 
   return (
@@ -78,6 +81,21 @@ export function EventDetailPanel({ event, theme }: Props) {
             {t.trasparenza.sentiments[event.sentiment]}
           </span>
         )}
+
+        {/* What the system reads and produces. The record page is where the
+            modality stays readable without a pointer to hover with. */}
+        {modalities?.map((modality) => {
+          const ModalityIcon = MODALITY_ICON[modality];
+          return (
+            <span
+              key={modality}
+              className="inline-flex items-center gap-1.5 rounded border border-border/50 px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground"
+            >
+              <ModalityIcon className="h-3 w-3" aria-hidden />
+              {MODALITY_META[modality].label[locale]}
+            </span>
+          );
+        })}
 
         {isAuto && (
           <span className="rounded border border-border/50 px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

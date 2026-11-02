@@ -131,6 +131,45 @@ export const CAPABILITY_DOMAIN_META: Record<
   },
 };
 
+/**
+ * What a model reads and produces: its interface, not its merit. Orthogonal to
+ * `CapabilityDomain`, which measures how well it performs — a model can be
+ * strong at reasoning and still text-only, or multimodal and mediocre. Lives on
+ * the models lane. Since 2023 a system is rarely one thing, hence the list.
+ */
+export type Modality = "text" | "image" | "video" | "audio" | "code";
+
+export const ALL_MODALITIES: Modality[] = ["text", "image", "video", "audio", "code"];
+
+/** Declaration order is the reading order: from the written word to the machine's. */
+export const MODALITY_META: Record<Modality, { label: LocaleText; order: number }> = {
+  text: {
+    label: { it: "Testo", en: "Text" },
+    order: 0,
+  },
+  image: {
+    label: { it: "Immagine", en: "Image" },
+    order: 1,
+  },
+  video: {
+    label: { it: "Video", en: "Video" },
+    order: 2,
+  },
+  audio: {
+    label: { it: "Audio", en: "Audio" },
+    order: 3,
+  },
+  code: {
+    label: { it: "Codice", en: "Code" },
+    order: 4,
+  },
+};
+
+/** Reading order, so the same model lists its modalities the same way everywhere. */
+export function orderedModalities(modalities: Modality[]): Modality[] {
+  return [...modalities].sort((a, b) => MODALITY_META[a].order - MODALITY_META[b].order);
+}
+
 /** Editorial reading of a public statement — not an objective score */
 export type SentimentTag =
   | "alarm"
@@ -220,6 +259,12 @@ export type TimelineEvent = {
   benchmarkLabel?: string;
   /** Structured benchmark metric */
   benchmarkMetric?: { name: string; value: string };
+  /**
+   * What the system reads and produces, as declared at release. Optional and
+   * filled in as the dataset is annotated: a pin without it simply shows
+   * nothing, and no filter can hide it.
+   */
+  modalities?: Modality[];
 };
 
 export type TimelineTheme = {
