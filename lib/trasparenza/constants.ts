@@ -10,6 +10,15 @@ export const PRESENT_PIN_ID = 'e-2026-09-today';
  */
 export const DEFAULT_COLLAPSED_LENSES: Lens[] = ALL_LENSES.slice(2);
 
+/**
+ * Arrival collapse state. A link that names its lenses (`?lente=`) opens them
+ * expanded: landing on a compact strip would hide the very row that was clicked.
+ */
+export function defaultCollapsedFor(requested?: Lens[]): Lens[] {
+  if (!requested?.length) return [...DEFAULT_COLLAPSED_LENSES];
+  return DEFAULT_COLLAPSED_LENSES.filter((lens) => !requested.includes(lens));
+}
+
 /** Event types shared by the filter UI and the URL parser. */
 export const ALL_EVENT_TYPES: EventType[] = [
   'legislative',

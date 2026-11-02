@@ -26,7 +26,11 @@ import { localIsoDate } from '@/lib/dates';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
-import { DEFAULT_COLLAPSED_LENSES, PRESENT_PIN_ID } from '@/lib/trasparenza/constants';
+import {
+  DEFAULT_COLLAPSED_LENSES,
+  PRESENT_PIN_ID,
+  defaultCollapsedFor,
+} from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
 import {
   buildTrasparenzaSearch,
@@ -237,7 +241,7 @@ export default function TrasparenzaContent() {
     setSelectedYears(parsed.years ?? defaults.current.years);
     setSelectedSentiments(parsed.sentiments ?? [...ALL_SENTIMENT_TAGS]);
     setSelectedLenses(parsed.lenses ?? [...ALL_LENSES]);
-    setCollapsedLenses(parsed.collapsedLenses ?? [...DEFAULT_COLLAPSED_LENSES]);
+    setCollapsedLenses(parsed.collapsedLenses ?? defaultCollapsedFor(parsed.lenses));
     setQuery(parsed.q ?? '');
     setSelectedThesis(parsed.thesis ?? 'all');
 
@@ -276,6 +280,9 @@ export default function TrasparenzaContent() {
   useEffect(() => {
     if (!urlApplied) return;
     const timer = window.setTimeout(() => {
+      /* A narrowed view opens its lens: the collapse default follows the link. */
+      const requestedLenses =
+        selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined;
       const search = buildTrasparenzaSearch({
         person: selectedPerson !== 'all' ? selectedPerson : undefined,
         actor: selectedActor !== 'all' ? selectedActor : undefined,
@@ -286,7 +293,7 @@ export default function TrasparenzaContent() {
             ? selectedSentiments
             : undefined,
         lenses: selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined,
-        collapsedLenses: sameLensSet(collapsedLenses, DEFAULT_COLLAPSED_LENSES)
+        collapsedLenses: sameLensSet(collapsedLenses, defaultCollapsedFor(requestedLenses))
           ? undefined
           : collapsedLenses,
         q: query.trim() || undefined,
