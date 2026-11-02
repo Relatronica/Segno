@@ -33,6 +33,9 @@ export function pixelsBeforeToday(ageDays: number): number {
   return px;
 }
 
+/** User zoom stops. 1x is the resting density; each step doubles the spread. */
+export const ZOOM_LEVELS = [1, 2, 4, 8] as const;
+
 export type TimeScale = {
   /** Total scrollable content width, padding included. */
   width: number;
@@ -41,19 +44,28 @@ export type TimeScale = {
   todayIso: string;
   minT: number;
   maxT: number;
+  /** Left padding before the oldest pin: where the time strip begins. */
+  padLeft: number;
+  /** Scrollable time width, both paddings removed. */
+  span: number;
+  /** Density multiplier in force. Used to re-anchor a zoom. */
+  zoom: number;
 };
 
 /**
  * Shared horizontal time axis: recent days spread out, history compressed.
  * Dates in the future clamp to today, so nothing sits past the "oggi" line.
+ * `zoom` scales the whole density curve uniformly, so the present keeps its
+ * privilege over the past at every step.
  */
 export function createTimeScale(
   dates: string[],
-  opts?: { padLeft?: number; padRight?: number; minWidth?: number },
+  opts?: { padLeft?: number; padRight?: number; minWidth?: number; zoom?: number },
 ): TimeScale {
   const padLeft = opts?.padLeft ?? 120;
   const padRight = opts?.padRight ?? 160;
   const minWidth = opts?.minWidth ?? 1400;
+  const zoom = opts?.zoom ?? 1;
 
   const todayIso = localIsoDate();
   const todayMs = toMs(todayIso);
@@ -62,13 +74,14 @@ export function createTimeScale(
   const minT = dates.length
     ? Math.min(...dates.map((d) => toMs(atPresent(d))), todayMs)
     : todayMs;
-  const spanPx = Math.max(pixelsBeforeToday((todayMs - minT) / DAY_MS), 1);
+  const spanPx = Math.max(pixelsBeforeToday((todayMs - minT) / DAY_MS) * zoom, 1);
   const width = Math.max(minWidth, padLeft + spanPx + padRight);
-  const scale = (width - padLeft - padRight) / spanPx;
+  const span = width - padLeft - padRight;
+  const factor = span / spanPx;
 
   const xForDate = (date: string) => {
     const t = Math.min(Math.max(toMs(atPresent(date)), minT), todayMs);
-    return padLeft + (spanPx - pixelsBeforeToday((todayMs - t) / DAY_MS)) * scale;
+    return padLeft + (spanPx - pixelsBeforeToday((todayMs - t) / DAY_MS) * zoom) * factor;
   };
 
   return {
@@ -78,6 +91,9 @@ export function createTimeScale(
     todayIso,
     minT,
     maxT: todayMs,
+    padLeft,
+    span,
+    zoom,
   };
 }
 

@@ -1,6 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
   ALL_LENSES,
@@ -18,12 +29,15 @@ import {
   type SentimentTag,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
-import { createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
+import { ZOOM_LEVELS, createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
 import { cn } from '@/lib/utils';
 import type { ScrubState } from './TimelineFeed';
 import { SENTIMENT_META, STANCE_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 import { LabMark, hasLabMark } from './LabMark';
+
+/** There is no layout to measure on the server, and `useLayoutEffect` warns there. */
+const useLayoutEffectSafe = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /** Row height: tall enough to hold several internal lines of captions. */
 const ROW_H_DESKTOP = 156;
@@ -44,13 +58,13 @@ const LANE_PAD_Y = 14;
 const LABEL_GAP_PX = 112;
 
 /** How many caption lines the row can hold, centred on the rail. */
-function lineCountFor(rowH: number): number {
-  return Math.max(1, Math.floor((rowH - LANE_PAD_Y * 2) / LINE_H));
+function lineCountFor(rowH: number, lineH: number, lanePadY: number): number {
+  return Math.max(1, Math.floor((rowH - lanePadY * 2) / lineH));
 }
 
 /** Vertical offset of a caption line from the row centre. */
-function lineDy(line: number, count: number): number {
-  return (line - (count - 1) / 2) * LINE_H;
+function lineDy(line: number, count: number, lineH: number): number {
+  return (line - (count - 1) / 2) * lineH;
 }
 /** Statement with no tone tag: the level is there, the editorial tone is not. */
 const NEUTRAL_MARK = '#64748b';
@@ -132,6 +146,19 @@ type Props = {
   presentFocusToken?: number;
   /** Bump to centre the lane view on activeId (list/click/keyboard) */
   focusEventToken?: number;
+  /** Density step in force, one of ZOOM_LEVELS. Lifted so the chrome can show it. */
+  zoom?: number;
+  /** Reports every density change made inside the chart (buttons, ctrl+wheel). */
+  onZoomChange?: (zoom: number) => void;
+  /** Type step for the whole chart, one of TEXT_LEVELS. 1 is the drawn density. */
+  textScale?: number;
+};
+
+/** Imperative handle: the chart owns the anchoring, the chrome only asks. */
+export type LaneTimelineHandle = {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
 };
 
 type LaneMark = {
@@ -346,29 +373,35 @@ function activeCapData(
   return null;
 }
 
-export function LaneTimeline({
-  events,
-  people,
-  locale,
-  activeId,
-  collapsedLenses,
-  onToggleLensCollapsed,
-  scrubId = null,
-  scrubRef,
-  onSelect,
-  emptyLabel,
-  labels,
-  typeLabel,
-  sentimentLabel,
-  lensLabel,
-  stanceByEventId,
-  stanceLabel,
-  volumeEvents,
-  moodEvents,
-  focusPresent = false,
-  presentFocusToken = 0,
-  focusEventToken = 0,
-}: Props) {
+export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneTimeline(
+  {
+    events,
+    people,
+    locale,
+    activeId,
+    collapsedLenses,
+    onToggleLensCollapsed,
+    scrubId = null,
+    scrubRef,
+    onSelect,
+    emptyLabel,
+    labels,
+    typeLabel,
+    sentimentLabel,
+    lensLabel,
+    stanceByEventId,
+    stanceLabel,
+    volumeEvents,
+    moodEvents,
+    focusPresent = false,
+    presentFocusToken = 0,
+    focusEventToken = 0,
+    zoom = 1,
+    onZoomChange,
+    textScale = 1,
+  }: Props,
+  ref,
+) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const moodGradId = useId().replace(/:/g, '');
   const volClipId = useId().replace(/:/g, '');
@@ -404,15 +437,32 @@ export function LaneTimeline({
   useEffect(() => {
     const update = () => {
       const narrow = window.innerWidth < 640;
-      setLabelW(narrow ? 112 : 168);
+      // The lane header carries type too, so its column follows the text step.
+      setLabelW((narrow ? 112 : 168) * textScale);
       setRowH(narrow ? ROW_H_MOBILE : ROW_H_DESKTOP);
     };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [textScale]);
 
-  const lineCount = lineCountFor(rowH);
+  /**
+   * Metrics calibrated to the type. They follow the text step, so a larger
+   * setting re-lays the chart out — captions need a wider gap and a taller
+   * line — instead of letting bigger labels collide. Row heights stay put, so
+   * the page does not grow: fewer caption lines fit, and that is the trade.
+   */
+  const { lineH, lanePadY, labelGap, facePx } = useMemo(
+    () => ({
+      lineH: LINE_H * textScale,
+      lanePadY: LANE_PAD_Y * textScale,
+      labelGap: LABEL_GAP_PX * textScale,
+      facePx: FACE_PX * textScale,
+    }),
+    [textScale],
+  );
+
+  const lineCount = lineCountFor(rowH, lineH, lanePadY);
   const collapsedSet = useMemo(() => new Set(collapsedLenses ?? []), [collapsedLenses]);
 
   const layout = useMemo(() => {
@@ -420,6 +470,7 @@ export function LaneTimeline({
       padLeft: 28,
       padRight: 48,
       minWidth: 900,
+      zoom,
     });
 
     /**
@@ -434,11 +485,11 @@ export function LaneTimeline({
         .sort((a, b) => a.x - b.x || a.event.date.localeCompare(b.event.date));
 
       const order = Array.from({ length: lines }, (_, i) => i).sort(
-        (a, b) => Math.abs(lineDy(a, lines)) - Math.abs(lineDy(b, lines)) || a - b,
+        (a, b) => Math.abs(lineDy(a, lines, lineH)) - Math.abs(lineDy(b, lines, lineH)) || a - b,
       );
       const lastX = Array.from({ length: lines }, () => Number.NEGATIVE_INFINITY);
       for (const mark of marks) {
-        const free = order.find((i) => mark.x - lastX[i] >= LABEL_GAP_PX);
+        const free = order.find((i) => mark.x - lastX[i] >= labelGap);
         const line =
           free ?? order.reduce((best, i) => (lastX[i] < lastX[best] ? i : best), order[0]);
         mark.line = line;
@@ -458,8 +509,8 @@ export function LaneTimeline({
           const next = list[i + 1];
           mark.room =
             !flat &&
-            (!next || next.x - mark.x >= LABEL_GAP_PX) &&
-            mark.x + LABEL_GAP_PX <= scale.width;
+            (!next || next.x - mark.x >= labelGap) &&
+            mark.x + labelGap <= scale.width;
         });
       }
       return marks;
@@ -576,7 +627,19 @@ export function LaneTimeline({
       volume,
       moodPoints: points,
     };
-  }, [events, locale, lensLabel, volumeEvents, moodEvents, lineCount, rowH, collapsedSet]);
+  }, [
+    events,
+    locale,
+    lensLabel,
+    volumeEvents,
+    moodEvents,
+    lineCount,
+    rowH,
+    collapsedSet,
+    zoom,
+    lineH,
+    labelGap,
+  ]);
 
   const { scale, lanes, lanesHeight, ticks, volume, moodPoints } = layout;
   const moodAmp = MOOD_H / 2 - 10;
@@ -586,6 +649,82 @@ export function LaneTimeline({
   const moodFirst = moodPoints[0];
   const moodLast = moodPoints[moodPoints.length - 1];
   const contentW = labelW + scale.width;
+
+  /**
+   * Pointer place captured just before a density change: its share of the time
+   * strip (so the same instant keeps its spot under the cursor) and its offset
+   * from the scroller's left edge. The share alone drives the re-anchor, since
+   * a zoom only scales the strip — the distortion at the recent end rides along.
+   */
+  const anchorRef = useRef<{ frac: number; offset: number } | null>(null);
+
+  /** Read the pointer's spot on the axis before the scale is rebuilt. */
+  const captureAnchor = useCallback(
+    (clientX?: number) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const offset = clientX != null ? clientX - rect.left : el.clientWidth / 2;
+      const xInScale = el.scrollLeft + offset - labelW;
+      anchorRef.current = {
+        frac: Math.min(Math.max((xInScale - scale.padLeft) / scale.span, 0), 1),
+        offset,
+      };
+    },
+    [labelW, scale.padLeft, scale.span],
+  );
+
+  /** One step up or down, anchored on the pointer (or the view centre). */
+  const requestZoom = useCallback(
+    (next: number, clientX?: number) => {
+      const clamped = Math.min(Math.max(next, 0), ZOOM_LEVELS.length - 1);
+      const value = ZOOM_LEVELS[clamped];
+      if (value === zoom) return;
+      captureAnchor(clientX);
+      onZoomChange?.(value);
+    },
+    [zoom, captureAnchor, onZoomChange],
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomIn: () => requestZoom(ZOOM_LEVELS.indexOf(zoom as (typeof ZOOM_LEVELS)[number]) + 1),
+      zoomOut: () => requestZoom(ZOOM_LEVELS.indexOf(zoom as (typeof ZOOM_LEVELS)[number]) - 1),
+      resetZoom: () => requestZoom(0),
+    }),
+    [requestZoom, zoom],
+  );
+
+  /**
+   * Ctrl/⌘ + wheel is how a trackpad pinch arrives. Plain wheel stays a pan,
+   * so the axes keep working the way they did.
+   */
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.deltaY === 0) return;
+      event.preventDefault();
+      const index = ZOOM_LEVELS.indexOf(zoom as (typeof ZOOM_LEVELS)[number]);
+      requestZoom(index + (event.deltaY < 0 ? 1 : -1), event.clientX);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [requestZoom, zoom]);
+
+  /**
+   * The wider (or narrower) content has been laid out: put the anchored instant
+   * back under the pointer. Runs before paint, so there is no visible jump.
+   */
+  useLayoutEffectSafe(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+    anchorRef.current = null;
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollLeft = Math.max(0, labelW + scale.padLeft + anchor.frac * scale.span - anchor.offset);
+  }, [scale, labelW]);
 
   /** Event id → mark x, so the playhead resolves without a flat scan. */
   const markById = useMemo(() => {
@@ -647,8 +786,12 @@ export function LaneTimeline({
     return () => cancelAnimationFrame(raf);
   }, [focusPresent, events.length, labelW, scale.todayX]);
 
+  const lastPresentToken = useRef(0);
   useEffect(() => {
-    if (presentFocusToken === 0) return;
+    // Only a fresh jump moves the view. A density change rebuilds `todayX`, and
+    // re-centring on it there would undo the zoom's own anchoring.
+    if (presentFocusToken === 0 || presentFocusToken === lastPresentToken.current) return;
+    lastPresentToken.current = presentFocusToken;
     presentCentered.current = true;
     scrollToX(scale.todayX, 'smooth');
   }, [presentFocusToken, scrollToX, scale.todayX]);
@@ -773,7 +916,11 @@ export function LaneTimeline({
   return (
     /* Padding clears the floating chrome: the search row, then the axis.
        Everything else the axis needs lives in the sidebar, not above it. */
-    <div className="relative h-full w-full pt-[calc(var(--nav-clearance)+4.5rem)]">
+    <div
+      className="relative h-full w-full pt-[calc(var(--nav-clearance)+4.5rem)]"
+      /* One multiplier for every size in the chart, read by the tl-fs-* utilities. */
+      style={{ '--tl-text': textScale } as React.CSSProperties}
+    >
       <div
         ref={scrollerRef}
         className="h-full overflow-auto overscroll-x-contain"
@@ -809,8 +956,8 @@ export function LaneTimeline({
                   className={cn(
                     'absolute bottom-1 -translate-x-1/2 font-mono whitespace-nowrap',
                     tick.kind === 'year'
-                      ? 'text-[10px] font-medium text-muted-foreground'
-                      : 'text-[9px] text-muted-foreground/55',
+                      ? 'tl-fs-10 font-medium text-muted-foreground'
+                      : 'tl-fs-9 text-muted-foreground/55',
                   )}
                   style={{ left: tick.x }}
                 >
@@ -818,7 +965,7 @@ export function LaneTimeline({
                 </span>
               ))}
               <span
-                className="pointer-events-none absolute top-0.5 z-20 -translate-x-1/2 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-foreground/80"
+                className="pointer-events-none absolute top-0.5 z-20 -translate-x-1/2 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono tl-fs-10 text-foreground/80"
                 style={{ left: scale.todayX }}
               >
                 {labels.todayLabel}
@@ -826,7 +973,7 @@ export function LaneTimeline({
               <span
                 ref={chipRef}
                 aria-hidden
-                className="pointer-events-none absolute top-0.5 z-20 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono text-[10px] text-muted-foreground opacity-0"
+                className="pointer-events-none absolute top-0.5 z-20 rounded-full border border-border/60 bg-background px-2 py-0.5 font-mono tl-fs-10 text-muted-foreground opacity-0"
                 style={{ left: 0, willChange: 'transform' }}
               />
             </div>
@@ -840,7 +987,7 @@ export function LaneTimeline({
               aria-hidden
               className={cn(
                 'pointer-events-none absolute z-0 w-px',
-                tick.kind === 'year' ? 'bg-border/45' : 'bg-border/20',
+                tick.kind === 'year' ? 'bg-foreground/12' : 'bg-foreground/6',
               )}
               style={{ left: labelW + tick.x, top: AXIS_H, height: lanesHeight }}
             />
@@ -893,17 +1040,17 @@ export function LaneTimeline({
                     className="h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: lane.accent }}
                   />
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight">
+                  <span className="min-w-0 flex-1 truncate tl-fs-13 font-semibold leading-tight">
                     {lane.name}
                   </span>
                   {lane.collapsed && (
-                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+                    <span className="shrink-0 font-mono tl-fs-10 text-muted-foreground/60">
                       {lane.count}
                     </span>
                   )}
                 </button>
                 {!lane.collapsed && (
-                  <span className="pl-5 text-[10px] leading-snug text-pretty text-muted-foreground/60">
+                  <span className="pl-5 tl-fs-10 leading-snug text-pretty text-muted-foreground/60">
                     {lane.blurb}
                   </span>
                 )}
@@ -920,7 +1067,7 @@ export function LaneTimeline({
                           onMouseEnter={() => setHoveredLegendDomain(dom)}
                           onMouseLeave={() => setHoveredLegendDomain(null)}
                           className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[9px] transition-all cursor-pointer select-none',
+                            'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono tl-fs-9 transition-all cursor-pointer select-none',
                             active
                               ? 'border-border/60 bg-background text-foreground shadow-xs'
                               : 'border-transparent bg-muted/30 text-muted-foreground/45 hover:text-muted-foreground/75',
@@ -958,7 +1105,7 @@ export function LaneTimeline({
                           e.stopPropagation();
                           setEnabledDomains(new Set(ALL_CAPABILITY_DOMAINS));
                         }}
-                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
+                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
                       >
                         {locale === 'it' ? 'Mostra tutti' : 'Show all'}
                       </button>
@@ -1071,7 +1218,7 @@ export function LaneTimeline({
                         aria-hidden
                         className={cn('absolute inset-x-0 h-px', !centre && 'bg-border/25')}
                         style={{
-                          top: `calc(50% + ${lineDy(i, lane.lines)}px)`,
+                          top: `calc(50% + ${lineDy(i, lane.lines, lineH)}px)`,
                           backgroundColor: centre ? `${lane.accent}44` : undefined,
                         }}
                       />
@@ -1123,7 +1270,7 @@ export function LaneTimeline({
                       className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none"
                       style={{
                         left: mark.x,
-                        top: markTopY !== null ? `${markTopY}px` : `calc(50% + ${lineDy(mark.line, lane.lines)}px)`,
+                        top: markTopY !== null ? `${markTopY}px` : `calc(50% + ${lineDy(mark.line, lane.lines, lineH)}px)`,
                         width: 36,
                         height: 36,
                       }}
@@ -1165,8 +1312,8 @@ export function LaneTimeline({
                           aria-hidden
                           className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-background"
                           style={{
-                            width: isActive ? 32 : isHot ? 30 : FACE_PX,
-                            height: isActive ? 32 : isHot ? 30 : FACE_PX,
+                            width: (isActive ? 32 : isHot ? 30 : FACE_PX) * textScale,
+                            height: (isActive ? 32 : isHot ? 30 : FACE_PX) * textScale,
                             boxShadow: isActive
                               ? `0 0 0 2.5px ${tone}, 0 0 12px ${tone}66`
                               : `0 0 0 ${isHot ? 2 : 1.5}px ${tone}`,
@@ -1230,18 +1377,18 @@ export function LaneTimeline({
                         <span
                           aria-hidden
                           className={cn(
-                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 text-[10px] leading-tight tracking-tight shadow-sm ring-1 ring-border/20',
+                            'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 tl-fs-10 leading-tight tracking-tight shadow-sm ring-1 ring-border/20',
                             isAuto
                               ? 'italic text-muted-foreground/55'
                               : isActive
                                 ? 'font-medium text-foreground ring-foreground/30'
                                 : 'font-medium text-muted-foreground/75',
                           )}
-                          style={{ left: captionLeft, maxWidth: LABEL_GAP_PX - captionLeft + 12 }}
+                          style={{ left: captionLeft, maxWidth: labelGap - captionLeft + 12 }}
                         >
                           {isCapLane && (event.benchmarkLabel || event.benchmarkMetric) && (
                             <span
-                              className="mr-1 rounded px-1 py-px font-mono text-[9px] font-semibold"
+                              className="mr-1 rounded px-1 py-px font-mono tl-fs-9 font-semibold"
                               style={{
                                 backgroundColor: `${tone}20`,
                                 color: tone,
@@ -1289,21 +1436,21 @@ export function LaneTimeline({
                         style={{
                           left: mark.x,
                           top: markTopY !== null
-                            ? `${markTopY - 14}px`
-                            : `calc(50% + ${lineDy(mark.line, lane.lines) - 14}px)`,
+                            ? `${markTopY - facePx / 2}px`
+                            : `calc(50% + ${lineDy(mark.line, lane.lines, lineH) - facePx / 2}px)`,
                         }}
                       >
-                        <p className="font-mono text-[9px] text-muted-foreground">
+                        <p className="font-mono tl-fs-9 text-muted-foreground">
                           {formatEventDate(event.date, locale)}
                           {' · '}
                           {detailLabel}
                           {person ? ` · ${person.shortName}` : ''}
                         </p>
-                        <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug tracking-tight">
+                        <p className="mt-0.5 line-clamp-2 tl-fs-11 font-semibold leading-snug tracking-tight">
                           {event.title[locale]}
                         </p>
                         {(event.benchmarkLabel || event.benchmarkMetric) && (
-                          <div className="mt-1 flex items-center gap-1.5 font-mono text-[9px] font-semibold">
+                          <div className="mt-1 flex items-center gap-1.5 font-mono tl-fs-9 font-semibold">
                             <span
                               className="rounded px-1.5 py-0.5 ring-1"
                               style={{
@@ -1322,7 +1469,7 @@ export function LaneTimeline({
                           </div>
                         )}
                         {isCapLane && event.capabilityScores && (
-                          <div className="mt-2 space-y-1 border-t border-border/40 pt-1.5 font-mono text-[9px]">
+                          <div className="mt-2 space-y-1 border-t border-border/40 pt-1.5 font-mono tl-fs-9">
                             {ALL_CAPABILITY_DOMAINS.map((dom) => {
                               const score = event.capabilityScores?.[dom];
                               if (score == null) return null;
@@ -1375,16 +1522,16 @@ export function LaneTimeline({
                 style={{ width: labelW }}
                 title={labels.sentimentHint}
               >
-                <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">
+                <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
                   {labels.sentiment}
                 </span>
-                <span className="text-[10px] leading-snug text-pretty text-muted-foreground/55">
+                <span className="tl-fs-10 leading-snug text-pretty text-muted-foreground/55">
                   {labels.sentimentBlurb}
                 </span>
-                <span className="text-[9px] leading-none text-muted-foreground/50">
+                <span className="tl-fs-9 leading-none text-muted-foreground/50">
                   ↑ {labels.enthusiasm} · ↓ {labels.fear}
                 </span>
-                <span className="flex items-center gap-1 text-[9px] leading-none text-muted-foreground/50">
+                <span className="flex items-center gap-1 tl-fs-9 leading-none text-muted-foreground/50">
                   <svg width="16" height="4" aria-hidden className="shrink-0">
                     <line
                       x1="0"
@@ -1482,7 +1629,7 @@ export function LaneTimeline({
               style={{ width: labelW }}
               title={labels.volumeHint}
             >
-              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">
+              <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
                 {labels.volume}
               </span>
             </div>
@@ -1549,7 +1696,7 @@ export function LaneTimeline({
                     className="pointer-events-none absolute z-40 w-max max-w-[13rem] -translate-x-1/2 rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
                     style={{ left: bar.x, bottom: VOLUME_H + 6 }}
                   >
-                    <p className="font-mono text-[9px] text-muted-foreground">
+                    <p className="font-mono tl-fs-9 text-muted-foreground">
                       {formatEventDate(bar.date, locale)} ·{' '}
                       {labels.volumeCount.replace('{count}', String(bar.count))}
                     </p>
@@ -1557,7 +1704,7 @@ export function LaneTimeline({
                       {bar.segments.map((segment) => (
                         <span
                           key={segment.lens}
-                          className="flex items-center gap-1.5 text-[10px] leading-tight"
+                          className="flex items-center gap-1.5 tl-fs-10 leading-tight"
                         >
                           <span
                             aria-hidden
@@ -1579,4 +1726,4 @@ export function LaneTimeline({
       </div>
     </div>
   );
-}
+});

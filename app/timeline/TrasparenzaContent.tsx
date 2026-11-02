@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, PanelRight, RotateCcw, Search, X } from 'lucide-react';
+import { Calendar, PanelRight, RotateCcw, Search, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { cn } from '@/lib/utils';
@@ -27,8 +27,10 @@ import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
 import {
+  DEFAULT_TEXT_INDEX,
   DEFAULT_COLLAPSED_LENSES,
   PRESENT_PIN_ID,
+  TEXT_LEVELS,
   defaultCollapsedFor,
 } from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
@@ -38,11 +40,18 @@ import {
   type TrasparenzaUrlState,
 } from '@/lib/trasparenza/url';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
-import { LaneTimeline } from '@/components/trasparenza/LaneTimeline';
+import { LaneTimeline, type LaneTimelineHandle } from '@/components/trasparenza/LaneTimeline';
 import { TimelineFeed, type ScrubState } from '@/components/trasparenza/TimelineFeed';
+import { ZOOM_LEVELS } from '@/lib/trasparenza/scale';
 
 /** Offset timeline chrome below the floating header */
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
+
+/** The scale cluster's square buttons and its read-out chips. */
+const SCALE_BTN =
+  'inline-flex h-8 w-8 items-center justify-center gap-0.5 text-muted-foreground/80 transition-colors hover:bg-background/70 hover:text-foreground disabled:pointer-events-none disabled:opacity-35 sm:h-9 sm:w-9';
+const SCALE_CHIP =
+  'inline-flex h-8 min-w-6 items-center justify-center px-1 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground disabled:pointer-events-none disabled:opacity-60 sm:h-9 sm:min-w-8';
 
 /** Order-free comparison, so the URL stays clean while a set is untouched. */
 function sameLensSet(a: Lens[], b: Lens[]): boolean {
@@ -116,6 +125,11 @@ export default function TrasparenzaContent() {
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [presentFocusToken, setPresentFocusToken] = useState(0);
   const [focusEventToken, setFocusEventToken] = useState(0);
+  /** Chart density step; the chart anchors each change, the chrome only shows it. */
+  const [zoom, setZoom] = useState(1);
+  /** Type step for the chart only; the feed and the sidebars keep their own size. */
+  const [textIndex, setTextIndex] = useState(DEFAULT_TEXT_INDEX);
+  const timelineRef = useRef<LaneTimelineHandle>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -831,6 +845,7 @@ export default function TrasparenzaContent() {
       <section id="timeline" className="relative min-h-0 min-w-0 flex-1">
         <div className="absolute inset-0">
           <LaneTimeline
+            ref={timelineRef}
             /* Same set as the volume band: verified pins and diary headlines
                alike, so the band mirrors exactly what the lanes draw. */
             events={feedEvents}
@@ -854,6 +869,9 @@ export default function TrasparenzaContent() {
             focusPresent
             presentFocusToken={presentFocusToken}
             focusEventToken={focusEventToken}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            textScale={TEXT_LEVELS[textIndex]}
           />
 
           <div
@@ -861,6 +879,78 @@ export default function TrasparenzaContent() {
             style={{ top: CHROME_TOP }}
           >
             <div className="pointer-events-auto ml-auto flex items-center gap-1">
+              {/* Type stepper: − / A (click to reset) / +. Scoped to the chart,
+                  so the lanes re-lay themselves out while the page keeps its size. */}
+              <div className="mr-1 flex items-center rounded-md border border-border/50 bg-background/80">
+                <button
+                  type="button"
+                  onClick={() => setTextIndex((i) => Math.max(0, i - 1))}
+                  disabled={textIndex <= 0}
+                  className={`${SCALE_BTN} rounded-l-md`}
+                  aria-label={t.trasparenza.textSmaller}
+                  title={t.trasparenza.textSmaller}
+                >
+                  <span className="text-[10px] font-semibold leading-none">A</span>
+                  <span className="text-[8px] leading-none">−</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTextIndex(DEFAULT_TEXT_INDEX)}
+                  disabled={textIndex === DEFAULT_TEXT_INDEX}
+                  className={SCALE_CHIP}
+                  aria-label={t.trasparenza.textReset}
+                  title={t.trasparenza.textReset}
+                >
+                  A
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTextIndex((i) => Math.min(TEXT_LEVELS.length - 1, i + 1))}
+                  disabled={textIndex >= TEXT_LEVELS.length - 1}
+                  className={`${SCALE_BTN} rounded-r-md`}
+                  aria-label={t.trasparenza.textLarger}
+                  title={t.trasparenza.textLarger}
+                >
+                  <span className="text-[13px] font-semibold leading-none">A</span>
+                  <span className="text-[8px] leading-none">+</span>
+                </button>
+              </div>
+
+              {/* Density stepper: − / level (click to reset) / +. The chart does
+                  the anchoring, so these only ask it to move one step. */}
+              <div className="mr-1 flex items-center rounded-md border border-border/50 bg-background/80">
+                <button
+                  type="button"
+                  onClick={() => timelineRef.current?.zoomOut()}
+                  disabled={zoom <= ZOOM_LEVELS[0]}
+                  className={`${SCALE_BTN} rounded-l-md`}
+                  aria-label={t.trasparenza.zoomOut}
+                  title={t.trasparenza.zoomOut}
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => timelineRef.current?.resetZoom()}
+                  disabled={zoom === ZOOM_LEVELS[0]}
+                  className={SCALE_CHIP}
+                  aria-label={t.trasparenza.zoomReset}
+                  title={t.trasparenza.zoomReset}
+                >
+                  {zoom}×
+                </button>
+                <button
+                  type="button"
+                  onClick={() => timelineRef.current?.zoomIn()}
+                  disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                  className={`${SCALE_BTN} rounded-r-md`}
+                  aria-label={t.trasparenza.zoomIn}
+                  title={t.trasparenza.zoomIn}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={openSearch}

@@ -196,7 +196,7 @@ export function FilterSidebar({
                   }`}
                 >
                   <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/25"
                     style={{ backgroundColor: meta.color, opacity: active ? 1 : 0.5 }}
                   />
                   {meta.label[locale]}
@@ -262,7 +262,7 @@ export function FilterSidebar({
                     }`}
                   >
                     <span
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/25"
                       style={{ backgroundColor: meta.dot, opacity: active ? 1 : 0.5 }}
                     />
                     {labels.sentimentTagLabel(tag)}
@@ -373,7 +373,7 @@ function Chip({
       {avatar}
       {dot && !avatar && (
         <span
-          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/25"
           style={{ backgroundColor: dot, opacity: active ? 1 : 0.7 }}
         />
       )}

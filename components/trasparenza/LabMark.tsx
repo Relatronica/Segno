@@ -174,7 +174,7 @@ export function LabMark({ actorId, size, active = false, hot = false, round = fa
   return (
     <span
       aria-hidden
-      className="flex items-center justify-center"
+      className="flex items-center justify-center ring-1 ring-inset ring-black/10 dark:ring-white/25"
       style={{
         width: size,
         height: size,

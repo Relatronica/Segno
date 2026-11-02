@@ -97,8 +97,8 @@
   --accent: oklch(0.24 0.025 255);
   --accent-foreground: oklch(0.94 0.008 250);
   --destructive: oklch(0.65 0.18 25);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 14%);
+  --border: oklch(0.28 0.02 255);
+  --input: oklch(0.3 0.02 255);
   --ring: oklch(0.62 0.14 25);
 
   --mark: oklch(0.68 0.16 25);
@@ -125,4 +125,23 @@
   h3 {
     @apply font-serif tracking-tight;
   }
+}
+
+/**
+ * Timeline typography. The chart's type and the metrics calibrated to it (line
+ * pitch, caption gap, face size) all read one multiplier, so asking for larger
+ * text re-lays the chart out instead of overlapping it. `--tl-text` is set on
+ * the timeline root.
+ */
+@utility tl-fs-9 {
+  font-size: calc(9px * var(--tl-text, 1));
+}
+@utility tl-fs-10 {
+  font-size: calc(10px * var(--tl-text, 1));
+}
+@utility tl-fs-11 {
+  font-size: calc(11px * var(--tl-text, 1));
+}
+@utility tl-fs-13 {
+  font-size: calc(13px * var(--tl-text, 1));
 }

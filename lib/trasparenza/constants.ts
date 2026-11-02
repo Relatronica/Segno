@@ -28,3 +28,11 @@ export const ALL_EVENT_TYPES: EventType[] = [
   'statement',
   'sanction',
 ];
+
+/**
+ * Chart typography steps. One factor drives every size in the timeline and the
+ * metrics calibrated to it, so larger type re-lays the chart out rather than
+ * overlapping it. Step 1 is "standard": the density the chart was drawn at.
+ */
+export const TEXT_LEVELS = [0.92, 1, 1.18] as const;
+export const DEFAULT_TEXT_INDEX = 1;

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Menu, X, Globe, Heart, Github } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SOURCE_URL } from '@/lib/seo';
@@ -98,6 +99,8 @@ export function Navbar() {
             <span className="uppercase">{locale}</span>
           </button>
 
+          <ThemeToggle />
+
           <span aria-hidden className="mx-0.5 hidden h-4 w-px bg-border sm:block" />
 
           <a
@@ -138,7 +141,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
-              className="absolute right-4 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-[0_12px_40px_rgba(15,23,42,0.1)] backdrop-blur-xl sm:right-6 lg:right-8 md:hidden"
+              className="absolute right-4 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-[0_12px_40px_rgba(15,23,42,0.1)] backdrop-blur-xl sm:right-6 lg:right-8 md:hidden dark:shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
             >
               <div className="space-y-1 p-2">
                 {items.map((item) => (
@@ -175,6 +178,10 @@ export function Navbar() {
                   <Github className="h-4 w-4" />
                   {t.footer.source}
                 </a>
+                <div className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                  <span>{t.nav.theme}</span>
+                  <ThemeToggle />
+                </div>
               </div>
             </motion.div>
           )}

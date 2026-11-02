@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Sans_3, Source_Serif_4, IBM_Plex_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { FaviconHandler } from "@/components/FaviconHandler";
 import { DocumentLang } from "@/components/DocumentLang";
@@ -75,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className="scroll-smooth">
+    <html lang="it" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <JsonLd
           data={{
@@ -105,15 +106,17 @@ export default function RootLayout({
         />
       </head>
       <body className={`${sourceSans.variable} ${sourceSerif.variable} ${plexMono.variable} antialiased`}>
-        <FaviconHandler />
-        <DocumentLang />
-        <div className="flex min-h-dvh flex-col">
-          <Navbar />
-          <main className="flex min-h-0 flex-1 flex-col">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <FaviconHandler />
+          <DocumentLang />
+          <div className="flex min-h-dvh flex-col">
+            <Navbar />
+            <main className="flex min-h-0 flex-1 flex-col">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

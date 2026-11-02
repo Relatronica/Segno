@@ -366,7 +366,7 @@ export function TimelineFeed({
                             {actor && (
                               <p className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
                                 <span
-                                  className="h-1.5 w-1.5 rounded-full"
+                                  className="h-1.5 w-1.5 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/25"
                                   style={{ backgroundColor: actor.color }}
                                 />
                                 {actor.name}

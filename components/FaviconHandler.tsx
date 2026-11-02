@@ -1,21 +1,26 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 export function FaviconHandler() {
+  const { resolvedTheme } = useTheme();
+
   useEffect(() => {
+    if (!resolvedTheme) return;
+
+    const isDark = resolvedTheme === 'dark';
+    // In dark mode usa la versione bianca (segno_logo_white.png), in light mode usa la nera (segno_logo.png)
+    const newHref = isDark ? '/segno_logo_white.png' : '/segno_logo.png';
+
     // Funzione per aggiornare il favicon in base al tema
     const updateFavicon = () => {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      // In dark mode usa la versione bianca (segno_logo_white.png), in light mode usa la nera (segno_logo.png)
-      const newHref = isDark ? '/segno_logo_white.png' : '/segno_logo.png';
-      
       // Cerca tutti i possibili link favicon (Next.js può usarli in modi diversi)
       // Cerca anche per href che contiene 'icon'
       const allLinks = document.querySelectorAll('link[rel*="icon"], link[href*="icon"]');
-      
+
       let favicon: HTMLLinkElement | null = null;
-      
+
       // Cerca il link favicon principale
       for (const link of Array.from(allLinks)) {
         const rel = (link as HTMLLinkElement).rel;
@@ -24,7 +29,7 @@ export function FaviconHandler() {
           break;
         }
       }
-      
+
       // Se non trovato, cerca per href
       if (!favicon) {
         for (const link of Array.from(allLinks)) {
@@ -35,11 +40,11 @@ export function FaviconHandler() {
           }
         }
       }
-      
+
       if (favicon) {
         // Rimuovi il vecchio link per forzare il refresh
         favicon.remove();
-        
+
         // Crea un nuovo link con l'href corretto
         const newLink = document.createElement('link');
         newLink.rel = 'icon';
@@ -49,7 +54,7 @@ export function FaviconHandler() {
         url.searchParams.set('v', Date.now().toString());
         newLink.href = url.toString();
         document.head.appendChild(newLink);
-        
+
         // Dopo un breve delay, aggiorna con URL pulito
         setTimeout(() => {
           const cleanLink = document.querySelector(`link[rel='icon']`) as HTMLLinkElement;
@@ -65,7 +70,7 @@ export function FaviconHandler() {
         link.href = newHref;
         document.head.appendChild(link);
       }
-      
+
       // Aggiorna anche apple-touch-icon se presente
       const appleIcon = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;
       if (appleIcon) {
@@ -77,31 +82,10 @@ export function FaviconHandler() {
     updateFavicon();
     const timeoutId = setTimeout(updateFavicon, 200);
 
-    // Ascolta i cambiamenti del tema
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    // Usa addEventListener (standard moderno)
-    const handleChange = () => {
-      updateFavicon();
-    };
-    
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-    } else {
-      // Fallback per browser più vecchi
-      mediaQuery.addListener(handleChange);
-    }
-
     return () => {
       clearTimeout(timeoutId);
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener('change', handleChange);
-      } else {
-        mediaQuery.removeListener(handleChange);
-      }
     };
-  }, []);
+  }, [resolvedTheme]);
 
   return null;
 }
-
