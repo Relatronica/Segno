@@ -1,24 +1,24 @@
-# Sicurezza
+# Security
 
-## Segnalare una vulnerabilità
+## Reporting a vulnerability
 
-Non aprire una issue pubblica.
+Do not open a public issue.
 
-Scrivi dal form su [segno.app/segnala](https://segno.app/segnala) e indica nell'oggetto "security". Descrivi il problema, i passi per riprodurlo e l'impatto che immagini. Rispondiamo prima di qualunque divulgazione pubblica; se non rispondiamo entro qualche giorno, sollecita sullo stesso canale.
+Use the form at [segno.app/segnala](https://segno.app/segnala) and put "security" in the subject. Describe the problem, the steps to reproduce it, and the impact you would expect. We reply before any public disclosure; if you hear nothing within a few days, follow up on the same channel.
 
-## Superficie esposta
+## Exposed surface
 
-| Area | Note |
+| Area | Notes |
 | --- | --- |
-| `/api/pipeline/*` | protetta da `PIPELINE_SECRET`; legge feed RSS esterni |
-| `/redazione` | protetta da `PIPELINE_SECRET`, esclusa da robots e sitemap |
-| `/api/contact` | form pubblico, invia email con Resend |
-| Netlify Blobs | store dei candidati e dei segnali in produzione |
+| `/api/pipeline/*` | guarded by `PIPELINE_SECRET`; reads external RSS feeds |
+| `/redazione` | guarded by `PIPELINE_SECRET`, excluded from robots and sitemap |
+| `/api/contact` | public form, sends email via Resend |
+| Netlify Blobs | store for candidates and signals in production |
 
-Segreti attesi: `PIPELINE_SECRET`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`. Stanno solo nelle variabili d'ambiente: nessuno di questi valori è versionato, e nessun `.env` deve esserlo.
+Expected secrets: `PIPELINE_SECRET`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`. They live only in environment variables: none of these values is committed, and no `.env` should ever be.
 
-## Cosa non è un problema di sicurezza
+## What is not a security issue
 
-- La timeline è pubblica e il codice è aperto per scelta: la repository è pubblica, non è una fuga di informazioni.
-- Il dataset è citabile e riusabile sotto CC BY 4.0: la sua copia non è una violazione.
-- Un errore nel dataset è una correzione, non una vulnerabilità: va segnalato dal form.
+- The timeline is public and the code is open by design: the repository is public, so this is not an information leak.
+- The dataset is citable and reusable under CC BY 4.0: copying it is not a violation.
+- A mistake in the dataset is a correction, not a vulnerability: report it through the form.

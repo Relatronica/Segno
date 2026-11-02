@@ -12,8 +12,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What is Segno?',
     },
     answer: {
-      it: 'Segno mette la storia dell’IA su un’unica timeline, letta per lenti: modelli, ricerca, mercato, cultura e politica, dal 2013 a oggi. Ogni segno è un dato con la sua fonte — un comunicato, un registro pubblico, un documento. Il sentiment è una delle letture.',
-      en: 'Segno puts the story of AI on a single timeline, read by lens: models, research, business, culture and policy, from 2013 to today. Every mark is a datum with its source — a press release, a public register, a document. Sentiment is one of the readings.',
+      it: 'Segno mette la storia dell’IA su un’unica timeline, letta per lenti: modelli, capacità, ricerca, mercato, cultura e politica, dal 2013 a oggi. Ogni segno è un dato con la sua fonte — un comunicato, un registro pubblico, un documento. Il sentiment è una delle letture.',
+      en: 'Segno puts the story of AI on a single timeline, read by lens: models, capabilities, research, business, culture and policy, from 2013 to today. Every mark is a datum with its source — a press release, a public register, a document. Sentiment is one of the readings.',
     },
   },
   {
@@ -23,8 +23,8 @@ export const homeFaqs: FaqItem[] = [
       en: 'What are timeline “lenses”?',
     },
     answer: {
-      it: 'Sono i cinque modi di leggere la stessa timeline: ogni riga è una lente — modelli, ricerca, mercato, cultura, politica. Puoi mostrarle tutte o isolarne una sola, e filtrare per tipo, azienda, persona e anno dalla sidebar. Ogni segno apre il dato e la sua fonte.',
-      en: 'They are the five ways to read the same timeline: each row is a lens — models, research, business, culture, policy. Show them all or isolate a single one, and filter by type, company, person and year in the sidebar. Every mark opens the datum and its source.',
+      it: 'Sono i sei modi di leggere la stessa timeline: ogni riga è una lente — modelli, capacità, ricerca, mercato, cultura, politica. Puoi mostrarle tutte o isolarne una sola, e filtrare per tipo, azienda, persona e anno dalla sidebar. Ogni segno apre il dato e la sua fonte.',
+      en: 'They are the six ways to read the same timeline: each row is a lens — models, capabilities, research, business, culture, policy. Show them all or isolate a single one, and filter by type, company, person and year in the sidebar. Every mark opens the datum and its source.',
     },
   },
   {

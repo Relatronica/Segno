@@ -35,7 +35,7 @@ export type EventType =
  */
 export type Lens = "models" | "capabilities" | "research" | "business" | "culture" | "policy";
 
-export const ALL_LENSES: Lens[] = ["models", "capabilities", "research", "business", "culture", "policy"];
+export const ALL_LENSES: Lens[] = ["models", "research", "capabilities", "business", "culture", "policy"];
 
 /** Declaration order is the reading order: from the artefact to its rules. */
 export const LENS_META: Record<Lens, { label: LocaleText; blurb: LocaleText; color: string }> = {
@@ -2508,8 +2508,8 @@ export function eventsForLens(events: TimelineEvent[], lens: Lens): TimelineEven
 }
 
 /**
- * Single live track: the whole field on one axis, read through five lenses —
- * models, research, business, culture and policy. The id and slug stay
+ * Single live track: the whole field on one axis, read through six lenses —
+ * models, capabilities, research, business, culture and policy. The id and slug stay
  * `sentiment` so existing permalinks and theses keep resolving.
  */
 export const unifiedTheme: TimelineTheme = {

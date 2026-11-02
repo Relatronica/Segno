@@ -1,93 +1,95 @@
 # Segno
 
 [![CI](https://github.com/Relatronica/Segno/actions/workflows/ci.yml/badge.svg)](https://github.com/Relatronica/Segno/actions/workflows/ci.yml)
-[![Codice: AGPL-3.0](https://img.shields.io/badge/codice-AGPL--3.0-blue.svg)](LICENSE)
-[![Dati: CC BY 4.0](https://img.shields.io/badge/dati-CC%20BY%204.0-lightgrey.svg)](LICENSE-CONTENT)
+[![Code: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-blue.svg)](LICENSE)
+[![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightgrey.svg)](LICENSE-CONTENT)
 
-Timeline pubblica su lobbying, dichiarazioni e decisioni europee sul digitale — con fonti e citazioni.
+A public timeline of how AI evolved, read through six lenses — with sources and quotes.
 
-Chi influenza le regole digitali in Europa? Segno mette incontri, spese dichiarate, dichiarazioni pubbliche e passaggi legislativi sullo stesso asse temporale. Ogni punto ha un link stabile.
+Where is AI actually going? Segno puts model releases, research, capabilities, market moves, cultural shifts and policy decisions on a single time axis. Every point has a stable link and a citable source.
 
-Sito: [segno.app](https://segno.app) · Progetto [Relatronica](https://relatronica.com)
+Site: [segno.app](https://segno.app) · A [Relatronica](https://relatronica.com) project
 
-## Pagine
+## Pages
 
-| Percorso | Cosa fa |
+| Route | What it does |
 | --- | --- |
-| `/` | Home: manifesto e numeri presi dai dati della timeline |
-| `/timeline` | Timeline interattiva, sei lenti (modelli, capacità, ricerca, mercato, cultura, politica) |
-| `/segnala` | Errori, fonti mancanti, contributi |
-| `/redazione` | Coda candidati (protetta, non indicizzata) |
+| `/` | Home: the thesis, plus numbers read from the timeline dataset |
+| `/timeline` | Interactive timeline: one axis, six lenses (models, research, capabilities, business, culture, policy) |
+| `/segnala` | Errors, missing sources, contributions |
+| `/chi-siamo` | Project identity, method, independence and licensing |
+| `/redazione` | Candidate queue (protected, not indexed) |
 
-Italiano e inglese si cambiano dalla navbar.
+Italian and English switch from the navbar.
 
-## Dati
+## Data
 
-La timeline curata vive in `lib/data/trasparenza.ts`:
+The curated timeline lives in `lib/data/trasparenza.ts`:
 
-- due temi (`ai-act`, `sentiment`)
-- aziende, persone, eventi con `sourceUrl` obbligatorio
-- `getHomeSnapshot()` calcola eventi, aziende, anni e fonti uniche — usati in homepage e nell’immagine Open Graph
+- one unified theme, "AI evolution" (`unifiedTheme` in [lib/data/trasparenza.ts](lib/data/trasparenza.ts))
+- six lenses in reading order — models, research, capabilities, business, culture, policy
+- actors, people and events, each with a mandatory `sourceUrl`
+- `getHomeSnapshot()` counts events, actors, the year range and unique sources — used by the homepage and the Open Graph image
 
-I numeri in homepage non sono copy: se aggiungi un evento, si aggiornano da soli.
+Numbers on the homepage are not copy: add an event and they update by themselves.
 
-## Pipeline redazionale
+## Editorial pipeline
 
-`lib/pipeline/` scopre dichiarazioni da feed RSS su host autorizzati (`lib/pipeline/sources.ts`).
+`lib/pipeline/` discovers statements from RSS feeds on allowlisted hosts (`lib/pipeline/sources.ts`).
 
-Due flussi:
+Two streams:
 
-- **Segnali automatici.** Un titolo che nomina una persona tracciata diventa una voce del diario automatico. Non ha citazione, quindi non ha tono e non entra in curva: il tono di un titolo non è la posizione della persona che nomina. La redazione può nascondere il pezzo o promuoverlo in coda.
-- **Coda editoriale.** Gli altri candidati restano `pending`. Pubblicare richiede una citazione: solo quella citazione diventa un vertice della curva.
+- **Automatic signals.** A headline naming a tracked person becomes an entry in the automatic log. It has no quote, so it carries no tone and stays out of the tone curve: the tone of a headline is not the position of the person it names. Editors can hide the item or promote it into the queue.
+- **Editorial queue.** Other candidates stay `pending`. Publishing requires a quote: only that quote becomes a point on the curve.
 
-Il workflow `.github/workflows/pipeline-discover.yml` chiama `POST /api/pipeline/discover` ogni giorno (06:30 UTC). La scansione raccoglie i titoli che nominano le persone tracciate; il tag di tono resta solo un suggerimento mostrato in redazione, mai applicato d’ufficio alle voci del diario.
+The workflow `.github/workflows/pipeline-discover.yml` calls `POST /api/pipeline/discover` once a day (06:30 UTC). The scan collects headlines that name tracked people; the tone tag stays a suggestion shown in the newsroom, never applied automatically to log entries.
 
-- Store: Netlify Blobs in produzione, `.data/pipeline-store.json` in locale (`candidates` e `signals`)
-- UI: `/redazione` con `PIPELINE_SECRET`
-- La timeline unisce eventi curati, pin pubblicati e segnali automatici
+- Store: Netlify Blobs in production, `.data/pipeline-store.json` locally (`candidates` and `signals`)
+- UI: `/redazione` behind `PIPELINE_SECRET`
+- The timeline merges curated events, published pins and automatic signals
 
-## Sviluppo
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Altri script: `npm run lint`, `npm run type-check`, `npm run build`.
+Other scripts: `npm run lint`, `npm run type-check`, `npm run build`.
 
-### Variabili d’ambiente
+### Environment variables
 
-| Variabile | Uso |
+| Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Canonical, sitemap, Open Graph (default `https://segno.app`) |
-| `RESEND_API_KEY` | Form /segnala |
-| `CONTACT_TO_EMAIL` | Destinatario segnalazioni |
-| `CONTACT_FROM_EMAIL` | Mittente Resend |
-| `PIPELINE_SECRET` | Auth redazione e API `/api/pipeline/*` |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URLs, sitemap, Open Graph (defaults to `https://segno.app`) |
+| `RESEND_API_KEY` | `/segnala` form |
+| `CONTACT_TO_EMAIL` | Where reports are delivered |
+| `CONTACT_FROM_EMAIL` | Resend sender |
+| `PIPELINE_SECRET` | Newsroom auth and `/api/pipeline/*` |
 
 ## SEO
 
-- Metadata e copy in `lib/seo.ts`
-- `app/opengraph-image.tsx` genera la card 1200×630 con i numeri della timeline
-- `app/sitemap.ts` e `app/robots.ts` (la redazione e `/api/` sono esclusi)
-- JSON-LD: `WebSite` + `Organization` sul layout, `Dataset` in homepage
+- Metadata and copy in `lib/seo.ts`
+- `app/opengraph-image.tsx` renders the 1200×630 card with the timeline numbers
+- `app/sitemap.ts` and `app/robots.ts` (newsroom and `/api/` are excluded)
+- JSON-LD: `WebSite` + `Organization` in the layout, `Dataset` on the homepage
 
-Per un dominio diverso da segno.app imposta `NEXT_PUBLIC_SITE_URL`.
+For a domain other than segno.app, set `NEXT_PUBLIC_SITE_URL`.
 
-## Licenza
+## License
 
-Questo repository distribuisce codice e contenuti con due licenze diverse.
+This repository ships code and content under two different licenses.
 
-| Cosa | Dove | Licenza |
+| What | Where | License |
 | --- | --- | --- |
-| Codice | `app/`, `components/`, `lib/pipeline/`, `lib/trasparenza/`, `store/` | [AGPL-3.0-or-later](LICENSE) |
-| Dati e testi | `lib/data/`, `lib/i18n/`, `lib/seo.ts`, `public/` | [CC BY 4.0](LICENSE-CONTENT) |
+| Code | `app/`, `components/`, `lib/pipeline/`, `lib/trasparenza/`, `store/` | [AGPL-3.0-or-later](LICENSE) |
+| Data and text | `lib/data/`, `lib/i18n/`, `lib/seo.ts`, `public/` | [CC BY 4.0](LICENSE-CONTENT) |
 
-**Codice.** Chi mette online una versione modificata di Segno deve pubblicarne il sorgente: è la clausola di rete della AGPL (§13), ed è il motivo per cui la licenza è questa e non una permissiva. Il link alla repository è nel footer e nella sezione "Codice e dati aperti" di `/chi-siamo`.
+**Code.** Anyone who puts a modified version of Segno online must publish its source: that is the network clause of the AGPL (§13), and it is why the license is this one and not a permissive one. The repository link is in the footer and in the "Open code and data" section of `/chi-siamo`.
 
-**Dati.** Redazioni, ricercatori e amministrazioni possono riusare eventi, citazioni e analisi di tono anche in contesti commerciali, senza vincoli di copyleft: serve solo attribuire il progetto, linkare la fonte del singolo dato e citare la licenza. Le citazioni restano di chi le ha pronunciate.
+**Data.** Newsrooms, researchers and public bodies can reuse events, quotes and tone analysis even in commercial settings, with no copyleft obligation: just credit the project, link the source of each data point, and cite the license. Quotes remain the property of whoever said them.
 
-Dettagli e casi limite in [LICENSE-CONTENT](LICENSE-CONTENT). Per contribuire vedi [CONTRIBUTING.md](CONTRIBUTING.md); per problemi di sicurezza [SECURITY.md](SECURITY.md).
+Edge cases and details in [LICENSE-CONTENT](LICENSE-CONTENT). To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md); for security issues, [SECURITY.md](SECURITY.md).
 
 ## Stack
 

@@ -262,14 +262,6 @@ export default function TrasparenzaContent() {
     return () => window.removeEventListener('popstate', onPop);
   }, [applyUrlState]);
 
-  /**
-   * Desktop lands with the panel already open. Below `lg` the panel is a
-   * full-screen overlay, so mobile keeps the timeline and opens it on demand.
-   */
-  useEffect(() => {
-    if (window.matchMedia('(min-width: 1024px)').matches) setPanelOpen(true);
-  }, []);
-
   useEffect(() => {
     if (!urlApplied) return;
     if (explicitYears.current) return;

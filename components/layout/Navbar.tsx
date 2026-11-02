@@ -6,8 +6,9 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
-import { Menu, X, Globe, Heart } from 'lucide-react';
+import { Menu, X, Globe, Heart, Github } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SOURCE_URL } from '@/lib/seo';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
 
@@ -109,6 +110,16 @@ export function Navbar() {
             {t.nav.donate}
           </a>
 
+          <a
+            href={SOURCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t.footer.source}
+            className="hidden rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            <Github className="h-4 w-4" />
+          </a>
+
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -153,6 +164,16 @@ export function Navbar() {
                 >
                   <Heart className="h-4 w-4" />
                   {t.nav.donate}
+                </a>
+                <a
+                  href={SOURCE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <Github className="h-4 w-4" />
+                  {t.footer.source}
                 </a>
               </div>
             </motion.div>

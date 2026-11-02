@@ -50,10 +50,31 @@ const methodFaqs = METHOD_FAQ_IDS.map((id) => homeFaqs.find((faq) => faq.id === 
   (faq): faq is (typeof homeFaqs)[number] => Boolean(faq),
 );
 
-const heroYears = Array.from(
-  { length: homeSnapshot.toYear - homeSnapshot.fromYear + 1 },
-  (_, i) => String(homeSnapshot.fromYear + i),
-);
+/**
+ * Hero volume chart: one stacked bar per year, split by lens, counted from the
+ * same dataset the timeline reads. Mirrors the volume band under the lanes.
+ */
+const volumeByYear = (() => {
+  const years = Array.from(
+    { length: homeSnapshot.toYear - homeSnapshot.fromYear + 1 },
+    (_, i) => homeSnapshot.fromYear + i,
+  );
+  const counts = years.map(() => ALL_LENSES.map(() => 0));
+
+  for (const event of unifiedTheme.events) {
+    const yearIndex = years.indexOf(Number(event.date.slice(0, 4)));
+    const lensPos = ALL_LENSES.indexOf(lensOf(event));
+    if (yearIndex < 0 || lensPos < 0) continue;
+    counts[yearIndex][lensPos] += 1;
+  }
+
+  return years.map((year, i) => {
+    const segments = ALL_LENSES.map((lens, j) => ({ lens, count: counts[i][j] }));
+    return { year, segments, total: segments.reduce((sum, segment) => sum + segment.count, 0) };
+  });
+})();
+
+const volumeMax = Math.max(1, ...volumeByYear.map((entry) => entry.total));
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -102,6 +123,12 @@ export default function HomeContent() {
   const shareUrl = SITE_URL;
   const shareText = t.home.shareText;
   const citation = `${SITE_NAME} (${currentYear}). ${t.home.citeWork}. Relatronica. ${SITE_URL}`;
+
+  const volumeLabel = (count: number) =>
+    (count === 1 ? t.hero.volumeBarLabelOne : t.hero.volumeBarLabel).replace(
+      '{count}',
+      String(count),
+    );
 
   const mastodonIntent = useMemo(() => {
     return (instance: string) => {
@@ -162,7 +189,7 @@ export default function HomeContent() {
           className="pointer-events-none absolute inset-0 opacity-[0.45] dark:opacity-[0.22] [background-image:linear-gradient(to_right,color-mix(in_oklch,var(--ink)_11%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--ink)_9%,transparent)_1px,transparent_1px)] [background-size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_at_50%_28%,black,transparent_78%)]"
         />
 
-        <div className="relative mx-auto max-w-6xl px-4 pb-0 pt-[calc(var(--nav-clearance)+3.5rem)] sm:px-6 sm:pt-[calc(var(--nav-clearance)+5rem)] lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-[calc(var(--nav-clearance)+3.5rem)] sm:px-6 sm:pb-20 sm:pt-[calc(var(--nav-clearance)+5rem)] lg:px-8">
           <motion.div initial="hidden" animate="visible" className="max-w-3xl">
             <motion.p
               custom={0}
@@ -202,12 +229,6 @@ export default function HomeContent() {
                 {t.hero.cta}
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="#metodo"
-                className="text-sm font-semibold underline-offset-4 hover:underline"
-              >
-                {t.hero.ctaSecondary}
-              </a>
             </motion.div>
             <motion.p
               custom={4}
@@ -220,29 +241,80 @@ export default function HomeContent() {
             </motion.p>
           </motion.div>
 
-          <div aria-hidden className="relative mx-auto mt-16 hidden max-w-4xl sm:block">
-            <div className="absolute inset-x-0 top-1 h-px bg-gradient-to-r from-transparent via-ink/35 to-transparent dark:via-mark/35" />
-            <div className="relative flex items-start justify-between">
-              {heroYears.map((year) => {
-                const current = year === String(homeSnapshot.toYear);
-                return (
-                  <div key={year} className="flex flex-col items-center gap-2">
+          <motion.figure custom={5} variants={fadeUp} className="mt-14 sm:mt-20">
+            <figcaption className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                {t.hero.volumeCaption}
+              </span>
+              <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                {ALL_LENSES.map((lens) => (
+                  <li
+                    key={lens}
+                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                  >
                     <span
-                      className={cn(
-                        'block h-2 w-2 rounded-full',
-                        current
-                          ? 'bg-mark shadow-[0_0_0_4px] shadow-mark/15'
-                          : 'bg-ink/40 dark:bg-foreground/35',
-                      )}
+                      aria-hidden
+                      className="h-2 w-2 shrink-0 rounded-sm"
+                      style={{ backgroundColor: LENS_META[lens].color }}
                     />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      {year}
-                    </span>
-                  </div>
-                );
-              })}
+                    {LENS_META[lens].label[locale]}
+                  </li>
+                ))}
+              </ul>
+            </figcaption>
+
+            <div aria-hidden className="mt-5 flex h-32 items-end gap-1 sm:h-44 sm:gap-1.5">
+              {volumeByYear.map(({ year, segments, total }) => (
+                <div
+                  key={year}
+                  title={`${year} · ${volumeLabel(total)}`}
+                  className="flex h-full min-w-0 flex-1 flex-col justify-end"
+                >
+                  {total === 0 ? (
+                    <span className="h-px w-full bg-border" />
+                  ) : (
+                    [...segments]
+                      .reverse()
+                      .filter((segment) => segment.count > 0)
+                      .map((segment, i) => (
+                        <span
+                          key={segment.lens}
+                          title={`${LENS_META[segment.lens].label[locale]} · ${volumeLabel(segment.count)}`}
+                          className={cn('block w-full shrink-0', i === 0 && 'rounded-t-[2px]')}
+                          style={{
+                            height: `${(segment.count / volumeMax) * 100}%`,
+                            backgroundColor: LENS_META[segment.lens].color,
+                          }}
+                        />
+                      ))
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
+
+            <div aria-hidden className="mt-2 flex gap-1 sm:gap-1.5">
+              {volumeByYear.map(({ year }, i) => (
+                <span
+                  key={year}
+                  className="flex-1 text-center font-mono text-[10px] tabular-nums text-muted-foreground"
+                >
+                  <span
+                    className={cn(
+                      i % 3 !== 0 && i !== volumeByYear.length - 1 && 'hidden sm:inline',
+                    )}
+                  >
+                    {year}
+                  </span>
+                </span>
+              ))}
+            </div>
+
+            <ul className="sr-only">
+              {volumeByYear.map(({ year, total }) => (
+                <li key={year}>{`${year}: ${volumeLabel(total)}`}</li>
+              ))}
+            </ul>
+          </motion.figure>
         </div>
       </section>
 
@@ -340,15 +412,12 @@ export default function HomeContent() {
             <p className="mt-4 text-muted-foreground leading-relaxed">{t.home.indexSubtitle}</p>
           </div>
 
-          <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/50 sm:grid-cols-2 lg:grid-cols-5">
-            {lensIndex.map(({ lens, meta, count }, i) => (
-              <li
-                key={lens}
-                className={cn('bg-background', i === lensIndex.length - 1 && 'sm:col-span-2 lg:col-span-1')}
-              >
+          <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {lensIndex.map(({ lens, meta, count }) => (
+              <li key={lens} className="bg-background">
                 <Link
                   href={`/timeline?lente=${lens}`}
-                  className="group flex h-full flex-col p-5 transition-colors hover:bg-accent/40"
+                  className="group flex h-full flex-col p-4 transition-colors hover:bg-accent/40"
                 >
                   <span
                     aria-hidden
@@ -356,7 +425,7 @@ export default function HomeContent() {
                     style={{ backgroundColor: meta.color }}
                   />
                   <span className="mt-4 text-base font-semibold tracking-tight">{meta.label[locale]}</span>
-                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-pretty text-muted-foreground">
+                  <p className="mt-1.5 flex-1 text-xs leading-relaxed text-pretty text-muted-foreground">
                     {meta.blurb[locale]}
                   </p>
                   <span className="mt-4 font-mono text-xs tabular-nums text-muted-foreground">

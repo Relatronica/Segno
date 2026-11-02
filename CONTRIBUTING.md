@@ -1,6 +1,6 @@
-# Contribuire a Segno
+# Contributing to Segno
 
-Segno è codice e dataset insieme. Le due cose si contribuiscono in modo diverso, e le due licenze sono diverse.
+Segno is code and dataset at once. The two are contributed in different ways, and they carry different licenses.
 
 ## Setup
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Prima di aprire una pull request:
+Before opening a pull request:
 
 ```bash
 npm run lint
@@ -17,45 +17,45 @@ npm run type-check
 npm run build
 ```
 
-## Contributi al dataset
+## Dataset contributions
 
-Il dataset curato è in `lib/data/`. Ogni evento richiede:
+The curated dataset lives in `lib/data/`. Every event requires:
 
-- `sourceUrl` valido — fonte primaria o testata citabile, mai un aggregatore;
-- una citazione testuale verificabile, quando l'evento entra nella curva di tono;
-- il tono (`sentiment`) solo sulla citazione, mai sul titolo che la riassume.
+- a valid `sourceUrl` — a primary source or a citable outlet, never an aggregator;
+- a verifiable verbatim quote, when the event feeds the tone curve;
+- tone (`sentiment`) only on the quote, never on the headline that sums it up.
 
-Un evento senza fonte non entra. Se un dato è incerto, meglio lasciarlo fuori e aprire una issue che lo segnali.
+An event without a source does not go in. If a data point is uncertain, better to leave it out and open an issue about it.
 
-Per correzioni, fonti mancanti o nuovi dati c'è anche il form su `/segnala`: va bene usarlo al posto di una pull request.
+For corrections, missing sources or new data there is also the form at `/segnala`: using it instead of a pull request is fine.
 
-## Contributi al codice
+## Code contributions
 
-Sono benvenuti bug fix, accessibilità, prestazioni e i test che oggi mancano. Per cambi su interfaccia o struttura apri prima una issue: il progetto ha una direzione visiva precisa e preferisce discuterla prima di rivedere il codice.
+Bug fixes, accessibility, performance and the tests we still lack are welcome. For changes to the interface or the structure, open an issue first: the project has a precise visual direction and prefers to discuss it before reviewing code.
 
-## DCO — firma obbligatoria
+## DCO — signature required
 
-Ogni commit deve avere un `Signed-off-by`:
+Every commit must carry a `Signed-off-by` line:
 
 ```bash
 git commit -s -m "Fix timeline scrub on touch devices"
 ```
 
-Il `-s` aggiunge al messaggio:
+The `-s` flag appends this to the message:
 
 ```
-Signed-off-by: Nome Cognome <email@example.com>
+Signed-off-by: First Last <email@example.com>
 ```
 
-Firmare significa che hai il diritto di inviare quel contributo e che accetti di rilasciarlo con le licenze del progetto. Non serve un CLA separato: la firma mantiene la possibilità, per il progetto, di riusare il proprio codice in futuro, incluso il relicensing. Le pull request senza firma vengono chiuse, non corrette a mano.
+Signing means you have the right to submit that contribution and that you agree to release it under the project licenses. No separate CLA is needed: the signature preserves the project's ability to reuse its own code in the future, relicensing included. Pull requests without a signature are closed, not fixed by hand.
 
-## Licenze dei contributi
+## Licensing of contributions
 
-- Codice → [AGPL-3.0-or-later](LICENSE)
-- Dati, citazioni e testi → [CC BY 4.0](LICENSE-CONTENT)
+- Code → [AGPL-3.0-or-later](LICENSE)
+- Data, quotes and text → [CC BY 4.0](LICENSE-CONTENT)
 
-Non inserire immagini, font o dataset di terzi senza licenza compatibile e senza attribuzione documentata nel file. Le immagini senza provenienza dichiarata vengono rifiutate.
+Do not add third-party images, fonts or datasets without a compatible license and documented attribution in the file. Images with no stated provenance are rejected.
 
-## Questioni di sicurezza
+## Security
 
-Non aprire issue pubbliche: vedi [SECURITY.md](SECURITY.md).
+Do not open public issues: see [SECURITY.md](SECURITY.md).

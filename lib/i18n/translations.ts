@@ -10,13 +10,15 @@ const translations = {
       donate: 'Dona',
     },
     hero: {
-      title: 'Come evolve l’IA, dal modello alla regola.',
+      title: 'L’IA corre. Qui la metti in fila.',
       subtitle:
-        'Segno mette su un solo asse i rilasci dei laboratori, le capacità misurate, la ricerca, il mercato, la cultura e la politica: sei lenti, un solo racconto dal 2013 a oggi. Ogni segno è un dato con la sua fonte.',
+        'Modelli, ricerca, mercato, cultura e politica su una sola timeline, dal 2013 a oggi. Ogni punto ha la sua fonte.',
       cta: 'Esplora la timeline',
-      ctaSecondary: 'Perché conta',
       statsEvents: 'Punti in timeline',
       statsSources: 'Fonti citabili',
+      volumeCaption: 'Punti in timeline, per anno e per lente',
+      volumeBarLabel: '{count} punti',
+      volumeBarLabelOne: '{count} punto',
     },
     home: {
       roadmapTitle: 'Cosa stiamo costruendo',
@@ -43,7 +45,7 @@ const translations = {
       aboutLink: 'Chi siamo e come lavoriamo',
       indexTitle: 'Indice dei dati',
       indexSubtitle:
-        'Cinque lenti, un solo asse. Apri una lente per leggerne la timeline filtrata.',
+        'Sei lenti, un solo asse. Apri una lente per leggerne la timeline filtrata.',
       indexEntries: '{count} inserimenti',
       citeTitle: 'Citare Segno',
       citeSubtitle: 'Ogni dato ha una fonte e un link stabile. Se lo usi, citalo così.',
@@ -330,13 +332,15 @@ const translations = {
       donate: 'Donate',
     },
     hero: {
-      title: 'How AI evolves, from the model to the rule.',
+      title: 'AI runs. Here you line it up.',
       subtitle:
-        'Segno places lab releases, measured capabilities, research, business, culture and policy on one axis: six lenses, one story from 2013 to today. Every mark is a datum with its source.',
+        'Models, research, business, culture and policy on a single timeline, from 2013 to today. Every point has its source.',
       cta: 'Explore the timeline',
-      ctaSecondary: 'Why it matters',
       statsEvents: 'Timeline points',
       statsSources: 'Citable sources',
+      volumeCaption: 'Timeline points, by year and lens',
+      volumeBarLabel: '{count} entries',
+      volumeBarLabelOne: '{count} entry',
     },
     home: {
       roadmapTitle: 'What we are building',
@@ -361,7 +365,7 @@ const translations = {
         'What we assert and what we do not claim to prove. The rest is in the timeline.',
       aboutLink: 'About and how we work',
       indexTitle: 'Data index',
-      indexSubtitle: 'Five lenses, one axis. Open a lens to read its filtered timeline.',
+      indexSubtitle: 'Six lenses, one axis. Open a lens to read its filtered timeline.',
       indexEntries: '{count} entries',
       citeTitle: 'Cite Segno',
       citeSubtitle: 'Every datum has a source and a stable link. If you use it, cite it like this.',
