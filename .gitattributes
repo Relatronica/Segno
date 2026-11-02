@@ -1,2 +1,16 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Assets binari: nessuna normalizzazione, nessun diff testuale
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+
+# Dataset editoriale e traduzioni: contenuto, non codice
+lib/data/** linguist-documentation
+lib/i18n/translations.ts linguist-documentation
+
+# Generato
+package-lock.json linguist-generated

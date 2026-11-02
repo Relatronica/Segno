@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useT } from '@/lib/i18n/useT';
+import { SOURCE_URL } from '@/lib/seo';
 
 const RELATRONICA_URL = 'https://relatronica.com';
+const CONTENT_LICENSE_URL = `${SOURCE_URL}/blob/main/LICENSE-CONTENT`;
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -156,8 +158,44 @@ export default function ChiSiamoContent() {
         </div>
       </section>
 
-      {/* Closing */}
+      {/* License */}
       <section className="relative border-t border-border/50 bg-muted/15">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={inView}
+            className="max-w-3xl"
+          >
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{a.licenseTitle}</h2>
+            <p className="mt-5 leading-relaxed text-pretty text-muted-foreground">{a.licenseText}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <a
+                href={SOURCE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+              >
+                {a.licenseCodeCta}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href={CONTENT_LICENSE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+              >
+                {a.licenseDataCta}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Closing */}
+      <section className="relative border-t border-border/50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <p className="max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground">

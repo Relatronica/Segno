@@ -302,6 +302,11 @@ const translations = {
       methodText2:
         'I fatti stanno sullo stesso asse in ordine cronologico: non dimostriamo rapporti di causa tra un rilascio e la regola che ne è seguita. La vicinanza nel tempo aiuta a leggere, non prova. Il sentiment è una lettura editoriale delle citazioni verificate, non un punteggio oggettivo.',
       methodCta: 'Leggi il metodo per intero',
+      licenseTitle: 'Codice e dati aperti',
+      licenseText:
+        'Il codice di Segno è aperto sotto AGPL-3.0: chi ne mette online una versione modificata deve pubblicarne il sorgente. Dati e testi sono invece sotto CC BY 4.0, senza vincoli di copyleft: redazioni, ricercatori e amministrazioni possono riusarli anche in contesti commerciali, indicando il progetto e la fonte del singolo dato.',
+      licenseCodeCta: 'Repository su GitHub',
+      licenseDataCta: 'Licenza dei dati',
       closingText:
         'Un errore, una fonte mancante, un dubbio sul metodo? Segnalalo: i dati devono circolare.',
       closingCta: 'Segnala',
@@ -311,7 +316,8 @@ const translations = {
         'Entusiasmo e timore sull’IA nelle parole pubbliche dei leader — su una timeline con fonti. Poi, se vuoi, le regole europee.',
       navigation: 'Progetto',
       contact: 'Partecipa',
-      rights: 'Tutti i diritti riservati.',
+      license: 'Codice sotto {code}, dati e testi sotto {content}.',
+      source: 'Codice sorgente',
       madeWith: 'Fatto con cura per un digitale migliore.',
     },
   },
@@ -613,6 +619,11 @@ const translations = {
       methodText2:
         'Facts sit on the same axis in chronological order: we do not prove causal links between a release and the rule that followed it. Temporal proximity helps you read, it does not prove. Sentiment is an editorial reading of verified quotes, not an objective score.',
       methodCta: 'Read the full method',
+      licenseTitle: 'Open code and data',
+      licenseText:
+        'Segno’s code is open under AGPL-3.0: whoever puts a modified version online must publish its source. Data and texts are under CC BY 4.0, with no copyleft: newsrooms, researchers and public bodies can reuse them in commercial contexts too, crediting the project and the source of each datum.',
+      licenseCodeCta: 'Repository on GitHub',
+      licenseDataCta: 'Data license',
       closingText:
         'An error, a missing source, a doubt about the method? Report it: data should circulate.',
       closingCta: 'Report',
@@ -622,7 +633,8 @@ const translations = {
         'Enthusiasm and fear around AI in leaders’ public words — on a sourced timeline. Then, if you want, Europe’s rules.',
       navigation: 'Project',
       contact: 'Take part',
-      rights: 'All rights reserved.',
+      license: 'Code under {code}, data and texts under {content}.',
+      source: 'Source code',
       madeWith: 'Made with care for a better digital world.',
     },
   },

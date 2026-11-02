@@ -1,0 +1,62 @@
+Dataset editoriale, citazioni e testi — Creative Commons Attribution 4.0
+================================================================================
+
+Copyright (C) 2024-2026 Relatronica
+
+Il codice sorgente di Segno è distribuito sotto GNU Affero General Public
+License v3 o successiva (vedi LICENSE). I contenuti elencati qui sotto sono
+invece distribuiti sotto Creative Commons Attribuzione 4.0 Internazionale
+(CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+Questa distinzione esiste per una ragione pratica: redazioni, ricercatori e
+amministrazioni devono poter riusare i dati e citarli senza vincoli di
+copyleft, anche in contesti commerciali. Il codice resta aperto e copyleft.
+
+
+Ambito di applicazione
+--------------------------------------------------------------------------------
+
+Coperto da CC BY 4.0:
+
+  lib/data/            dataset curato: eventi, persone, aziende, citazioni,
+                       analisi di tono e le sei lenti della timeline
+  lib/i18n/            testi dell'interfaccia in italiano e inglese
+  lib/seo.ts           copy per metadata, sitemap e Open Graph
+  public/              loghi, illustrazioni e ritratti del progetto
+  README.md e la documentazione del repository
+
+Coperto da AGPL-3.0-or-later (vedi LICENSE):
+
+  app/                 route, pagine, API
+  components/          interfaccia
+  lib/pipeline/        pipeline redazionale, discovery, store
+  lib/trasparenza/     logica di risoluzione, ricerca, scala
+  lib/dates.ts  lib/utils.ts  store/  configurazione e workflow
+
+Le citazioni testuali di dichiarazioni pubbliche di terze persone restano di
+chi le ha pronunciate o pubblicate: Segno ne indica sempre la fonte
+(`sourceUrl`) e chi riusa i dati deve mantenerne l'attribuzione.
+
+
+Attribuzione richiesta
+--------------------------------------------------------------------------------
+
+Chi riusa i contenuti deve indicare, in modo ragionevole rispetto al mezzo:
+
+  1. il titolo dell'opera — "Segno, timeline su dichiarazioni e regole
+     digitali in Europa";
+  2. l'autore — Relatronica;
+  3. la fonte — l'URL della pagina o del file da cui il dato proviene,
+     preferibilmente il link stabile del singolo evento;
+  4. la licenza — CC BY 4.0, con link a https://creativecommons.org/licenses/by/4.0/
+
+Non serve chiedere permesso preventivo. Se modifichi i dati, indica che sono
+stati modificati: la responsabilità di un dato alterato è di chi lo altera.
+
+
+Errore nei dati
+--------------------------------------------------------------------------------
+
+Segnalazioni di errori, fonte sbagliata o dato mancante passano da /segnala.
+Questa licenza non è un disclaimer sul merito: ogni evento in timeline ha una
+fonte verificabile e resta soggetto a correzione.

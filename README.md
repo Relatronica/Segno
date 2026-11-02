@@ -1,5 +1,9 @@
 # Segno
 
+[![CI](https://github.com/Relatronica/Segno/actions/workflows/ci.yml/badge.svg)](https://github.com/Relatronica/Segno/actions/workflows/ci.yml)
+[![Codice: AGPL-3.0](https://img.shields.io/badge/codice-AGPL--3.0-blue.svg)](LICENSE)
+[![Dati: CC BY 4.0](https://img.shields.io/badge/dati-CC%20BY%204.0-lightgrey.svg)](LICENSE-CONTENT)
+
 Timeline pubblica su lobbying, dichiarazioni e decisioni europee sul digitale — con fonti e citazioni.
 
 Chi influenza le regole digitali in Europa? Segno mette incontri, spese dichiarate, dichiarazioni pubbliche e passaggi legislativi sullo stesso asse temporale. Ogni punto ha un link stabile.
@@ -69,6 +73,21 @@ Altri script: `npm run lint`, `npm run type-check`, `npm run build`.
 - JSON-LD: `WebSite` + `Organization` sul layout, `Dataset` in homepage
 
 Per un dominio diverso da segno.app imposta `NEXT_PUBLIC_SITE_URL`.
+
+## Licenza
+
+Questo repository distribuisce codice e contenuti con due licenze diverse.
+
+| Cosa | Dove | Licenza |
+| --- | --- | --- |
+| Codice | `app/`, `components/`, `lib/pipeline/`, `lib/trasparenza/`, `store/` | [AGPL-3.0-or-later](LICENSE) |
+| Dati e testi | `lib/data/`, `lib/i18n/`, `lib/seo.ts`, `public/` | [CC BY 4.0](LICENSE-CONTENT) |
+
+**Codice.** Chi mette online una versione modificata di Segno deve pubblicarne il sorgente: è la clausola di rete della AGPL (§13), ed è il motivo per cui la licenza è questa e non una permissiva. Il link alla repository è nel footer e nella sezione "Codice e dati aperti" di `/chi-siamo`.
+
+**Dati.** Redazioni, ricercatori e amministrazioni possono riusare eventi, citazioni e analisi di tono anche in contesti commerciali, senza vincoli di copyleft: serve solo attribuire il progetto, linkare la fonte del singolo dato e citare la licenza. Le citazioni restano di chi le ha pronunciate.
+
+Dettagli e casi limite in [LICENSE-CONTENT](LICENSE-CONTENT). Per contribuire vedi [CONTRIBUTING.md](CONTRIBUTING.md); per problemi di sicurezza [SECURITY.md](SECURITY.md).
 
 ## Stack
 

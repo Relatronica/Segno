@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/lib/i18n/useT';
+import { CODE_LICENSE, CONTENT_LICENSE, SOURCE_URL } from '@/lib/seo';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
 
@@ -80,6 +81,16 @@ export function Footer() {
               </li>
               <li>
                 <a
+                  href={SOURCE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t.footer.source}
+                </a>
+              </li>
+              <li>
+                <a
                   href={DONATE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -94,7 +105,8 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {year} Segno. {t.footer.rights}
+            &copy; {year} Segno.{' '}
+            {t.footer.license.replace('{code}', CODE_LICENSE).replace('{content}', CONTENT_LICENSE)}
           </p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>{t.footer.madeWith}</span>
