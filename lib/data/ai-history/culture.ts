@@ -21,10 +21,15 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2022-06-11-lamda-lemoine", date: "2022-06-11", type: "statement", lens: "culture",
+    sentiment: "caution",
     title: { it: "Il caso Lemoine e il modello LaMDA", en: "The Lemoine case and the LaMDA model" },
     summary: {
       it: "Il Washington Post pubblica il racconto dell'ingegnere Google Blake Lemoine, che sostiene che il modello LaMDA sia senziente; Google esamina le sue affermazioni, le respinge e lo sospende dal lavoro.",
       en: "The Washington Post publishes the account of Google engineer Blake Lemoine, who claims the LaMDA model is sentient; Google reviews his claims, rejects them and places him on leave.",
+    },
+    quote: {
+      it: "I know a person when I talk to it.",
+      en: "I know a person when I talk to it.",
     },
     sourceLabel: { it: "The Washington Post", en: "The Washington Post" }, sourceUrl: "https://www.washingtonpost.com/technology/2022/06/11/google-ai-lamda-blake-lemoine/",
   },
@@ -66,10 +71,15 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2024-06-04-situational-awareness", date: "2024-06-04", type: "statement", lens: "culture",
+    sentiment: "alarm",
     title: { it: "Situational Awareness: The Decade Ahead", en: "Situational Awareness: The Decade Ahead" },
     summary: {
       it: "Leopold Aschenbrenner, già nel team Superalignment di OpenAI, pubblica 'Situational Awareness: The Decade Ahead', un saggio in sei parti che stima un'AGI plausibile entro il 2027 e sostiene la necessità di una mobilitazione industriale e di sicurezza.",
       en: "Leopold Aschenbrenner, formerly on OpenAI's Superalignment team, publishes 'Situational Awareness: The Decade Ahead', a six-part essay arguing AGI is plausible by 2027 and calling for industrial and security mobilisation.",
+    },
+    quote: {
+      it: "By the end of the decade, they will be smarter than you or I; we will have superintelligence, in the true sense of the word.",
+      en: "By the end of the decade, they will be smarter than you or I; we will have superintelligence, in the true sense of the word.",
     },
     sourceLabel: { it: "Situational Awareness", en: "Situational Awareness" }, sourceUrl: "https://situational-awareness.ai/",
   },
@@ -93,10 +103,15 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2025-04-03-ai-2027", date: "2025-04-03", type: "statement", lens: "culture",
+    sentiment: "alarm",
     title: { it: "AI 2027", en: "AI 2027" },
     summary: {
       it: "Il progetto AI Futures Project pubblica 'AI 2027', uno scenario mese per mese che descrive come AGI e superintelligenza potrebbero emergere entro la fine del 2027.",
       en: "The AI Futures Project publishes 'AI 2027', a month-by-month scenario describing how AGI and superintelligence could emerge by the end of 2027.",
+    },
+    quote: {
+      it: "We predict that the impact of superhuman AI over the next decade will be enormous, exceeding that of the Industrial Revolution.",
+      en: "We predict that the impact of superhuman AI over the next decade will be enormous, exceeding that of the Industrial Revolution.",
     },
     sourceLabel: { it: "AI Futures Project", en: "AI Futures Project" }, sourceUrl: "https://ai-2027.com",
   },
@@ -111,10 +126,15 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2026-05-25-magnifica-humanitas", date: "2026-05-25", type: "statement", lens: "culture",
+    sentiment: "caution",
     title: { it: "Enciclica 'Magnifica Humanitas'", en: "Encyclical 'Magnifica Humanitas'" },
     summary: {
       it: "Papa Leone XIV pubblica la sua prima enciclica, 'Magnifica Humanitas', dedicata alla custodia della persona umana nell'era dell'intelligenza artificiale; il testo affronta il rapporto tra tecnologia, potere e persona.",
       en: "Pope Leo XIV publishes his first encyclical, 'Magnifica Humanitas', on safeguarding the human person in the age of artificial intelligence; the text addresses the relationship between technology, power and the person.",
+    },
+    quote: {
+      it: "Never has humanity had such power over itself.",
+      en: "Never has humanity had such power over itself.",
     },
     sourceLabel: { it: "Santa Sede (vatican.va)", en: "Holy See (vatican.va)" }, sourceUrl: "https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html",
   },
@@ -147,15 +167,20 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2026-09-06-an-alien-mind", date: "2026-09-06", type: "statement", lens: "culture", actorId: "openai",
+    sentiment: "caution",
     title: { it: "An Alien Mind", en: "An Alien Mind" },
     summary: {
       it: "Jakub Pachocki, chief scientist di OpenAI, pubblica 'An Alien Mind', in cui sostiene che nessun laboratorio ha risolto l'allineamento e il monitoraggio abbastanza bene da continuare a scalare alla massima velocità, e chiede soglie di sicurezza comuni e possibili rallentamenti volontari.",
       en: "OpenAI chief scientist Jakub Pachocki publishes 'An Alien Mind', arguing that no lab has solved alignment and monitoring well enough to keep scaling at maximum speed, and calling for common safety thresholds and possible voluntary slowdowns.",
     },
+    quote: {
+      it: "This is a time that calls for extreme caution. I am concerned no one is prepared for the consequences of a continued rapid rise in machine intelligence.",
+      en: "This is a time that calls for extreme caution. I am concerned no one is prepared for the consequences of a continued rapid rise in machine intelligence.",
+    },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/an-alien-mind/",
   },
   {
-    id: "h-2026-09-08-coxon-resigns", date: "2026-09-08", type: "statement", lens: "culture",
+    id: "h-2026-09-08-coxon-resigns", date: "2026-09-08", type: "statement", lens: "culture", personId: "coxon",
     title: { it: "Jacob Coxon lascia Anthropic", en: "Jacob Coxon leaves Anthropic" },
     summary: {
       it: "Jacob Coxon, ricercatore di pretraining, annuncia pubblicamente le sue dimissioni da Anthropic affermando che l'azienda e OpenAI non stanno agendo in modo responsabile e stanno accelerando verso una superintelligenza auto-migliorante.",
@@ -183,10 +208,15 @@ export const cultureEvents: TimelineEvent[] = [
   },
   {
     id: "h-2026-10-08-openai-safety-letter", date: "2026-10-08", type: "statement", lens: "culture", actorId: "openai",
+    sentiment: "alarm",
     title: { it: "Lettera dei ricercatori sulla sicurezza licenziati da OpenAI", en: "Letter from the safety researchers dismissed by OpenAI" },
     summary: {
       it: "Jasmine Wang, Tomek Korbak e Mikita Balesni, tre ricercatori sulla sicurezza licenziati da OpenAI, pubblicano la lettera aperta 'OpenAI cannot make AI safe on its own', indirizzata agli organi di sicurezza dell'azienda, in cui negano di aver violato le policy e sostengono che i loro licenziamenti stanno raffreddando la cultura della sicurezza.",
       en: "Jasmine Wang, Tomek Korbak and Mikita Balesni, three safety researchers dismissed by OpenAI, publish the open letter 'OpenAI cannot make AI safe on its own', addressed to the company's safety bodies, denying they broke policy and arguing their dismissals are chilling the safety culture.",
+    },
+    quote: {
+      it: "AI is not a normal technology, and OpenAI is not a normal company.",
+      en: "AI is not a normal technology, and OpenAI is not a normal company.",
     },
     sourceLabel: { it: "Lettera aperta (mikitabalesni.com)", en: "Open letter (mikitabalesni.com)" }, sourceUrl: "https://mikitabalesni.com/letter/letter.pdf",
   },

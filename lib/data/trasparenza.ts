@@ -1700,7 +1700,7 @@ export const sentimentTheme: TimelineTheme = {
     },
     {
       id: "s-2024-10-amodei",
-      date: "2024-10-01",
+      date: "2024-10-11",
       type: "statement",
       actorId: "anthropic",
       personId: "amodei",
@@ -1721,7 +1721,7 @@ export const sentimentTheme: TimelineTheme = {
         it: "Dario Amodei — Machines of Loving Grace (ottobre 2024)",
         en: "Dario Amodei — Machines of Loving Grace (October 2024)",
       },
-      sourceUrl: "https://darioamodei.com/essay/machines-of-loving-grace",
+      sourceUrl: "https://darioamodei.com/machines-of-loving-grace",
     },
     {
       id: "s-2025-01-altman-reflections",
@@ -2070,7 +2070,7 @@ export const sentimentTheme: TimelineTheme = {
     },
     {
       id: "s-2026-09-coxon-resignation",
-      date: "2026-09-09",
+      date: "2026-09-08",
       type: "statement",
       personId: "coxon",
       sentiment: "alarm",
