@@ -290,9 +290,15 @@ export default function RedazioneContent() {
     const current = candidates.find((c) => c.id === id);
     const quote = draft.quote ?? current?.quote;
     const nextStatus = status ?? current?.status;
-    if ((nextStatus === 'published' || nextStatus === 'approved') && !quote?.en?.trim()) {
-      setMessage(t.redazione.quoteRequired);
-      return;
+    if (nextStatus === 'published' || nextStatus === 'approved') {
+      if (!(draft.lens ?? current?.lens)) {
+        setMessage(t.redazione.laneRequired);
+        return;
+      }
+      if (!quote?.en?.trim()) {
+        setMessage(t.redazione.quoteRequired);
+        return;
+      }
     }
 
     setMessage(null);
@@ -321,7 +327,9 @@ export default function RedazioneContent() {
       setMessage(
         payload?.error === 'quote_required'
           ? t.redazione.quoteRequired
-          : t.redazione.saveError,
+          : payload?.error === 'lane_required'
+            ? t.redazione.laneRequired
+            : t.redazione.saveError,
       );
       return;
     }
@@ -986,7 +994,9 @@ function CandidateCard({
   const sentiment = (draft.suggestedSentiment ?? c.suggestedSentiment) as
     | SentimentTag
     | undefined;
-  const lens = draft.lens ?? c.lens ?? 'culture';
+  // No lane means the discovery run read nothing it could name. The card says
+  // so instead of defaulting to culture, which would look like a fact.
+  const assignedLens = draft.lens ?? c.lens;
   const type = draft.type ?? c.type ?? 'statement';
 
   return (
@@ -1008,7 +1018,9 @@ function CandidateCard({
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {c.date} · {c.personId || '—'} · {t.redazione.pipeline} · {c.status} ·{' '}
-            {LENS_META[lens].label[locale]} · {t.trasparenza.types[type]}
+            {assignedLens
+              ? `${LENS_META[assignedLens].label[locale]} · ${t.trasparenza.types[type]}`
+              : t.redazione.laneNone}
             {c.sourceTier ? ` · ${c.sourceTier}` : ''}
             {c.xQuoted ? ' · X' : ''}
           </p>
@@ -1085,10 +1097,11 @@ function CandidateCard({
               <Label htmlFor={`lens-${c.id}`}>{t.redazione.lens}</Label>
               <select
                 id={`lens-${c.id}`}
-                value={lens}
+                value={assignedLens ?? ''}
                 onChange={(e) => onDraft({ lens: e.target.value as Lens })}
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
+                {!assignedLens && <option value="">{t.redazione.laneNone}</option>}
                 {ALL_LENSES.map((item) => (
                   <option key={item} value={item}>
                     {LENS_META[item].label[locale]}

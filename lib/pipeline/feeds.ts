@@ -105,7 +105,7 @@ export const SENTIMENT_FEEDS: DiscoverFeed[] = [
     id: 'lane-research',
     label: 'Lane — techniques and results',
     url: gn(
-      '(AI OR LLM OR "machine learning") (paper OR preprint OR benchmark OR "state of the art" OR breakthrough OR dataset)',
+      '("large language model" OR LLM OR "machine learning" OR "neural network" OR "AI research") (paper OR preprint OR benchmark OR "state of the art" OR breakthrough OR dataset)',
       'research',
     ),
     lens: 'research',
@@ -117,7 +117,7 @@ export const SENTIMENT_FEEDS: DiscoverFeed[] = [
     id: 'lane-business',
     label: 'Lane — funding, valuations, infrastructure',
     url: gn(
-      '(AI OR OpenAI OR Anthropic OR Nvidia) (funding OR raises OR valuation OR invests OR "data center" OR capex)',
+      '("AI lab" OR "AI startup" OR "AI model" OR "AI chip" OR OpenAI OR Anthropic OR Nvidia) (funding OR raises OR valuation OR invests OR capex OR "data center")',
       'business',
     ),
     lens: 'business',

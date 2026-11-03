@@ -152,6 +152,11 @@ export async function PATCH(request: Request) {
   // may go live on its source alone.
   const nextSentiment = body.suggestedSentiment ?? current.suggestedSentiment;
   if (nextStatus === 'published' || nextStatus === 'approved') {
+    // A pin with no lane has nowhere to land on the timeline: the discovery run
+    // refused to guess, so an editor has to choose before it leaves the desk.
+    if (!(body.lens ?? current.lens)) {
+      return NextResponse.json({ error: 'lane_required' }, { status: 400 });
+    }
     const quote = body.quote ?? current.quote;
     if (nextSentiment && !quote?.en?.trim()) {
       return NextResponse.json({ error: 'quote_required' }, { status: 400 });

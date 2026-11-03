@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import { lobbyPeople, type Lens } from '@/lib/data/trasparenza';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
-import { classifyLane } from '@/lib/pipeline/lanes';
+import { classifyLane, isOnTopic } from '@/lib/pipeline/lanes';
 import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
 import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/store';
@@ -153,6 +153,8 @@ export async function discoverSentimentCandidates(): Promise<{
   scannedFeeds: number;
   matchedItems: number;
   rejectedBySource: number;
+  rejectedOffTopic: number;
+  unassignedItems: number;
   laneCounts: Partial<Record<Lens, number>>;
 }> {
   const parser = new Parser({
@@ -171,6 +173,8 @@ export async function discoverSentimentCandidates(): Promise<{
   const laneCounts: Partial<Record<Lens, number>> = {};
   let matchedItems = 0;
   let rejectedBySource = 0;
+  let rejectedOffTopic = 0;
+  let unassignedItems = 0;
 
   // Feeds are independent: one slow or broken sweep must not delay the rest.
   const batches = await Promise.all(
@@ -208,6 +212,15 @@ export async function discoverSentimentCandidates(): Promise<{
         continue;
       }
 
+      // The allowlist says who may publish and the lane rules say what shape
+      // the sentence has, but neither says the sentence is about AI. This is
+      // the gate that keeps unrelated coverage out of the desk, and it applies
+      // to the person feeds too: a tracked name does not make a piece on topic.
+      if (!isOnTopic({ title, snippet, host: classification.host })) {
+        rejectedOffTopic += 1;
+        continue;
+      }
+
       let personId = match?.personId;
       let actorId = match?.actorId;
       if (feed.requiresPerson && classification.xHandle) {
@@ -218,7 +231,10 @@ export async function discoverSentimentCandidates(): Promise<{
         }
       }
 
-      // Lane feeds are classified from the headline; person feeds stay statements.
+      // Person feeds stay statements: the feed is the assertion that this is a
+      // tracked person speaking. Lane feeds must read their lane off the
+      // headline — when nothing is read, the item enters with no lane at all
+      // and an editor places it, instead of the feed guessing on its behalf.
       const lane = feed.requiresPerson
         ? { lens: feed.lens, type: feed.type, confident: true }
         : classifyLane({ lens: feed.lens, type: feed.type, title, snippet });
@@ -247,8 +263,8 @@ export async function discoverSentimentCandidates(): Promise<{
         quote: quoteSeed ? { it: quoteSeed, en: quoteSeed } : undefined,
         personId,
         actorId,
-        lens: lane.lens,
-        type: lane.type,
+        lens: lane.confident ? lane.lens : undefined,
+        type: lane.confident ? lane.type : undefined,
         suggestedSentiment: sentiment,
         rawTitle: title,
         rawSnippet: snippet || undefined,
@@ -260,7 +276,11 @@ export async function discoverSentimentCandidates(): Promise<{
         ...(imageUrl ? { imageUrl } : {}),
       });
 
-      laneCounts[lane.lens] = (laneCounts[lane.lens] ?? 0) + 1;
+      if (lane.confident) {
+        laneCounts[lane.lens] = (laneCounts[lane.lens] ?? 0) + 1;
+      } else {
+        unassignedItems += 1;
+      }
 
       if (feed.requiresPerson) {
         // The diary row exists only for a strict name match: a headline is not
@@ -328,6 +348,8 @@ export async function discoverSentimentCandidates(): Promise<{
     scannedFeeds: SENTIMENT_FEEDS.length,
     matchedItems,
     rejectedBySource,
+    rejectedOffTopic,
+    unassignedItems,
     laneCounts,
   };
 }

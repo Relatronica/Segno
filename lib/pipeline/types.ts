@@ -23,9 +23,10 @@ export type SentimentCandidate = {
   personId?: string;
   actorId?: string;
   /**
-   * Lane and event type the discovery run assigned. Culture statements are the
-   * default; every other lane has to be declared, because the lane is what
-   * decides where the pin lands once published.
+   * Lane and event type the discovery run assigned. Person feeds are always
+   * culture statements. Lane feeds earn their lane by reading the headline;
+   * when no rule matched, both stay absent and the item is queued for an editor
+   * to place. It cannot be published before that.
    */
   lens?: Lens;
   type?: EventType;

@@ -242,6 +242,38 @@ export function lookupHostTier(host: string): SourceTier | null {
   return null;
 }
 
+/**
+ * First-party AI sources. Their own newsroom is the evidence, so a headline
+ * from here does not have to prove it is about AI: a lab's release note is on
+ * topic by construction, even when the title carries no keyword at all.
+ */
+export const AI_FIRST_PARTY_HOSTS = [
+  'openai.com',
+  'anthropic.com',
+  'blog.google',
+  'deepmind.google',
+  'ai.googleblog.com',
+  'research.google',
+  'ai.meta.com',
+  'about.meta.com',
+  'about.fb.com',
+  'microsoft.com',
+  'blogs.microsoft.com',
+  'news.microsoft.com',
+  'nvidia.com',
+  'nvidianews.nvidia.com',
+  'blogs.nvidia.com',
+  'x.ai',
+  'mistral.ai',
+  'huggingface.co',
+  'arxiv.org',
+];
+
+export function isFirstPartyAiHost(host: string): boolean {
+  const h = normalizeHost(host);
+  return AI_FIRST_PARTY_HOSTS.some((allowed) => h === allowed || h.endsWith(`.${allowed}`));
+}
+
 export function publisherLabelToHost(label: string): string | null {
   const key = label.trim().toLowerCase();
   if (PUBLISHER_ALIASES[key]) return PUBLISHER_ALIASES[key];

@@ -1,4 +1,5 @@
 import type { EventType, Lens } from '@/lib/data/trasparenza';
+import { isFirstPartyAiHost } from '@/lib/pipeline/sources';
 
 /**
  * A discovered headline is not an event yet: it is a sentence. These rules read
@@ -52,6 +53,31 @@ function body(text: string): string {
 }
 
 /**
+ * The allowlist says who may publish, the rules below say what shape the
+ * sentence has. Neither says whether the sentence is about artificial
+ * intelligence at all — this is that third question, and it is the one that
+ * keeps a chip fab's quarterly results out of a desk about AI.
+ *
+ * Acronyms are matched case-sensitively: `ai` is also an Italian preposition
+ * and the desk reads English feeds, but a stray lowercase match would let
+ * whole sentences through on a conjunction.
+ */
+const TOPIC_ACRONYMS = /\b(?:AI|LLMs?|GPT|AGI|GPUs?|ChatGPT)\b|\bA\.I\./;
+
+const TOPIC_WORDS =
+  /\b(artificial intelligence|machine learning|deep learning|neural network|language model|foundation model|generative|chatbot|chat bot|copilot|openai|anthropic|deepmind|nvidia|hugging face|mistral|grok|gemini|claude|llama|midjourney|stable diffusion|sora|veo|inference|training run|fine-?tun\w*|alignment|hallucinat\w*|deepfake|ai agent|autonomous agent|data cent(?:er|re)s?|semiconductor)\b/i;
+
+/**
+ * Is this item about AI? A first-party lab host passes without argument: the
+ * source is the claim. Everything else has to show one thing it is about.
+ */
+export function isOnTopic(input: { title: string; snippet?: string; host?: string }): boolean {
+  if (input.host && isFirstPartyAiHost(input.host)) return true;
+  const blob = body(`${input.title} ${input.snippet ?? ''}`);
+  return TOPIC_ACRONYMS.test(blob) || TOPIC_WORDS.test(blob);
+}
+
+/**
  * Read a headline and return the lane it belongs to. Fallback is the lane the
  * feed was born in, with `confident: false` — those items may still enter the
  * editorial queue, but never the automatic diary.
@@ -62,7 +88,16 @@ export function classifyLane(input: {
   title: string;
   snippet?: string;
 }): LaneClassification {
-  const blob = body(`${input.title} ${input.snippet ?? ''}`);
+  const title = body(input.title);
+  // The headline is the sentence the editor reads first; the snippet is
+  // syndication boilerplate and often mentions other stories. Read the title
+  // alone first, so a snippet cannot move an item into another lane.
+  for (const rule of LANE_RULES) {
+    if (rule.re.test(title)) {
+      return { lens: rule.lens, type: rule.type, confident: true };
+    }
+  }
+  const blob = body(`${title} ${input.snippet ?? ''}`);
   for (const rule of LANE_RULES) {
     if (rule.re.test(blob)) {
       return { lens: rule.lens, type: rule.type, confident: true };

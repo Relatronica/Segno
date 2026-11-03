@@ -17,14 +17,28 @@ const KEYWORDS: Record<string, string[]> = {
   pichai: ['sundar pichai', 'pichai', 'google ceo', 'alphabet ceo'],
 };
 
+/**
+ * Matching is on whole words. Without the boundary, `musk` also matches
+ * Muskogee and `xai` matches any word that contains it: the desk would file a
+ * piece about a town, or about anything at all, as a statement by a person.
+ */
+function wordPattern(word: string): RegExp {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`, 'i');
+}
+
+const KEYWORD_PATTERNS: Record<string, RegExp[]> = Object.fromEntries(
+  Object.entries(KEYWORDS).map(([personId, words]) => [personId, words.map(wordPattern)]),
+);
+
 export function matchPerson(text: string): PersonMatch | null {
-  const hay = text.toLowerCase();
   let best: PersonMatch | null = null;
 
-  for (const [personId, words] of Object.entries(KEYWORDS)) {
-    for (const w of words) {
-      if (!hay.includes(w)) continue;
-      const score = w.length;
+  for (const [personId, patterns] of Object.entries(KEYWORD_PATTERNS)) {
+    for (const pattern of patterns) {
+      const found = text.match(pattern);
+      if (!found) continue;
+      const score = found[0].length;
       if (!best || score > best.score) {
         const person = lobbyPeople.find((p) => p.id === personId);
         best = { personId, actorId: person?.orgId, score };
