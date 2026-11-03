@@ -109,7 +109,7 @@ type Chart = {
 };
 
 /** One row per trading day, oldest first; days the venue did not close are dropped. */
-function closesFrom(payload: unknown, ticker: string): [string, number][] {
+function closesFrom(payload: unknown): [string, number][] {
   const chart = (payload as Chart).chart;
   if (chart?.error) throw new Error(chart.error.description ?? 'yahoo error');
 
@@ -135,7 +135,7 @@ export async function refreshMarketSnapshot(): Promise<MarketSnapshot> {
   const entries = await Promise.all(
     Object.entries(TICKERS).map(async ([ticker, meta]) => {
       try {
-        const all = closesFrom(await fetchChart(ticker), ticker).sort((a, b) =>
+        const all = closesFrom(await fetchChart(ticker)).sort((a, b) =>
           a[0].localeCompare(b[0]),
         );
         const window = all.filter(([date]) => date >= BASE_DATE);

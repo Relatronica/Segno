@@ -2268,6 +2268,32 @@ export const sentimentTheme: TimelineTheme = {
         "https://www.vaticannews.va/en/pope/news/2026-10/pope-ai-decisions-affecting-human-life-must-never-be-delegated.html",
     },
     {
+      id: "s-2026-11-altman-adipec",
+      date: "2026-11-02",
+      type: "statement",
+      actorId: "openai",
+      personId: "altman",
+      sentiment: "caution",
+      title: {
+        it: "Altman ad Adipec: sul controllo umano “non deve esserci dibattito”",
+        en: "Altman at Adipec: on human control “there must be no room for debate”",
+      },
+      summary: {
+        it: "Abu Dhabi, dopo gli accordi con Adnoc, G42 e il governo emiratino: l’IA “non va consegnata” e deve restare uno strumento costruito per le persone. Dice che l’IA è passata da meno brava dei migliori scienziati a “per lo più più brava di loro”, e che l’industria deve dimostrare di saper evitare incidenti gravi di sicurezza e allineamento; indica l’energia come la sfida principale.",
+        en: "Abu Dhabi, after the agreements with Adnoc, G42 and the Emirati government: there “should not be a handoff to AI”, and it must stay a tool built for people. He says AI has gone from trailing the best scientists to “mostly smarter than them”, and that the industry must show it can avoid serious safety and alignment incidents; he names energy as the main challenge.",
+      },
+      quote: {
+        it: "There are a lot of other things we can debate, but on this one, we think there must be no room for debate.",
+        en: "There are a lot of other things we can debate, but on this one, we think there must be no room for debate.",
+      },
+      sourceLabel: {
+        it: "The National — ‘No room for debate’ over human control of AI (2 novembre 2026)",
+        en: "The National — ‘No room for debate’ over human control of AI (2 November 2026)",
+      },
+      sourceUrl:
+        "https://www.thenationalnews.com/future/technology/2026/11/02/no-room-for-debate-over-human-control-of-ai-says-sam-altman/",
+    },
+    {
       id: "l-2026-06-digital-omnibus",
       date: "2026-06-16",
       type: "legislative",

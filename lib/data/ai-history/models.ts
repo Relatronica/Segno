@@ -928,4 +928,23 @@ export const modelEvents: TimelineEvent[] = [
     sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/",
     modalities: ["text", "image", "video", "audio"],
   },
+  {
+    id: "h-2026-10-29-mistral-large-4", date: "2026-10-29", type: "milestone", lens: "models", actorId: "mistral",
+    title: { it: "Mistral Large 4 (Le Chonk)", en: "Mistral Large 4 (Le Chonk)" },
+    summary: {
+      it: "Mistral AI apre su Hugging Face i pesi di Mistral Large 4: 1,05 trilioni di parametri totali e circa 50 miliardi attivi per token, contesto da un milione di token e input immagini nativo. La licenza Ecosystem Open-Weight è una MIT modificata: ricerca e uso interno liberi, ma chi rivende il modello come servizio deve firmare un accordo commerciale.",
+      en: "Mistral AI opens the weights of Mistral Large 4 on Hugging Face: 1.05 trillion total parameters and about 50 billion active per token, a one-million-token context and native image input. The Ecosystem Open-Weight licence is a modified MIT: research and internal use are free, but anyone reselling the model as a service must sign a commercial agreement.",
+    },
+    sourceLabel: { it: "The Next Web", en: "The Next Web" }, sourceUrl: "https://thenextweb.com/news/mistral-large-4-open-weights-release",
+    modalities: ["text", "image"],
+  },
+  {
+    id: "h-2026-10-30-gpt-6-rosalind", date: "2026-10-30", type: "milestone", lens: "models", actorId: "openai",
+    title: { it: "GPT-6 Rosalind Research", en: "GPT-6 Rosalind Research" },
+    summary: {
+      it: "OpenAI porta il ragionamento di GPT-6 sulle scienze della vita con la famiglia GPT-Rosalind, disponibile solo tramite trusted access per clienti approvati: gli stessi pesi del modello di frontiera, ma con deployment a meno rifiuti sulle richieste biologiche dual-use e controlli di sicurezza dedicati. Il system card addendum è pubblicato lo stesso giorno.",
+      en: "OpenAI brings GPT-6 reasoning to life sciences with the GPT-Rosalind family, available only through trusted access for approved customers: the same weights as the frontier model, but deployed with fewer refusals on dual-use biological queries and dedicated security controls. The system card addendum is published the same day.",
+    },
+    sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://help.openai.com/en/articles/20001193-gpt-rosalind-for-life-sciences-research",
+  },
 ];

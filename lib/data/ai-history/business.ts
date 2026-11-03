@@ -389,4 +389,22 @@ export const businessEvents: TimelineEvent[] = [
     },
     sourceLabel: { it: "CNBC", en: "CNBC" }, sourceUrl: "https://www.cnbc.com/2026/10/28/doj-questions-nvidias-12point9-billion-hugging-face-deal.html",
   },
+  {
+    id: "h-2026-11-02-anthropic-s1-quarter", date: "2026-11-02", type: "milestone", lens: "business", actorId: "anthropic",
+    title: { it: "Anthropic deposita l'S-1/A: 17 miliardi di ricavi nel trimestre", en: "Anthropic files its S-1/A: $17 billion in quarterly revenue" },
+    summary: {
+      it: "Nel prospetto aggiornato per la quotazione al Nasdaq, Anthropic riporta ricavi per 17 miliardi di dollari nel trimestre chiuso il 30 settembre 2026 e il primo trimestre di utile operativo (2,5 miliardi non-GAAP, margine del 15%). Dichiara inoltre impegni di acquisto per circa 895 miliardi di dollari, in gran parte per capacità di calcolo. Prezzo e numero di azioni restano da fissare.",
+      en: "In the updated filing for its Nasdaq listing, Anthropic reports $17 billion in revenue for the quarter ended 30 September 2026 and its first quarter of operating profit ($2.5 billion non-GAAP, a 15% margin). It also discloses purchase commitments of about $895 billion, largely for compute. Price and share count are still to be set.",
+    },
+    sourceLabel: { it: "CNBC", en: "CNBC" }, sourceUrl: "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html",
+  },
+  {
+    id: "h-2026-11-02-openai-grid-protectors", date: "2026-11-02", type: "milestone", lens: "business", actorId: "openai",
+    title: { it: "OpenAI lancia il Grid Protectors Program", en: "OpenAI launches the Grid Protectors Program" },
+    summary: {
+      it: "OpenAI annuncia un programma nazionale per rendere flessibile il consumo elettrico dei propri campus: quando la rete è sotto stress, i data center riducono la domanda su richiesta delle utility. Il primo caso è il campus previsto nella contea di Effingham, in Georgia, dove l'accordo con Georgia Power prevede fino a 1.000 megawatt di riduzione; i termini degli altri siti non sono ancora definiti.",
+      en: "OpenAI announces a national programme to make its campuses' electricity use flexible: when the grid is under strain, the data centres cut demand at the utilities' request. The first case is the planned campus in Effingham County, Georgia, where the agreement with Georgia Power provides for up to 1,000 megawatts of demand reduction; terms elsewhere are not yet set.",
+    },
+    sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/grid-protectors-program/",
+  },
 ];

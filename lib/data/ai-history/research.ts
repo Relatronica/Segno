@@ -506,4 +506,13 @@ export const researchEvents: TimelineEvent[] = [
     },
     sourceLabel: { it: "OpenAI", en: "OpenAI" }, sourceUrl: "https://openai.com/index/building-scientific-understanding-with-academic-communities/",
   },
+  {
+    id: "h-2026-10-30-google-suncatcher", date: "2026-10-30", type: "milestone", lens: "research", actorId: "google",
+    title: { it: "Project Suncatcher: la prima inferenza dall'orbita", en: "Project Suncatcher: the first inference from orbit" },
+    summary: {
+      it: "Google riceve la prima risposta da un modello eseguito su un TPU di classe datacenter in orbita: durante un passaggio sulla stazione di terra di Svalbard, il satellite prototipo — costruito con Planet e lanciato il 1° ottobre — avvia il TPU, esegue Gemma 4 e riscarica a terra un haiku. Google lo chiama il proprio “Hello World”: a bordo ci sono quattro TPU e circa un kilowatt di potenza, mentre dissipazione del calore e tenuta alle radiazioni restano da verificare.",
+      en: "Google receives the first response from a model running on a data-centre-class TPU in orbit: during a pass over the Svalbard ground station, the prototype satellite — built with Planet and launched on 1 October — boots the TPU, runs Gemma 4 and downlinks a haiku. Google calls it its own “Hello World”: four TPUs and about a kilowatt on board, while heat dissipation and radiation tolerance remain untested.",
+    },
+    sourceLabel: { it: "Google", en: "Google" }, sourceUrl: "https://blog.google/innovation-and-ai/models-and-research/google-research/project-suncatcher-satellite-response/",
+  },
 ];

@@ -250,4 +250,14 @@ export const policyEvents: TimelineEvent[] = [
     sourceLabel: { it: "Fortune", en: "Fortune" },
     sourceUrl: "https://fortune.com/2026/10/04/trump-national-intelligence-director-jay-clayton-super-intelligence-force-ai-agency/",
   },
+  {
+    id: "h-2026-11-02-openai-driscoll", date: "2026-11-02", type: "milestone", lens: "policy", actorId: "openai",
+    title: { it: "OpenAI assume l'ex Segretario dell'Esercito Driscoll", en: "OpenAI hires former Army Secretary Driscoll" },
+    summary: {
+      it: "OpenAI crea una posizione nuova, Senior Counselor for National Security Modernization, e vi nomina Dan Driscoll, Segretario dell'Esercito degli Stati Uniti fino all'agosto 2026. Il ruolo punta a rafforzare l'uso dell'AI nella sicurezza nazionale e informatica, con particolare attenzione agli alleati degli Stati Uniti.",
+      en: "OpenAI creates a new position, Senior Counselor for National Security Modernization, and appoints Dan Driscoll, US Secretary of the Army until August 2026, to it. The role aims to strengthen the use of AI in national and cyber security, with a particular focus on US allies.",
+    },
+    sourceLabel: { it: "Anadolu Agency", en: "Anadolu Agency" },
+    sourceUrl: "https://mobile.aa.com.tr/en/americas/openai-names-former-us-army-secretary-for-national-security-role/4109268",
+  },
 ];

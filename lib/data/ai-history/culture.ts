@@ -199,4 +199,13 @@ export const cultureEvents: TimelineEvent[] = [
     },
     sourceLabel: { it: "Anthropic", en: "Anthropic" }, sourceUrl: "https://www.anthropic.com/research/investigating-unintended-model-actions",
   },
+  {
+    id: "h-2026-11-02-anthropic-rsi", date: "2026-11-02", type: "statement", lens: "culture", actorId: "anthropic",
+    title: { it: "Anthropic: vicini alla capacità di auto-miglioramento", en: "Anthropic: close to self-improvement capability" },
+    summary: {
+      it: "Nel prospetto per la quotazione l'azienda scrive che l'uso crescente dei propri sistemi per accelerare ricerca e sviluppo rischia di far avanzare le capacità dei modelli più in fretta della capacità di sviluppare, validare e mettere in atto le relative misure di sicurezza e allineamento.",
+      en: "In its listing prospectus the company writes that its growing use of its own systems to accelerate research and development may let model capabilities advance faster than its ability to develop, validate and implement the corresponding safety and alignment measures.",
+    },
+    sourceLabel: { it: "TechCrunch", en: "TechCrunch" }, sourceUrl: "https://techcrunch.com/2026/11/02/anthropic-warns-that-its-very-close-to-rsi-capability-aka-self-building-ai/",
+  },
 ];
