@@ -325,7 +325,7 @@ export function TimelineFeed({
                               {/* Glyphs only: the row is already a line of
                                   words, and the names repeat on hover. */}
                               {modalities && (
-                                <span className="flex shrink-0 items-center gap-1 text-muted-foreground/60">
+                                <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
                                   {modalities.map((modality) => {
                                     const ModalityIcon = MODALITY_ICON[modality];
                                     return (

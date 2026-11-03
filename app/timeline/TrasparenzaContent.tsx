@@ -773,7 +773,7 @@ export default function TrasparenzaContent({
               }}
               placeholder={t.trasparenza.searchPlaceholder}
               aria-label={t.trasparenza.searchLabel}
-              className="h-9 w-full rounded-md border border-border/50 bg-background pl-8 pr-8 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/25 [&::-webkit-search-cancel-button]:appearance-none"
+              className="h-9 w-full rounded-md border border-border/50 bg-background pl-8 pr-8 text-[13px] text-foreground outline-none transition-colors placeholder:text-faint-foreground focus:border-foreground/25 [&::-webkit-search-cancel-button]:appearance-none"
             />
             {query && (
               <button

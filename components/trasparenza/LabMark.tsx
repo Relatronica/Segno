@@ -153,7 +153,10 @@ function inkOn(hex: string): string {
   const g = channel(parseInt(h.slice(2, 4), 16) / 255);
   const b = channel(parseInt(h.slice(4, 6), 16) / 255);
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return luminance > 0.33 ? '#111827' : '#ffffff';
+  // Crossover between #111827 and #ffffff, not a round number: at 0.33 the
+  // mid-luminance brand colours (Microsoft blue, Mistral orange, OpenAI green)
+  // kept white ink and fell to 2.8:1.
+  return luminance > 0.2 ? '#111827' : '#ffffff';
 }
 
 type Props = {

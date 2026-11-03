@@ -1130,7 +1130,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                     'absolute bottom-1 -translate-x-1/2 font-mono whitespace-nowrap',
                     tick.kind === 'year'
                       ? 'tl-fs-10 font-medium text-muted-foreground'
-                      : 'tl-fs-9 text-muted-foreground/55',
+                      : 'tl-fs-9 text-faint-foreground',
                   )}
                   style={{ left: tick.x }}
                 >
@@ -1204,7 +1204,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                   <ChevronDown
                     aria-hidden
                     className={cn(
-                      'h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform',
+                      'h-3 w-3 shrink-0 text-faint-foreground transition-transform',
                       lane.collapsed && '-rotate-90',
                     )}
                   />
@@ -1217,13 +1217,13 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                     {lane.name}
                   </span>
                   {lane.collapsed && (
-                    <span className="shrink-0 font-mono tl-fs-10 text-muted-foreground/60">
+                    <span className="shrink-0 font-mono tl-fs-10 text-faint-foreground">
                       {lane.count}
                     </span>
                   )}
                 </button>
                 {!lane.collapsed && (
-                  <span className="pl-5 tl-fs-10 leading-snug text-pretty text-muted-foreground/60">
+                  <span className="pl-5 tl-fs-10 leading-snug text-pretty text-faint-foreground">
                     {lane.blurb}
                   </span>
                 )}
@@ -1243,7 +1243,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                             'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono tl-fs-9 transition-all cursor-pointer select-none',
                             active
                               ? 'border-border/60 bg-background text-foreground shadow-xs'
-                              : 'border-transparent bg-muted/30 text-muted-foreground/45 hover:text-muted-foreground/75',
+                              : 'border-transparent bg-muted/30 text-faint-foreground hover:text-muted-foreground',
                           )}
                           style={{
                             borderColor: active ? `${meta.color}66` : undefined,
@@ -1265,7 +1265,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                             )}
                             style={{ backgroundColor: meta.color }}
                           />
-                          <span className={cn(!active && 'line-through opacity-60')}>
+                          <span className={cn(!active && 'line-through')}>
                             {meta.label[locale]}
                           </span>
                         </button>
@@ -1278,7 +1278,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           e.stopPropagation();
                           setEnabledDomains(new Set(ALL_CAPABILITY_DOMAINS));
                         }}
-                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
+                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
                       >
                         {locale === 'it' ? 'Mostra tutti' : 'Show all'}
                       </button>
@@ -1304,7 +1304,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                             'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono tl-fs-9 transition-all cursor-pointer select-none',
                             active
                               ? 'border-border/60 bg-background text-foreground shadow-xs'
-                              : 'border-transparent bg-muted/30 text-muted-foreground/45 hover:text-muted-foreground/75',
+                              : 'border-transparent bg-muted/30 text-faint-foreground hover:text-muted-foreground',
                           )}
                           title={
                             active
@@ -1317,7 +1317,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           }
                         >
                           <ModalityIcon className="h-3 w-3 shrink-0" aria-hidden />
-                          <span className={cn(!active && 'line-through opacity-60')}>
+                          <span className={cn(!active && 'line-through')}>
                             {meta.label[locale]}
                           </span>
                         </button>
@@ -1330,7 +1330,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           e.stopPropagation();
                           setEnabledModalities(new Set(ALL_MODALITIES));
                         }}
-                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground/75 underline underline-offset-2 hover:text-foreground cursor-pointer"
+                        className="inline-flex items-center rounded px-1.5 py-0.5 font-mono tl-fs-9 text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
                       >
                         {locale === 'it' ? 'Mostra tutte' : 'Show all'}
                       </button>
@@ -1604,10 +1604,10 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           className={cn(
                             'pointer-events-none absolute top-1/2 -translate-y-1/2 truncate rounded-[3px] bg-background/85 py-px pl-1 pr-1.5 tl-fs-10 leading-tight tracking-tight shadow-sm ring-1 ring-border/20',
                             isAuto
-                              ? 'italic text-muted-foreground/55'
+                              ? 'italic text-faint-foreground'
                               : isActive
                                 ? 'font-medium text-foreground ring-foreground/30'
-                                : 'font-medium text-muted-foreground/75',
+                                : 'font-medium text-muted-foreground',
                           )}
                           style={{ left: captionLeft, maxWidth: labelGap - captionLeft + 12 }}
                         >
@@ -1687,7 +1687,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                               {event.benchmarkLabel ?? `${event.benchmarkMetric?.name}: ${event.benchmarkMetric?.value}`}
                             </span>
                             {capDomainMeta && (
-                              <span className="text-muted-foreground/80">
+                              <span className="text-muted-foreground">
                                 · {capDomainMeta.label[locale]}
                               </span>
                             )}
@@ -1696,7 +1696,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                         {/* What the model reads and produces. Icons carry no
                             colour: the lane's palette is spoken for. */}
                         {event.modalities && event.modalities.length > 0 && (
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono tl-fs-9 text-muted-foreground/80">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono tl-fs-9 text-muted-foreground">
                             {orderedModalities(event.modalities).map((modality) => {
                               const ModalityIcon = MODALITY_ICON[modality];
                               return (
@@ -1762,16 +1762,16 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                 style={{ width: labelW }}
                 title={labels.sentimentHint}
               >
-                <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
+                <span className="font-mono tl-fs-9 uppercase tracking-wider text-faint-foreground">
                   {labels.sentiment}
                 </span>
-                <span className="tl-fs-10 leading-snug text-pretty text-muted-foreground/55">
+                <span className="tl-fs-10 leading-snug text-pretty text-faint-foreground">
                   {labels.sentimentBlurb}
                 </span>
-                <span className="tl-fs-9 leading-none text-muted-foreground/50">
+                <span className="tl-fs-9 leading-none text-faint-foreground">
                   ↑ {labels.enthusiasm} · ↓ {labels.fear}
                 </span>
-                <span className="flex items-center gap-1 tl-fs-9 leading-none text-muted-foreground/50">
+                <span className="flex items-center gap-1 tl-fs-9 leading-none text-faint-foreground">
                   <svg width="16" height="4" aria-hidden className="shrink-0">
                     <line
                       x1="0"
@@ -1869,7 +1869,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
               style={{ width: labelW }}
               title={labels.volumeHint}
             >
-              <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
+              <span className="font-mono tl-fs-9 uppercase tracking-wider text-faint-foreground">
                 {labels.volume}
               </span>
             </div>
@@ -1977,13 +1977,13 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                 style={{ width: labelW }}
                 title={labels.marketHint}
               >
-                <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
+                <span className="font-mono tl-fs-9 uppercase tracking-wider text-faint-foreground">
                   {labels.market}
                 </span>
-                <span className="tl-fs-10 leading-snug text-pretty text-muted-foreground/55">
+                <span className="tl-fs-10 leading-snug text-pretty text-faint-foreground">
                   {labels.marketBlurb.replace('{base}', MARKET_BASE_DATE)}
                 </span>
-                <span className="tl-fs-9 leading-tight text-pretty text-muted-foreground/45">
+                <span className="tl-fs-9 leading-tight text-pretty text-faint-foreground">
                   {priceCredit}
                 </span>
               </div>
@@ -2057,7 +2057,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                 </svg>
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -translate-x-full -translate-y-1/2 rounded bg-background/70 px-1 font-mono tl-fs-9 leading-none text-muted-foreground/50"
+                  className="pointer-events-none absolute -translate-x-full -translate-y-1/2 rounded bg-background/70 px-1 font-mono tl-fs-9 leading-none text-faint-foreground"
                   style={{ left: scale.todayX - 2, top: price.baseY }}
                 >
                   {PRICE_BASE}
@@ -2087,7 +2087,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                         className="h-0.5 w-3.5 shrink-0 rounded-full"
                         style={{ backgroundColor: line.color }}
                       />
-                      <span className="font-mono text-muted-foreground/70">{line.ticker}</span>
+                      <span className="font-mono text-muted-foreground">{line.ticker}</span>
                     </button>
                   ))}
                 </div>
