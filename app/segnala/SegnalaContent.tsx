@@ -20,7 +20,7 @@ export default function SegnalaContent() {
     <div className="relative overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-[radial-gradient(ellipse_at_12%_0%,oklch(0.48_0.17_25/_0.08),transparent_50%),linear-gradient(to_bottom,oklch(0.972_0.006_250),transparent)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[50vh] bg-[radial-gradient(ellipse_at_12%_0%,color-mix(in_oklch,var(--mark)_8%,transparent),transparent_50%)]"
       />
 
       <section className="relative mx-auto max-w-2xl px-4 pb-16 pt-[calc(var(--nav-clearance)+2.5rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--nav-clearance)+3.5rem)] lg:px-8">
