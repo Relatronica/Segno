@@ -108,6 +108,12 @@ const translations = {
       activityHint:
         'Quante voci pubbliche quel giorno: citazioni verificate e titoli del diario automatico.',
       activityCount: '{count} voci',
+      market: 'Prezzi',
+      marketBlurb: 'Chiusure dei titoli quotati, base 100 = {base}',
+      marketHint:
+        'Contesto, non lettura dell’evento: chiusure di fine giornata dei titoli quotati, ribasate a 100 alla data base e ridotte all’ultima chiusura di ogni settimana. Un ticker misura il gruppo, non la sua unità IA.',
+      marketSource: '{source} · dato di terze parti, non CC BY 4.0',
+      marketClose: 'chiusura',
       feedTitle: 'Cronologia',
       searchLabel: 'Cerca',
       searchPlaceholder: 'Cerca dichiarazioni, persone, fonti…',
@@ -437,6 +443,12 @@ const translations = {
       activityHint:
         'Public voices that day: verified quotes and automatic-diary headlines.',
       activityCount: '{count} voices',
+      market: 'Prices',
+      marketBlurb: 'Closes of the listed actors, base 100 = {base}',
+      marketHint:
+        'Context, not a reading of the event: end-of-day closes of the listed actors, rebased to 100 on the base date and thinned to the last close of each week. A ticker measures the group, not its AI unit.',
+      marketSource: '{source} · third-party data, not CC BY 4.0',
+      marketClose: 'close',
       feedTitle: 'History',
       searchLabel: 'Search',
       searchPlaceholder: 'Search statements, people, sources…',

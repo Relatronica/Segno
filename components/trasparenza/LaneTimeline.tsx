@@ -10,6 +10,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
   type RefObject,
 } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -26,6 +27,7 @@ import {
   SENTIMENT_FEAR_SCORE,
   formatEventDate,
   lensOf,
+  lobbyActors,
   type EventType,
   type Lens,
   type LobbyPerson,
@@ -33,6 +35,7 @@ import {
   type SentimentTag,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
+import { MARKET_BASE_DATE, MARKET_SOURCE, type MarketSeries } from '@/lib/data/market';
 import { ZOOM_LEVELS, createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
 import { cn } from '@/lib/utils';
 import type { ScrubState } from './TimelineFeed';
@@ -96,6 +99,16 @@ const MOOD_UP = '#047857';
 const MOOD_MID = '#94a3b8';
 const MOOD_DOWN = '#991b1b';
 const DAY_MS = 86_400_000;
+/** Market band: the listed actors' closes, rebased to 100, as lines. Context
+    under the other two bands, so it stays flat while keeping six lines apart. */
+const PRICE_H = 112;
+/** The base every line is measured from. Drawn, because a line at 100 means
+    nothing until you can see which level 100 is. */
+const PRICE_BASE = 100;
+/** Share of the index range, read in logarithms, left empty above and below,
+    so a line never rides the very edge of the band. */
+const PRICE_PAD = 0.08;
+const PRICE_STROKE = 1.6;
 /** Statement mark: the person's face. Every other form takes its lane's glyph. */
 const FACE_PX = 28;
 
@@ -119,6 +132,16 @@ export type LaneLabels = {
   enthusiasm: string;
   /** Legend for the dashed stretch: the neutral level where no quote was recorded. */
   moodNeutral: string;
+  /** Title of the market band. */
+  market: string;
+  /** One line under the title: what the lines read, and from what base. */
+  marketBlurb: string;
+  marketHint: string;
+  /** "{source} · third-party data, not CC BY 4.0": the credit, with the
+      source named when one is licensed for public display. */
+  marketSource: string;
+  /** "close": what the price on the band's hover read-out is. */
+  marketClose: string;
   /** Toggle on each lane header. */
   collapseLane: string;
   expandLane: string;
@@ -157,6 +180,8 @@ type Props = {
   volumeEvents?: TimelineEvent[];
   /** Verified quotes only: they alone carry a tone, so they alone feed the curve. */
   moodEvents?: TimelineEvent[];
+  /** Listed actors' closes, rebased to 100: context under the bands, not a reading. */
+  marketSeries?: MarketSeries[];
   focusPresent?: boolean;
   /** Bump to re-centre on today (e.g. jump button) */
   presentFocusToken?: number;
@@ -234,6 +259,16 @@ export function subjectOf(event: TimelineEvent): EventSubject | null {
  */
 function shortTitle(title: string): string {
   return title.split(/[:—–,]/)[0].trim() || title.trim();
+}
+
+/** The band plots indices, so a hover has to give the price back: US dollars,
+    as quoted, which is the only figure a reader can check against the market. */
+function formatPrice(value: number, locale: 'it' | 'en'): string {
+  return new Intl.NumberFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 /**
@@ -409,6 +444,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     stanceLabel,
     volumeEvents,
     moodEvents,
+    marketSeries,
     focusPresent = false,
     presentFocusToken = 0,
     focusEventToken = 0,
@@ -423,6 +459,10 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
   const volClipId = useId().replace(/:/g, '');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoveredVolume, setHoveredVolume] = useState<string | null>(null);
+  /** Listed actor whose price line is picked out of the band; the rest dim. */
+  const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
+  /** Week under the pointer on the market band: the day whose closes are read. */
+  const [hoveredPriceDate, setHoveredPriceDate] = useState<string | null>(null);
   const [labelW, setLabelW] = useState(168);
   const [rowH, setRowH] = useState(ROW_H_DESKTOP);
   const [enabledDomains, setEnabledDomains] = useState<Set<CapabilityDomain>>(
@@ -693,6 +733,95 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
   const moodFirst = moodPoints[0];
   const moodLast = moodPoints[moodPoints.length - 1];
   const contentW = labelW + scale.width;
+
+  /**
+   * Market band: one line per listed actor, all on one index scale. The base
+   * is kept inside the range even when no close returns to it, because a line
+   * at 340 says nothing until the level 100 is visible under it.
+   */
+  const price = useMemo(() => {
+    const points = (marketSeries ?? []).flatMap((series) => series.points);
+    if (!points.length) return null;
+
+    const values = points.map((point) => point.index);
+    const lo = Math.min(PRICE_BASE, ...values);
+    const hi = Math.max(PRICE_BASE, ...values);
+    // Logarithmic, because the lines span two orders of magnitude: a linear
+    // axis lets one line rising four hundredfold press every other onto the
+    // floor. Equal vertical steps then read as equal percentage moves, which
+    // is how an index comparison is read anyway.
+    const pad = Math.log(hi / lo) * PRICE_PAD || 0.01;
+    const top = Math.log(hi) + pad;
+    const bottom = Math.log(lo) - pad;
+    const y = (index: number) =>
+      PRICE_H - ((Math.log(index) - bottom) / (top - bottom)) * PRICE_H;
+
+    return {
+      baseY: y(PRICE_BASE),
+      /** Every day any line carries a close on, left to right: the columns the
+          pointer reads, and the x the vertical guide is drawn at. */
+      days: [...new Set(points.map((point) => point.date))].sort().map((date) => ({
+        date,
+        x: scale.xForDate(date),
+      })),
+      lines: (marketSeries ?? []).map((series) => {
+        const actor = lobbyActors.find((candidate) => candidate.id === series.actorId);
+        return {
+          actorId: series.actorId,
+          ticker: series.ticker,
+          exchange: series.exchange,
+          /** The actor behind the ticker, spelled out: a bare ticker is jargon. */
+          name: actor?.name ?? series.ticker,
+          /** The actor's own colour: the same one its pins carry in the lanes. */
+          color: actor?.color ?? NEUTRAL_MARK,
+          /** The close 100 stands for, to turn a level back into a price. */
+          baseClose: series.baseClose,
+          points: series.points
+            .map((point) => `${scale.xForDate(point.date)},${y(point.index)}`)
+            .join(' '),
+          /** Index and y per day, so a hover resolves a close without a rescan. */
+          byDate: new Map(
+            series.points.map((point) => [point.date, { index: point.index, y: y(point.index) }]),
+          ),
+        };
+      }),
+    };
+  }, [marketSeries, scale]);
+
+  /** Credit: the source named when one is licensed, the third-party notice alone
+      otherwise. The data is not ours, so it never rides the CC BY 4.0 grant. */
+  const priceCredit = labels.marketSource
+    .replace('{source}', MARKET_SOURCE.label)
+    .replace(/^\s*·\s*/, '');
+
+  /**
+   * Pointer on the market band. The closes are weekly, too far apart to demand a
+   * hit on the drawn day, so the pointer resolves to the nearest column and the
+   * read-out names the day it landed on.
+   */
+  const hoverPrice = useCallback(
+    (event: MouseEvent<SVGRectElement>) => {
+      if (!price || !price.days.length) return;
+      const days = price.days;
+      const x = event.clientX - event.currentTarget.getBoundingClientRect().left;
+      let lo = 0;
+      let hi = days.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (days[mid].x < x) lo = mid + 1;
+        else hi = mid;
+      }
+      const after = days[lo];
+      const before = days[lo - 1] ?? after;
+      setHoveredPriceDate(
+        Math.abs(after.x - x) <= Math.abs(x - before.x) ? after.date : before.date,
+      );
+    },
+    [price],
+  );
+
+  /** The day being read, with the x the guide is drawn at. */
+  const hoveredDay = price?.days.find((day) => day.date === hoveredPriceDate) ?? null;
 
   /**
    * Pointer place captured just before a density change: its share of the time
@@ -1833,6 +1962,175 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                 ))}
             </div>
           </div>
+
+          {/* Market band: the listed actors' closes, all rebased to 100 on one
+              fixed base date. Context under the lanes — a ticker measures the
+              group, not the AI unit inside it, so the band never reads as a
+              verdict on the event above it. */}
+          {price && (
+            <div
+              className="relative flex border-t border-border/40"
+              style={{ height: PRICE_H, width: contentW }}
+            >
+              <div
+                className="sticky left-0 z-30 flex h-full flex-col justify-center gap-0.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
+                style={{ width: labelW }}
+                title={labels.marketHint}
+              >
+                <span className="font-mono tl-fs-9 uppercase tracking-wider text-muted-foreground/60">
+                  {labels.market}
+                </span>
+                <span className="tl-fs-10 leading-snug text-pretty text-muted-foreground/55">
+                  {labels.marketBlurb.replace('{base}', MARKET_BASE_DATE)}
+                </span>
+                <span className="tl-fs-9 leading-tight text-pretty text-muted-foreground/45">
+                  {priceCredit}
+                </span>
+              </div>
+              <div className="relative h-full" style={{ width: scale.width }}>
+                <svg aria-hidden width={scale.width} height={PRICE_H} className="block">
+                  {/* The base: every series is an index of this level. */}
+                  <line
+                    x1={0}
+                    y1={price.baseY}
+                    x2={scale.todayX}
+                    y2={price.baseY}
+                    stroke={MOOD_MID}
+                    strokeWidth={1}
+                    strokeDasharray="3 4"
+                    strokeOpacity={0.5}
+                  />
+                  {price.lines.map((line) => (
+                    <polyline
+                      key={line.actorId}
+                      fill="none"
+                      stroke={line.color}
+                      strokeWidth={PRICE_STROKE}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      strokeOpacity={hoveredTicker && hoveredTicker !== line.actorId ? 0.22 : 1}
+                      points={line.points}
+                    />
+                  ))}
+                  {/* The day under the pointer: a guide down the band and a dot
+                      on each line, so the level being read is the one on screen
+                      and the tooltip names the company it belongs to. */}
+                  {hoveredDay && (
+                    <line
+                      x1={hoveredDay.x}
+                      y1={0}
+                      x2={hoveredDay.x}
+                      y2={PRICE_H}
+                      stroke={MOOD_MID}
+                      strokeWidth={1}
+                      strokeOpacity={0.45}
+                    />
+                  )}
+                  {hoveredDay &&
+                    price.lines.map((line) => {
+                      const point = line.byDate.get(hoveredDay.date);
+                      if (!point) return null;
+                      return (
+                        <circle
+                          key={line.actorId}
+                          cx={hoveredDay.x}
+                          cy={point.y}
+                          r={2.6}
+                          fill={line.color}
+                          strokeWidth={1.2}
+                          style={{ stroke: 'var(--background)' }}
+                        />
+                      );
+                    })}
+                  {/* Drawn last and transparent: the pointer always lands here,
+                      so the band reads a day instead of whatever line is under
+                      the cursor. */}
+                  <rect
+                    x={0}
+                    y={0}
+                    width={scale.width}
+                    height={PRICE_H}
+                    fill="transparent"
+                    onMouseMove={hoverPrice}
+                    onMouseLeave={() => setHoveredPriceDate(null)}
+                  />
+                </svg>
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -translate-x-full -translate-y-1/2 rounded bg-background/70 px-1 font-mono tl-fs-9 leading-none text-muted-foreground/50"
+                  style={{ left: scale.todayX - 2, top: price.baseY }}
+                >
+                  {PRICE_BASE}
+                </span>
+                {/* Legend sits in the plot, not in the label column: history
+                    starts at the base date, so the corner is free and the
+                    header keeps room for the title, the blurb and the credit. */}
+                <div className="absolute left-1 top-1 z-10 flex max-w-[14rem] flex-wrap gap-x-2.5 gap-y-0.5 rounded bg-background/70 px-1.5 py-1 backdrop-blur-[2px]">
+                  {price.lines.map((line) => (
+                    <button
+                      key={line.actorId}
+                      type="button"
+                      onMouseEnter={() => setHoveredTicker(line.actorId)}
+                      onMouseLeave={() => setHoveredTicker((id) => (id === line.actorId ? null : id))}
+                      onFocus={() => setHoveredTicker(line.actorId)}
+                      onBlur={() => setHoveredTicker((id) => (id === line.actorId ? null : id))}
+                      title={`${line.ticker} · ${line.exchange}`}
+                      className={cn(
+                        'flex items-center gap-1 rounded px-0.5 tl-fs-9 leading-none transition-opacity',
+                        hoveredTicker && hoveredTicker !== line.actorId
+                          ? 'opacity-40'
+                          : 'opacity-100',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className="h-0.5 w-3.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: line.color }}
+                      />
+                      <span className="font-mono text-muted-foreground/70">{line.ticker}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Read-out: the lines are indices, so the day is given back as
+                    the price each one was, under the name of the company. */}
+                {hoveredDay && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute z-40 w-max max-w-[16rem] -translate-x-1/2 rounded-md border border-border/50 bg-background/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+                    style={{ left: hoveredDay.x, bottom: PRICE_H + 6 }}
+                  >
+                    <p className="font-mono tl-fs-9 text-muted-foreground">
+                      {formatEventDate(hoveredDay.date, locale)} · {labels.marketClose}
+                    </p>
+                    <div className="mt-1 flex flex-col gap-0.5">
+                      {price.lines.map((line) => {
+                        const point = line.byDate.get(hoveredDay.date);
+                        if (!point) return null;
+                        return (
+                          <span
+                            key={line.actorId}
+                            className="flex items-center gap-1.5 tl-fs-10 leading-tight"
+                          >
+                            <span
+                              aria-hidden
+                              className="h-2 w-2 shrink-0 rounded-sm"
+                              style={{ backgroundColor: line.color }}
+                            />
+                            <span className="flex-1 truncate text-muted-foreground">
+                              {line.name}
+                            </span>
+                            <span className="font-mono text-foreground/80">
+                              {formatPrice((point.index / 100) * line.baseClose, locale)}
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

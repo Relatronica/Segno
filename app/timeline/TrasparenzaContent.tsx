@@ -23,6 +23,7 @@ import {
   type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
+import { type MarketSeries } from '@/lib/data/market';
 import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
 import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
@@ -43,6 +44,9 @@ import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { LaneTimeline, type LaneTimelineHandle } from '@/components/trasparenza/LaneTimeline';
 import { TimelineFeed, type ScrubState } from '@/components/trasparenza/TimelineFeed';
 import { ZOOM_LEVELS } from '@/lib/trasparenza/scale';
+
+/** No snapshot, no band: an empty series set keeps the chart from drawing one. */
+const NO_MARKET: MarketSeries[] = [];
 
 /** Offset timeline chrome below the floating header */
 const CHROME_TOP = 'calc(var(--nav-clearance) + 0.5rem)';
@@ -113,7 +117,12 @@ function signalHaystack(signal: AutoSignal, people: PersonMap, actors: ActorMap)
   ]);
 }
 
-export default function TrasparenzaContent() {
+export default function TrasparenzaContent({
+  marketSeries = NO_MARKET,
+}: {
+  /** Closes of the listed actors, read from the store on the server. */
+  marketSeries?: MarketSeries[];
+}) {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
 
@@ -669,6 +678,11 @@ export default function TrasparenzaContent() {
       fear: t.trasparenza.moodFear,
       enthusiasm: t.trasparenza.moodEnthusiasm,
       moodNeutral: t.trasparenza.moodNeutral,
+      market: t.trasparenza.market,
+      marketBlurb: t.trasparenza.marketBlurb,
+      marketHint: t.trasparenza.marketHint,
+      marketSource: t.trasparenza.marketSource,
+      marketClose: t.trasparenza.marketClose,
       collapseLane: t.trasparenza.laneCollapse,
       expandLane: t.trasparenza.laneExpand,
     }),
@@ -866,6 +880,7 @@ export default function TrasparenzaContent() {
             stanceLabel={stanceLabel}
             volumeEvents={feedEvents}
             moodEvents={moodEvents}
+            marketSeries={marketSeries}
             focusPresent
             presentFocusToken={presentFocusToken}
             focusEventToken={focusEventToken}

@@ -1,0 +1,24 @@
+name: Weekly market refresh
+
+on:
+  schedule:
+    # 06:00 UTC on Monday, after the Friday close
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull the listed actors' closes into the market snapshot
+        env:
+          PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$PIPELINE_SECRET" ]; then
+            echo "PIPELINE_SECRET secret is not set — skipping."
+            exit 0
+          fi
+          BASE_URL="${SITE_URL:-https://segno.app}"
+          curl -fsS --max-time 120 -X POST "$BASE_URL/api/market/refresh" \
+            -H "Authorization: Bearer $PIPELINE_SECRET"
