@@ -25,17 +25,6 @@ const nextConfig: NextConfig = {
     return [
       { source: '/trasparenza', destination: '/timeline', permanent: true },
       { source: '/trasparenza/:path*', destination: '/timeline/:path*', permanent: true },
-      { source: '/strumenti', destination: '/', permanent: true },
-      { source: '/news', destination: '/', permanent: true },
-      { source: '/percorsi', destination: '/', permanent: true },
-      { source: '/percorsi/:path*', destination: '/', permanent: true },
-      { source: '/risorse', destination: '/', permanent: true },
-      { source: '/risorse/:path*', destination: '/', permanent: true },
-      { source: '/glossario', destination: '/', permanent: true },
-      { source: '/mappa-digitale', destination: '/', permanent: true },
-      { source: '/stack-etico', destination: '/', permanent: true },
-      { source: '/process-designer', destination: '/', permanent: true },
-      { source: '/metodologia', destination: '/', permanent: true },
     ];
   },
 };

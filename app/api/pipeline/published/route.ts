@@ -1,38 +1,20 @@
 import { NextResponse } from 'next/server';
-import { loadPipelineStore } from '@/lib/pipeline/store';
-import { signalsForPublic } from '@/lib/pipeline/signals';
-import { candidateToTimelineEvent, createdToTimelineEvent } from '@/lib/pipeline/types';
+import { loadPublicTimeline } from '@/lib/db/public';
 
 export const runtime = 'nodejs';
 
-/** Public: published (and approved) sentiment pins for the live timeline. */
+/**
+ * Public: the live timeline. Every pin the database holds — curated and
+ * hand-written alike, already corrected and with hidden rows dropped — plus the
+ * promoted quotes and the automatic diary. The projection itself lives in
+ * `lib/db/public` so the page and this route cannot diverge.
+ */
 export async function GET() {
-  const store = await loadPipelineStore();
-  const hidden = new Set(store.hiddenIds ?? []);
-  const events = store.candidates
-    .filter((c) => c.status === 'published')
-    .map(candidateToTimelineEvent)
-    .filter((e): e is NonNullable<typeof e> => e !== null)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const timeline = await loadPublicTimeline();
 
-  const createdEvents = (store.createdEvents ?? [])
-    .filter((e) => !hidden.has(e.id))
-    .map(createdToTimelineEvent)
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  return NextResponse.json(
-    {
-      events,
-      createdEvents,
-      signals: signalsForPublic(store),
-      edits: store.edits ?? {},
-      hiddenIds: store.hiddenIds ?? [],
-      updatedAt: store.updatedAt,
+  return NextResponse.json(timeline, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
     },
-    {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
-    },
-  );
+  });
 }

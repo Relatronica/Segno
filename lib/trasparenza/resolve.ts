@@ -8,14 +8,11 @@ import {
   type TimelineEvent,
   type TimelineTheme,
 } from '@/lib/data/trasparenza';
-import { applyStoreOverlays } from '@/lib/pipeline/edits';
-import { signalsForPublic, signalToTimelineEvent } from '@/lib/pipeline/signals';
-import { loadPipelineStore } from '@/lib/pipeline/store';
-import {
-  candidateToTimelineEvent,
-  createdToTimelineEvent,
-  type PipelineStore,
-} from '@/lib/pipeline/types';
+import { listEvents } from '@/lib/db/events';
+import { listCandidates, listPublicSignals } from '@/lib/db/queue';
+import { MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
+import { signalToTimelineEvent } from '@/lib/pipeline/signals';
+import { candidateToTimelineEvent } from '@/lib/pipeline/types';
 import { PRESENT_PIN_ID } from './constants';
 
 export type EventOrigin = 'editorial' | 'auto';
@@ -50,14 +47,15 @@ function liveTheme(): TimelineTheme {
   return timelineThemes[0] ?? unifiedTheme;
 }
 
-/** The closing "today" pin keeps a fixed date in the data file, but moves with the calendar. */
+/** The closing "today" pin keeps a fixed date in the database, but moves with the calendar. */
 function withPresentDate(event: TimelineEvent): TimelineEvent {
   return event.id === PRESENT_PIN_ID ? { ...event, date: localIsoDate() } : event;
 }
 
 /**
- * Curated tracks we publish, in resolution order.
- * The unified feed dedupes some AI Act pins, so both sources must be searched.
+ * Membership, not content. The database is the only home of the pins; the data
+ * file keeps just the id lists that say which pin belongs to which track. The
+ * unified feed dedupes some AI Act pins, so both sources are read.
  */
 function curatedSources(): TimelineTheme[] {
   const live = liveTheme();
@@ -66,56 +64,62 @@ function curatedSources(): TimelineTheme[] {
   );
 }
 
-/** Curated pins of every track, with editorial overlays and hidden pins applied. */
-function curatedEvents(store: PipelineStore): TimelineEvent[] {
-  const seen = new Set<string>();
-  const events: TimelineEvent[] = [];
+/** Curated id → track, for the permalink breadcrumb. */
+function curatedThemeById(): Map<string, TimelineTheme> {
+  const map = new Map<string, TimelineTheme>();
   for (const theme of curatedSources()) {
-    for (const event of applyStoreOverlays(theme.events, store.edits, store.hiddenIds)) {
-      if (seen.has(event.id)) continue;
-      seen.add(event.id);
-      events.push(withPresentDate(event));
+    for (const event of theme.events) {
+      if (!map.has(event.id)) map.set(event.id, theme);
     }
   }
-  return events;
+  return map;
 }
 
-function publishedEvents(store: PipelineStore): TimelineEvent[] {
-  const published = store.candidates
-    .filter((candidate) => candidate.status === 'published')
-    .map(candidateToTimelineEvent)
-    .filter((event): event is TimelineEvent => event !== null);
-  const manual = (store.createdEvents ?? []).map(createdToTimelineEvent);
-  return [...published, ...manual];
-}
-
-function autoEvents(store: PipelineStore): TimelineEvent[] {
-  return signalsForPublic(store)
-    .map(signalToTimelineEvent)
-    .filter((event): event is TimelineEvent => event !== null);
+/** Membership lookup: tells a curated pin from a hand-written one. */
+export function findCuratedEvent(id: string): TimelineEvent | undefined {
+  for (const theme of timelineThemes) {
+    const event = theme.events.find((item) => item.id === id);
+    if (event) return event;
+  }
+  return undefined;
 }
 
 function sortNewestFirst(events: TimelineEvent[]): TimelineEvent[] {
   return [...events].sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/** Every pin the database holds under this timeline: curated and hand-written alike. */
+async function editorialEvents(): Promise<TimelineEvent[]> {
+  return (await listEvents()).map(withPresentDate);
+}
+
+/** Promoted quotes: candidates that cleared moderation and carry a verified quote. */
+async function publishedEvents(): Promise<TimelineEvent[]> {
+  return (await listCandidates('published'))
+    .map(candidateToTimelineEvent)
+    .filter((event): event is TimelineEvent => event !== null);
+}
+
+/** The unverified diary: headline rows with no tone of their own. */
+async function autoEvents(): Promise<TimelineEvent[]> {
+  return (await listPublicSignals()).map(signalToTimelineEvent);
+}
+
 /** Resolves a public permalink id against curated pins, published quotes and auto signals. */
 export async function resolveEventById(id: string): Promise<ResolvedEvent | null> {
-  const store = await loadPipelineStore();
-
-  const curated = curatedEvents(store).find((event) => event.id === id);
+  const curated = (await editorialEvents()).find((event) => event.id === id);
   if (curated) {
     return {
       event: curated,
       origin: curated.origin ?? 'editorial',
-      theme: curatedSources().find((theme) => theme.events.some((e) => e.id === id)) ?? null,
+      theme: curatedThemeById().get(id) ?? null,
     };
   }
 
-  const published = publishedEvents(store).find((event) => event.id === id);
+  const published = (await publishedEvents()).find((event) => event.id === id);
   if (published) return { event: published, origin: 'editorial', theme: null };
 
-  const auto = autoEvents(store).find((event) => event.id === id);
+  const auto = (await autoEvents()).find((event) => event.id === id);
   if (auto) return { event: auto, origin: 'auto', theme: null };
 
   return null;
@@ -125,11 +129,9 @@ export async function resolvePersonBySlug(slug: string): Promise<ResolvedPerson 
   const person = lobbyPeople.find((p) => p.id === slug);
   if (!person) return null;
 
-  const store = await loadPipelineStore();
+  const [editorial, published] = await Promise.all([editorialEvents(), publishedEvents()]);
   const events = sortNewestFirst(
-    [...curatedEvents(store), ...publishedEvents(store)].filter(
-      (event) => event.personId === slug,
-    ),
+    [...editorial, ...published].filter((event) => event.personId === slug),
   );
 
   return { person, events };
@@ -139,14 +141,14 @@ export async function resolveThemeBySlug(slug: string): Promise<ResolvedTheme | 
   const entry = THEME_PAGES.find((item) => item.theme.slug === slug);
   if (!entry) return null;
 
-  const store = await loadPipelineStore();
-  const curated = applyStoreOverlays(entry.theme.events, store.edits, store.hiddenIds).map(
-    withPresentDate,
-  );
-  const events = sortNewestFirst([
-    ...curated,
-    ...(entry.includePublished ? publishedEvents(store) : []),
-  ]);
+  const live = entry.theme.slug === liveTheme().slug;
+  const memberIds = new Set(entry.theme.events.map((event) => event.id));
+  const curated = (await listEvents())
+    .filter((event) => memberIds.has(event.id) || (live && event.id.startsWith(MANUAL_ID_PREFIX)))
+    .map(withPresentDate);
+
+  const published = entry.includePublished ? await publishedEvents() : [];
+  const events = sortNewestFirst([...curated, ...published]);
 
   const peopleIds = new Set(
     events.map((event) => event.personId).filter((id): id is string => Boolean(id)),
@@ -177,8 +179,7 @@ export function listCuratedEventIds(): string[] {
 /** Published pipeline permalinks — best effort, used by the sitemap. */
 export async function listPublishedEventIds(): Promise<string[]> {
   try {
-    const store = await loadPipelineStore();
-    return publishedEvents(store).map((event) => event.id);
+    return (await publishedEvents()).map((event) => event.id);
   } catch {
     return [];
   }

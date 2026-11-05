@@ -14,11 +14,15 @@ import {
   Code,
   type LucideIcon,
 } from 'lucide-react';
-import type { EventType, Modality, PositionStance, SentimentTag } from '@/lib/data/trasparenza';
 import { toMs as toMsDate } from '@/lib/dates';
 
+/**
+ * Colour and glyph per ontology key. Keyed by `string`, not by the domain's
+ * union: the engine draws whatever key a spec declares, so it must not depend
+ * on the AI ontology's enumerations.
+ */
 export const EVENT_META: Record<
-  EventType,
+  string,
   { icon: LucideIcon; color: string; bg: string; ring: string; dot: string; lane: 'up' | 'down' }
 > = {
   meeting: {
@@ -72,7 +76,7 @@ export const EVENT_META: Record<
 };
 
 /** Modality glyphs. Labels stay in the data layer; only the icon lives here. */
-export const MODALITY_ICON: Record<Modality, LucideIcon> = {
+export const MODALITY_ICON: Record<string, LucideIcon> = {
   text: Type,
   image: ImageIcon,
   video: Video,
@@ -81,7 +85,7 @@ export const MODALITY_ICON: Record<Modality, LucideIcon> = {
 };
 
 export const SENTIMENT_META: Record<
-  SentimentTag,
+  string,
   { color: string; bg: string; dot: string }
 > = {
   alarm: {
@@ -111,15 +115,13 @@ export const SENTIMENT_META: Record<
   },
 };
 
-export { SENTIMENT_FEAR_SCORE } from '@/lib/data/trasparenza';
-
 /**
  * Colour of a reading on a thesis. Fixed order: support / oppose /
  * conditional / ambiguous / undetermined, so a shift in position reads as a
  * change of colour rather than a change of mood.
  */
 export const STANCE_META: Record<
-  PositionStance,
+  string,
   { color: string; bg: string; dot: string }
 > = {
   support: {

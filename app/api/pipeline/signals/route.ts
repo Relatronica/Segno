@@ -5,7 +5,7 @@ import {
   SESSION_COOKIE,
   unauthorized,
 } from '@/lib/pipeline/auth';
-import { loadPipelineStore, patchSignal, promoteSignal, savePipelineStore } from '@/lib/pipeline/store';
+import { getSignal, promoteSignal, setSignalHidden } from '@/lib/db/queue';
 
 export const runtime = 'nodejs';
 
@@ -37,21 +37,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
-  const store = await loadPipelineStore();
-
   if (body.promote) {
-    const promoted = promoteSignal(store, body.id);
+    const promoted = await promoteSignal(body.id);
     if (!promoted) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    await savePipelineStore(promoted.store);
     return NextResponse.json({ ok: true, created: promoted.created });
   }
 
-  const patch: { hidden?: boolean } = {};
-  if (typeof body.hidden === 'boolean') patch.hidden = body.hidden;
+  if (typeof body.hidden !== 'boolean') {
+    const signal = await getSignal(body.id);
+    if (!signal) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    return NextResponse.json({ ok: true, signal });
+  }
 
-  const next = patchSignal(store, body.id, patch);
-  if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  await savePipelineStore(next);
-  const signal = next.signals?.find((item) => item.id === body.id);
+  const signal = await setSignalHidden(body.id, body.hidden);
+  if (!signal) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   return NextResponse.json({ ok: true, signal });
 }

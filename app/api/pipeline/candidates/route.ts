@@ -5,15 +5,15 @@ import {
   SESSION_COOKIE,
   unauthorized,
 } from '@/lib/pipeline/auth';
-import { listCuratedPins } from '@/lib/pipeline/edits';
+import { listCuratedPins, listManualEvents } from '@/lib/db/events';
 import {
   deleteCandidates,
-  listCreatedEvents,
-  loadPipelineStore,
-  savePipelineStore,
+  getCandidate,
+  listCandidates,
+  listSignals,
   updateCandidateStatus,
-  updateManyCandidateStatus,
-} from '@/lib/pipeline/store';
+  updateCandidatesStatus,
+} from '@/lib/db/queue';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import {
   ALL_LENSES,
@@ -38,30 +38,29 @@ export async function GET(request: Request) {
   if (missing) return missing;
   if (!isAuthorized(request, sessionFrom(request))) return unauthorized();
 
-  const store = await loadPipelineStore();
   const url = new URL(request.url);
   const status = url.searchParams.get('status') as CandidateStatus | null;
-  const candidates = status
-    ? store.candidates.filter((c) => c.status === status)
-    : store.candidates;
 
-  const signals = [...(store.signals ?? [])].sort(
-    (a, b) => b.date.localeCompare(a.date) || b.discoveredAt.localeCompare(a.discoveredAt),
-  );
+  const [all, signals, curated, manual] = await Promise.all([
+    listCandidates(),
+    listSignals(),
+    listCuratedPins(),
+    listManualEvents(),
+  ]);
+  const candidates = status ? all.filter((c) => c.status === status) : all;
 
   return NextResponse.json({
-    updatedAt: store.updatedAt,
     candidates,
     signals,
-    curated: listCuratedPins(store),
-    manual: listCreatedEvents(store),
+    curated,
+    manual,
     counts: {
-      pending: store.candidates.filter((c) => c.status === 'pending').length,
-      approved: store.candidates.filter((c) => c.status === 'approved').length,
-      published: store.candidates.filter((c) => c.status === 'published').length,
-      rejected: store.candidates.filter((c) => c.status === 'rejected').length,
+      pending: all.filter((c) => c.status === 'pending').length,
+      approved: all.filter((c) => c.status === 'approved').length,
+      published: all.filter((c) => c.status === 'published').length,
+      rejected: all.filter((c) => c.status === 'rejected').length,
       signals: signals.length,
-      manual: (store.createdEvents ?? []).length,
+      manual: manual.length,
     },
   });
 }
@@ -108,22 +107,16 @@ export async function PATCH(request: Request) {
     if (bulkStatus !== 'rejected' && bulkStatus !== 'pending') {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
-    const store = await loadPipelineStore();
-    const known = bulkIds.filter((id) => store.candidates.some((c) => c.id === id));
-    if (known.length === 0) {
-      return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    }
-    const next = updateManyCandidateStatus(store, known, bulkStatus);
-    await savePipelineStore(next);
-    return NextResponse.json({ ok: true, updated: known.length });
+    const updated = await updateCandidatesStatus(bulkIds, bulkStatus);
+    if (updated === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    return NextResponse.json({ ok: true, updated });
   }
 
   if (!body.id || typeof body.id !== 'string') {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
-  const store = await loadPipelineStore();
-  const current = store.candidates.find((c) => c.id === body.id);
+  const current = await getCandidate(body.id);
   if (!current) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -163,7 +156,7 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const next = updateCandidateStatus(store, body.id, nextStatus, {
+  const updated = await updateCandidateStatus(body.id, nextStatus, {
     title: body.title,
     summary: body.summary,
     quote: body.quote,
@@ -175,9 +168,6 @@ export async function PATCH(request: Request) {
     type: body.type,
     reviewNote: body.reviewNote,
   });
-
-  await savePipelineStore(next);
-  const updated = next.candidates.find((c) => c.id === body.id);
 
   return NextResponse.json({ ok: true, candidate: updated });
 }
@@ -199,13 +189,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'invalid_ids' }, { status: 400 });
   }
 
-  const store = await loadPipelineStore();
-  const known = ids.filter((id) => store.candidates.some((c) => c.id === id));
-  if (known.length === 0) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  const deleted = await deleteCandidates(ids);
+  if (deleted === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const next = deleteCandidates(store, known);
-  await savePipelineStore(next);
-  return NextResponse.json({ ok: true, deleted: known.length });
+  return NextResponse.json({ ok: true, deleted });
 }

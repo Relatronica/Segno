@@ -1,11 +1,4 @@
-import {
-  ALL_LENSES,
-  ALL_SENTIMENT_TAGS,
-  type EventType,
-  type Lens,
-  type SentimentTag,
-} from '@/lib/data/trasparenza';
-import { ALL_EVENT_TYPES } from './constants';
+import type { TimelineSpec } from './spec';
 
 /**
  * Shareable state of the transparency hub.
@@ -14,13 +7,13 @@ import { ALL_EVENT_TYPES } from './constants';
 export type TrasparenzaUrlState = {
   person?: string;
   actor?: string;
-  types?: EventType[];
+  types?: string[];
   years?: string[];
-  sentiments?: SentimentTag[];
+  sentiments?: string[];
   /** Domain lenses kept on the axis. Absent means all of them. */
-  lenses?: Lens[];
+  lenses?: string[];
   /** Lenses drawn as a compact strip instead of a full lane. */
-  collapsedLenses?: Lens[];
+  collapsedLenses?: string[];
   q?: string;
   event?: string;
   /** Thesis slug: narrows statements to readings recorded on that claim. */
@@ -49,9 +42,14 @@ function splitList(value: string | null): string[] {
 }
 
 /** Reads the hub state from a query string; unknown or malformed values are dropped. */
-export function parseTrasparenzaSearch(search: string): TrasparenzaUrlState {
+export function parseTrasparenzaSearch(search: string, spec: TimelineSpec): TrasparenzaUrlState {
   const params = new URLSearchParams(search);
   const state: TrasparenzaUrlState = {};
+
+  /** The spec owns the vocabulary: a value that is not in it is not a filter. */
+  const typeKeys = new Set(spec.eventTypes.map((axis) => axis.key));
+  const sentimentKeys = new Set(spec.sentimentTags.map((axis) => axis.key));
+  const lensKeys = new Set(spec.lenses.map((axis) => axis.key));
 
   const person = params.get(KEYS.person)?.trim();
   if (person) state.person = person;
@@ -59,26 +57,22 @@ export function parseTrasparenzaSearch(search: string): TrasparenzaUrlState {
   const actor = params.get(KEYS.actor)?.trim();
   if (actor) state.actor = actor;
 
-  const types = splitList(params.get(KEYS.types)).filter((value): value is EventType =>
-    (ALL_EVENT_TYPES as string[]).includes(value),
-  );
+  const types = splitList(params.get(KEYS.types)).filter((value) => typeKeys.has(value));
   if (types.length) state.types = types;
 
   const years = [...new Set(splitList(params.get(KEYS.years)).filter((v) => /^\d{4}$/.test(v)))].sort();
   if (years.length) state.years = years;
 
-  const sentiments = splitList(params.get(KEYS.sentiments)).filter(
-    (value): value is SentimentTag => (ALL_SENTIMENT_TAGS as string[]).includes(value),
+  const sentiments = splitList(params.get(KEYS.sentiments)).filter((value) =>
+    sentimentKeys.has(value),
   );
   if (sentiments.length) state.sentiments = sentiments;
 
-  const lenses = splitList(params.get(KEYS.lenses)).filter((value): value is Lens =>
-    (ALL_LENSES as string[]).includes(value),
-  );
+  const lenses = splitList(params.get(KEYS.lenses)).filter((value) => lensKeys.has(value));
   if (lenses.length) state.lenses = lenses;
 
-  const collapsedLenses = splitList(params.get(KEYS.collapsedLenses)).filter(
-    (value): value is Lens => (ALL_LENSES as string[]).includes(value),
+  const collapsedLenses = splitList(params.get(KEYS.collapsedLenses)).filter((value) =>
+    lensKeys.has(value),
   );
   if (collapsedLenses.length) state.collapsedLenses = collapsedLenses;
 

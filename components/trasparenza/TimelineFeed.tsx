@@ -5,16 +5,15 @@ import { ExternalLink, Link2, type LucideIcon } from 'lucide-react';
 import {
   formatAmount,
   formatEventDate,
-  lensOf,
-  LENS_META,
   MODALITY_META,
   orderedModalities,
   type LobbyPerson,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
-import type { EventType, Lens, SentimentTag } from '@/lib/data/trasparenza';
 import { localIsoDate, offsetIsoDate } from '@/lib/dates';
+import { axisMap, lensOf } from '@/lib/trasparenza/spec';
 import { EVENT_META, MODALITY_ICON, SENTIMENT_META } from './meta';
+import { useTimelineSpec } from './TimelineSpecProvider';
 import { LabMark, hasLabMark } from './LabMark';
 import { PersonAvatar } from './PersonAvatar';
 import { paths } from '@/lib/seo';
@@ -46,9 +45,9 @@ type Props = {
   onSelect: (id: string) => void;
   /** Feed scroll position → temporal playhead on the chart (no selection) */
   onScrub?: (state: ScrubState | null) => void;
-  sentimentLabel?: (tag: SentimentTag) => string;
-  typeLabel?: (type: EventType) => string;
-  lensLabel?: (lens: Lens) => string;
+  sentimentLabel?: (tag: string) => string;
+  typeLabel?: (type: string) => string;
+  lensLabel?: (lens: string) => string;
   sentimentNote?: string;
   /** Shown instead of sentimentNote on automatic headline pins */
   autoNote?: string;
@@ -140,6 +139,8 @@ export function TimelineFeed({
   emptyLabel,
   className = '',
 }: Props) {
+  const spec = useTimelineSpec();
+  const lensAxes = axisMap(spec.lenses);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
   const syncLock = useRef<'external' | 'self' | null>(null);
@@ -253,8 +254,8 @@ export function TimelineFeed({
                       : null;
                     const typeMeta = EVENT_META[event.type];
                     const TypeIcon = typeMeta.icon;
-                    const lens = lensOf(event);
-                    const laneColor = LENS_META[lens].color;
+                    const lens = lensOf(event, spec);
+                    const laneColor = lensAxes.get(lens)?.color ?? 'currentColor';
                     const note = event.origin === 'auto' ? autoNote : sentimentNote;
                     const body = event.detail?.[locale] ?? event.summary[locale];
                     const modalities = event.modalities?.length
@@ -308,7 +309,7 @@ export function TimelineFeed({
                                 style={{ backgroundColor: laneColor }}
                               />
                               <span className="truncate">
-                                {lensLabel ? lensLabel(lens) : LENS_META[lens].label[locale]}
+                                {lensLabel ? lensLabel(lens) : lensAxes.get(lens)?.label?.[locale] ?? lens}
                               </span>
                               {typeLabel && (
                                 <>

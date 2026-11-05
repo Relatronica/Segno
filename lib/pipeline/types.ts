@@ -126,17 +126,6 @@ export type CreatedEvent = {
   sourceUrl: string;
 };
 
-export type PipelineStore = {
-  updatedAt: string;
-  candidates: SentimentCandidate[];
-  /** Daily automatic tone. Separate from the editorial queue. */
-  signals?: AutoSignal[];
-  edits?: Record<string, TimelineEventEdit>;
-  hiddenIds?: string[];
-  /** Hand-written pins, kept apart from the discovered queue. */
-  createdEvents?: CreatedEvent[];
-};
-
 export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent | null {
   if (c.status !== 'published' && c.status !== 'approved') return null;
   if (!c.sourceUrl) return null;
@@ -158,26 +147,5 @@ export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent |
     sourceLabel: c.sourceLabel,
     sourceUrl: c.sourceUrl,
     imageUrl: c.imageUrl,
-  };
-}
-
-/** A hand-written pin as it appears on the public timeline. */
-export function createdToTimelineEvent(e: CreatedEvent): TimelineEvent {
-  return {
-    id: e.id,
-    date: e.date,
-    type: e.type,
-    lens: e.lens,
-    origin: 'editorial',
-    actorId: e.actorId,
-    personId: e.personId,
-    title: e.title,
-    summary: e.summary,
-    detail: e.detail,
-    quote: e.quote,
-    sentiment: e.sentiment,
-    amountEur: e.amountEur,
-    sourceLabel: e.sourceLabel,
-    sourceUrl: e.sourceUrl,
   };
 }

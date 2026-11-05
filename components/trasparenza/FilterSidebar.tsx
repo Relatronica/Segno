@@ -2,16 +2,12 @@
 
 import { EVENT_META, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
-import {
-  ALL_LENSES,
-  LENS_META,
-  type EventType,
-  type Lens,
-  type LobbyActor,
-  type LobbyPerson,
-  type SentimentTag,
-  type Thesis,
-  type TimelineTheme,
+import { useTimelineSpec } from './TimelineSpecProvider';
+import type {
+  LobbyActor,
+  LobbyPerson,
+  Thesis,
+  TimelineTheme,
 } from '@/lib/data/trasparenza';
 
 type Labels = {
@@ -31,8 +27,8 @@ type Labels = {
   thesisSettled: string;
   thesisSince: string;
   eventsCount: string;
-  typeLabel: (type: EventType) => string;
-  sentimentTagLabel: (tag: SentimentTag) => string;
+  typeLabel: (type: string) => string;
+  sentimentTagLabel: (tag: string) => string;
 };
 
 type Props = {
@@ -43,28 +39,28 @@ type Props = {
   actors: LobbyActor[];
   people: LobbyPerson[];
   years: string[];
-  filterTypes: EventType[];
+  filterTypes: string[];
   showSentiment: boolean;
   /** Claims under test, with their reading key */
   theses: Thesis[];
   selectedActor: string | 'all';
   selectedPerson: string | 'all';
-  selectedTypes: EventType[];
+  selectedTypes: string[];
   selectedYears: string[];
-  selectedSentiments: SentimentTag[];
-  allSentimentTags: SentimentTag[];
+  selectedSentiments: string[];
+  allSentimentTags: string[];
   /** Domain lenses kept on the axis. */
-  selectedLenses: Lens[];
+  selectedLenses: string[];
   selectedThesis: string | 'all';
   eventCount: number;
   disclaimer: string;
   labels: Labels;
   onActorChange: (id: string | 'all') => void;
   onPersonChange: (id: string | 'all') => void;
-  onToggleType: (type: EventType) => void;
+  onToggleType: (type: string) => void;
   onToggleYear: (year: string) => void;
-  onToggleSentiment: (tag: SentimentTag) => void;
-  onToggleLens: (lens: Lens) => void;
+  onToggleSentiment: (tag: string) => void;
+  onToggleLens: (lens: string) => void;
   onThesisChange: (slug: string | 'all') => void;
   className?: string;
 };
@@ -100,6 +96,7 @@ export function FilterSidebar({
   onThesisChange,
   className = '',
 }: Props) {
+  const spec = useTimelineSpec();
   const activeThesis = theses.find((thesis) => thesis.slug === selectedThesis);
 
   return (
@@ -181,8 +178,8 @@ export function FilterSidebar({
 
         <FilterSection title={labels.lensesLabel}>
           <div className="flex flex-wrap gap-1">
-            {ALL_LENSES.map((lens) => {
-              const meta = LENS_META[lens];
+            {spec.lenses.map((axis) => {
+              const lens = axis.key;
               const active = selectedLenses.includes(lens);
               return (
                 <button
@@ -197,9 +194,9 @@ export function FilterSidebar({
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/25"
-                    style={{ backgroundColor: meta.color, opacity: active ? 1 : 0.5 }}
+                    style={{ backgroundColor: axis.color ?? 'currentColor', opacity: active ? 1 : 0.5 }}
                   />
-                  {meta.label[locale]}
+                  {axis.label?.[locale] ?? lens}
                 </button>
               );
             })}

@@ -1,4 +1,5 @@
-import { ALL_LENSES, type EventType, type Lens } from '@/lib/data/trasparenza';
+import type { EventType } from '@/lib/data/trasparenza';
+import type { TimelineSpec } from './spec';
 
 /** Closing "today" pin on the AI Act track — its date follows the calendar. */
 export const PRESENT_PIN_ID = 'e-2026-09-today';
@@ -6,17 +7,21 @@ export const PRESENT_PIN_ID = 'e-2026-09-today';
 /**
  * Lanes that start as compact strips: everything but the first two, so the
  * axis opens on a readable stack instead of five full rows. View-only — the
- * data stays on the axis.
+ * data stays on the axis. Derived from the spec, so a timeline with two
+ * lenses simply opens fully.
  */
-export const DEFAULT_COLLAPSED_LENSES: Lens[] = ALL_LENSES.slice(2);
+export function defaultCollapsedLenses(spec: TimelineSpec): string[] {
+  return spec.lenses.slice(2).map((axis) => axis.key);
+}
 
 /**
  * Arrival collapse state. A link that names its lenses (`?lente=`) opens them
  * expanded: landing on a compact strip would hide the very row that was clicked.
  */
-export function defaultCollapsedFor(requested?: Lens[]): Lens[] {
-  if (!requested?.length) return [...DEFAULT_COLLAPSED_LENSES];
-  return DEFAULT_COLLAPSED_LENSES.filter((lens) => !requested.includes(lens));
+export function defaultCollapsedFor(spec: TimelineSpec, requested?: string[]): string[] {
+  const base = defaultCollapsedLenses(spec);
+  if (!requested?.length) return base;
+  return base.filter((lens) => !requested.includes(lens));
 }
 
 /** Event types shared by the filter UI and the URL parser. */

@@ -4,7 +4,7 @@ import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
 import { classifyLane, isOnTopic } from '@/lib/pipeline/lanes';
 import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
 import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
-import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/store';
+import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/ids';
 import type { AutoSignal, SentimentCandidate } from '@/lib/pipeline/types';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
 

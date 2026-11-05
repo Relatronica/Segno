@@ -11,30 +11,24 @@ import {
   unifiedTheme,
   timelineThemes,
   lobbyPeople,
-  ALL_LENSES,
-  ALL_SENTIMENT_TAGS,
-  LENS_META,
-  lensOf,
   readingsForThesis,
   thesesForTheme,
-  type EventType,
-  type Lens,
   type PositionStance,
-  type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
 import { type MarketSeries } from '@/lib/data/market';
-import { applyStoreOverlays } from '@/lib/pipeline/edits';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
-import type { AutoSignal, TimelineEventEdit } from '@/lib/pipeline/types';
+import type { AutoSignal } from '@/lib/pipeline/types';
+import type { PublicTimeline } from '@/lib/db/public';
 import {
   DEFAULT_TEXT_INDEX,
-  DEFAULT_COLLAPSED_LENSES,
   PRESENT_PIN_ID,
   TEXT_LEVELS,
   defaultCollapsedFor,
+  defaultCollapsedLenses,
 } from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
+import { axisMap, lensOf } from '@/lib/trasparenza/spec';
 import {
   buildTrasparenzaSearch,
   parseTrasparenzaSearch,
@@ -42,6 +36,7 @@ import {
 } from '@/lib/trasparenza/url';
 import { FilterSidebar } from '@/components/trasparenza/FilterSidebar';
 import { LaneTimeline, type LaneTimelineHandle } from '@/components/trasparenza/LaneTimeline';
+import { useTimelineSpec } from '@/components/trasparenza/TimelineSpecProvider';
 import { TimelineFeed, type ScrubState } from '@/components/trasparenza/TimelineFeed';
 import { ZOOM_LEVELS } from '@/lib/trasparenza/scale';
 
@@ -58,7 +53,7 @@ const SCALE_CHIP =
   'inline-flex h-8 min-w-6 items-center justify-center px-1 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground disabled:pointer-events-none disabled:opacity-60 sm:h-9 sm:min-w-8';
 
 /** Order-free comparison, so the URL stays clean while a set is untouched. */
-function sameLensSet(a: Lens[], b: Lens[]): boolean {
+function sameLensSet(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
   const set = new Set(a);
   return b.every((lens) => set.has(lens));
@@ -119,19 +114,31 @@ function signalHaystack(signal: AutoSignal, people: PersonMap, actors: ActorMap)
 
 export default function TrasparenzaContent({
   marketSeries = NO_MARKET,
+  initialTimeline,
 }: {
   /** Closes of the listed actors, read from the store on the server. */
   marketSeries?: MarketSeries[];
+  /**
+   * First paint of the live timeline, read from Postgres on the server. The
+   * client re-fetches on mount, so this only removes the gap between the
+   * bundled base and the corrections the database holds.
+   */
+  initialTimeline?: PublicTimeline;
 }) {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
+  /** The timeline's ontology: lenses, forms and tags come from here, not the domain. */
+  const spec = useTimelineSpec();
+  const lensAxes = useMemo(() => axisMap(spec.lenses), [spec]);
+  const lensKeys = useMemo(() => spec.lenses.map((axis) => axis.key), [spec]);
+  const sentimentKeys = useMemo(() => spec.sentimentTags.map((axis) => axis.key), [spec]);
 
   const [themeId] = useState(unifiedTheme.id);
-  const [pipelineEvents, setPipelineEvents] = useState<TimelineEvent[]>([]);
-  const [createdEvents, setCreatedEvents] = useState<TimelineEvent[]>([]);
-  const [autoSignals, setAutoSignals] = useState<AutoSignal[]>([]);
-  const [edits, setEdits] = useState<Record<string, TimelineEventEdit>>({});
-  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [dbEvents, setDbEvents] = useState<TimelineEvent[]>(() => initialTimeline?.events ?? []);
+  const [publishedEvents, setPublishedEvents] = useState<TimelineEvent[]>(
+    () => initialTimeline?.published ?? [],
+  );
+  const [autoSignals, setAutoSignals] = useState<AutoSignal[]>(() => initialTimeline?.signals ?? []);
   const [presentFocusToken, setPresentFocusToken] = useState(0);
   const [focusEventToken, setFocusEventToken] = useState(0);
   /** Chart density step; the chart anchors each change, the chrome only shows it. */
@@ -149,18 +156,14 @@ export default function TrasparenzaContent({
           (
             data: {
               events?: TimelineEvent[];
-              createdEvents?: TimelineEvent[];
+              published?: TimelineEvent[];
               signals?: AutoSignal[];
-              edits?: Record<string, TimelineEventEdit>;
-              hiddenIds?: string[];
             } | null,
           ) => {
             if (cancelled || !data) return;
-            setPipelineEvents(data.events ?? []);
-            setCreatedEvents(data.createdEvents ?? []);
+            setDbEvents(data.events ?? []);
+            setPublishedEvents(data.published ?? []);
             setAutoSignals(data.signals ?? []);
-            setEdits(data.edits ?? {});
-            setHiddenIds(data.hiddenIds ?? []);
           },
         )
         .catch(() => {
@@ -178,27 +181,20 @@ export default function TrasparenzaContent({
 
   const track = useMemo(() => {
     const today = localIsoDate();
-    const hidden = new Set(hiddenIds);
     const base = timelineThemes.find((th) => th.id === themeId) ?? unifiedTheme;
-    const withPresent = applyStoreOverlays(
-      base.events.map((e) =>
-        e.id === PRESENT_PIN_ID ? { ...e, date: today } : e,
-      ),
-      edits,
-      hiddenIds,
-    ).map((e) => (e.id === PRESENT_PIN_ID ? { ...e, date: today } : e));
+    // The database holds the content, already corrected: `hidden` drops a row,
+    // an edit is a column. Here we only pin the closing "today" mark to the
+    // calendar and never let a pin run past it.
+    const merge = (e: TimelineEvent): TimelineEvent => {
+      if (e.id === PRESENT_PIN_ID) return { ...e, date: today };
+      return e.date > today ? { ...e, date: today } : e;
+    };
 
-    const byId = new Map(withPresent.map((e) => [e.id, e]));
-    for (const e of pipelineEvents) {
-      if (hidden.has(e.id)) continue;
-      byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
-    }
-    for (const e of createdEvents) {
-      if (hidden.has(e.id)) continue;
-      byId.set(e.id, { ...e, date: e.date > today ? today : e.date });
-    }
+    const byId = new Map<string, TimelineEvent>();
+    for (const e of dbEvents) byId.set(e.id, merge(e));
+    for (const e of publishedEvents) byId.set(e.id, merge(e));
     return { ...base, events: [...byId.values()] };
-  }, [themeId, pipelineEvents, createdEvents, edits, hiddenIds]);
+  }, [themeId, dbEvents, publishedEvents]);
 
   const allYears = useMemo(() => {
     const years = [
@@ -210,15 +206,13 @@ export default function TrasparenzaContent({
 
   const [selectedActor, setSelectedActor] = useState<string | 'all'>('all');
   const [selectedPerson, setSelectedPerson] = useState<string | 'all'>('all');
-  const [selectedTypes, setSelectedTypes] = useState<EventType[]>([...track.filterTypes]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([...track.filterTypes]);
   const [selectedYears, setSelectedYears] = useState<string[]>(allYears);
-  const [selectedSentiments, setSelectedSentiments] = useState<SentimentTag[]>([
-    ...ALL_SENTIMENT_TAGS,
-  ]);
+  const [selectedSentiments, setSelectedSentiments] = useState<string[]>(sentimentKeys);
   /** Domain lenses kept on the axis. All of them by default. */
-  const [selectedLenses, setSelectedLenses] = useState<Lens[]>([...ALL_LENSES]);
+  const [selectedLenses, setSelectedLenses] = useState<string[]>(lensKeys);
   /** Lenses drawn as a compact strip. View-only: the data stays on the axis. */
-  const [collapsedLenses, setCollapsedLenses] = useState<Lens[]>([...DEFAULT_COLLAPSED_LENSES]);
+  const [collapsedLenses, setCollapsedLenses] = useState<string[]>(() => defaultCollapsedLenses(spec));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scrubId, setScrubId] = useState<string | null>(null);
   /**
@@ -262,9 +256,9 @@ export default function TrasparenzaContent({
     setSelectedTypes(parsed.types ?? defaults.current.types);
     explicitYears.current = Boolean(parsed.years);
     setSelectedYears(parsed.years ?? defaults.current.years);
-    setSelectedSentiments(parsed.sentiments ?? [...ALL_SENTIMENT_TAGS]);
-    setSelectedLenses(parsed.lenses ?? [...ALL_LENSES]);
-    setCollapsedLenses(parsed.collapsedLenses ?? defaultCollapsedFor(parsed.lenses));
+    setSelectedSentiments(parsed.sentiments ?? sentimentKeys);
+    setSelectedLenses(parsed.lenses ?? lensKeys);
+    setCollapsedLenses(parsed.collapsedLenses ?? defaultCollapsedFor(spec, parsed.lenses));
     setQuery(parsed.q ?? '');
     setSelectedThesis(parsed.thesis ?? 'all');
 
@@ -276,18 +270,18 @@ export default function TrasparenzaContent({
       setPendingEvent(null);
       setActiveId(null);
     }
-  }, []);
+  }, [spec, sentimentKeys, lensKeys]);
 
   useEffect(() => {
-    applyUrlState(parseTrasparenzaSearch(window.location.search));
+    applyUrlState(parseTrasparenzaSearch(window.location.search, spec));
     setUrlApplied(true);
-  }, [applyUrlState]);
+  }, [applyUrlState, spec]);
 
   useEffect(() => {
-    const onPop = () => applyUrlState(parseTrasparenzaSearch(window.location.search));
+    const onPop = () => applyUrlState(parseTrasparenzaSearch(window.location.search, spec));
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [applyUrlState]);
+  }, [applyUrlState, spec]);
 
   useEffect(() => {
     if (!urlApplied) return;
@@ -305,18 +299,16 @@ export default function TrasparenzaContent({
     const timer = window.setTimeout(() => {
       /* A narrowed view opens its lens: the collapse default follows the link. */
       const requestedLenses =
-        selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined;
+        selectedLenses.length < lensKeys.length ? selectedLenses : undefined;
       const search = buildTrasparenzaSearch({
         person: selectedPerson !== 'all' ? selectedPerson : undefined,
         actor: selectedActor !== 'all' ? selectedActor : undefined,
         types: selectedTypes.length < track.filterTypes.length ? selectedTypes : undefined,
         years: selectedYears.length < allYears.length ? selectedYears : undefined,
         sentiments:
-          selectedSentiments.length < ALL_SENTIMENT_TAGS.length
-            ? selectedSentiments
-            : undefined,
-        lenses: selectedLenses.length < ALL_LENSES.length ? selectedLenses : undefined,
-        collapsedLenses: sameLensSet(collapsedLenses, defaultCollapsedFor(requestedLenses))
+          selectedSentiments.length < sentimentKeys.length ? selectedSentiments : undefined,
+        lenses: selectedLenses.length < lensKeys.length ? selectedLenses : undefined,
+        collapsedLenses: sameLensSet(collapsedLenses, defaultCollapsedFor(spec, requestedLenses))
           ? undefined
           : collapsedLenses,
         q: query.trim() || undefined,
@@ -343,6 +335,9 @@ export default function TrasparenzaContent({
     selectedThesis,
     track.filterTypes,
     allYears,
+    spec,
+    lensKeys,
+    sentimentKeys,
   ]);
 
   const switchTheme = () => {
@@ -417,7 +412,7 @@ export default function TrasparenzaContent({
         if (!e.sentiment) return true;
         return selectedSentiments.includes(e.sentiment);
       })
-      .filter((e) => selectedLenses.includes(lensOf(e)))
+      .filter((e) => selectedLenses.includes(lensOf(e, spec)))
       .filter((e) => {
         // A thesis scopes statements to its recorded readings; context pins
         // stay on the axis, like the person filter above.
@@ -437,6 +432,7 @@ export default function TrasparenzaContent({
     personMap,
     actorMap,
     thesisReadingsById,
+    spec,
   ]);
 
   /**
@@ -489,7 +485,7 @@ export default function TrasparenzaContent({
 
   const activeIndex = feedEvents.findIndex((e) => e.id === activeId);
 
-  const toggleType = (type: EventType) => {
+  const toggleType = (type: string) => {
     setSelectedTypes((prev) => {
       if (prev.includes(type)) {
         if (prev.length === 1) return prev;
@@ -511,7 +507,7 @@ export default function TrasparenzaContent({
     });
   };
 
-  const toggleSentiment = (tag: SentimentTag) => {
+  const toggleSentiment = (tag: string) => {
     setSelectedSentiments((prev) => {
       if (prev.includes(tag)) {
         if (prev.length === 1) return prev;
@@ -521,17 +517,17 @@ export default function TrasparenzaContent({
     });
   };
 
-  const toggleLens = (lens: Lens) => {
+  const toggleLens = (lens: string) => {
     setSelectedLenses((prev) => {
       if (prev.includes(lens)) {
         if (prev.length === 1) return prev;
         return prev.filter((x) => x !== lens);
       }
-      return ALL_LENSES.filter((l) => prev.includes(l) || l === lens);
+      return lensKeys.filter((l) => prev.includes(l) || l === lens);
     });
   };
 
-  const toggleLensCollapsed = (lens: Lens) => {
+  const toggleLensCollapsed = (lens: string) => {
     setCollapsedLenses((prev) =>
       prev.includes(lens) ? prev.filter((l) => l !== lens) : [...prev, lens],
     );
@@ -543,9 +539,9 @@ export default function TrasparenzaContent({
     setSelectedTypes([...track.filterTypes]);
     explicitYears.current = false;
     setSelectedYears(allYears);
-    setSelectedSentiments([...ALL_SENTIMENT_TAGS]);
-    setSelectedLenses([...ALL_LENSES]);
-    setCollapsedLenses([...DEFAULT_COLLAPSED_LENSES]);
+    setSelectedSentiments([...sentimentKeys]);
+    setSelectedLenses([...lensKeys]);
+    setCollapsedLenses(defaultCollapsedLenses(spec));
     setSelectedThesis('all');
   };
 
@@ -569,8 +565,10 @@ export default function TrasparenzaContent({
     requestAnimationFrame(() => focusField(0));
   };
 
-  const typeLabel = (type: EventType) => t.trasparenza.types[type];
-  const sentimentTagLabel = (tag: SentimentTag) => t.trasparenza.sentiments[tag];
+  const typeLabel = (type: string) =>
+    (t.trasparenza.types as Record<string, string>)[type] ?? type;
+  const sentimentTagLabel = (tag: string) =>
+    (t.trasparenza.sentiments as Record<string, string>)[tag] ?? tag;
   const stanceLabel = (stance: PositionStance) => t.trasparenza.stances[stance];
 
   const centerOnEvent = (id: string) => {
@@ -616,7 +614,7 @@ export default function TrasparenzaContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, filtered]);
 
-  const lensLabel = (lens: Lens) => LENS_META[lens].label[locale];
+  const lensLabel = (lens: string) => lensAxes.get(lens)?.label?.[locale] ?? lens;
 
   const filterLabels = {
     themeLabel: t.trasparenza.themeLabel,
@@ -654,8 +652,8 @@ export default function TrasparenzaContent({
     (selectedPerson !== 'all' ? 1 : 0) +
     (selectedTypes.length < track.filterTypes.length ? 1 : 0) +
     (selectedYears.length < allYears.length ? 1 : 0) +
-    (selectedSentiments.length < ALL_SENTIMENT_TAGS.length ? 1 : 0) +
-    (selectedLenses.length < ALL_LENSES.length ? 1 : 0) +
+    (selectedSentiments.length < sentimentKeys.length ? 1 : 0) +
+    (selectedLenses.length < lensKeys.length ? 1 : 0) +
     (selectedThesis !== 'all' ? 1 : 0);
 
   /** Verified quotes: the only pins that carry a tone tag. */
@@ -805,7 +803,7 @@ export default function TrasparenzaContent({
           selectedTypes={selectedTypes}
           selectedYears={selectedYears}
           selectedSentiments={selectedSentiments}
-          allSentimentTags={ALL_SENTIMENT_TAGS}
+          allSentimentTags={sentimentKeys}
           selectedLenses={selectedLenses}
           eventCount={feedEvents.length}
           disclaimer={track.disclaimer[locale]}

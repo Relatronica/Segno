@@ -5,16 +5,15 @@ import {
   SESSION_COOKIE,
   unauthorized,
 } from '@/lib/pipeline/auth';
-import { findCuratedEvent } from '@/lib/pipeline/edits';
 import {
-  createEvent,
-  deleteCreatedEvent,
-  loadPipelineStore,
-  patchCreatedEvent,
-  patchCuratedEvent,
-  savePipelineStore,
-} from '@/lib/pipeline/store';
-import type { CreatedEvent, TimelineEventEdit } from '@/lib/pipeline/types';
+  deleteEvent,
+  getStoredEvent,
+  insertEvent,
+  updateEvent,
+  type EventPatch,
+} from '@/lib/db/events';
+import { createdEventIdFromUrl, MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
+import { findCuratedEvent } from '@/lib/trasparenza/resolve';
 import {
   ALL_LENSES,
   ALL_SENTIMENT_TAGS,
@@ -22,6 +21,7 @@ import {
   type Lens,
   type LocaleText,
   type SentimentTag,
+  type TimelineEvent,
 } from '@/lib/data/trasparenza';
 import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
@@ -29,11 +29,6 @@ import { clampIsoToToday, localIsoDate } from '@/lib/dates';
 export const runtime = 'nodejs';
 
 const PRESENT_PIN_ID = 'e-2026-09-today';
-
-/** Hand-written pins carry this id prefix; curated ones never do. */
-const MANUAL_PREFIX = 'man-';
-
-type ManualInput = Omit<CreatedEvent, 'id' | 'createdAt' | 'updatedAt'>;
 
 function sessionFrom(request: Request) {
   const cookie = request.headers.get('cookie') || '';
@@ -147,28 +142,37 @@ export async function POST(request: Request) {
     : 'policy';
 
   const sourceUrl = body.sourceUrl.trim();
-  const input: ManualInput = {
+  // A hand-written pin is keyed on its source, so the url can only ever make one.
+  const id = createdEventIdFromUrl(sourceUrl);
+  if (await getStoredEvent(id)) {
+    return NextResponse.json({ error: 'duplicate_source' }, { status: 409 });
+  }
+
+  const event: TimelineEvent = {
+    id,
     date: body.date ? clampIsoToToday(body.date) : localIsoDate(),
     type,
     lens,
+    origin: 'editorial',
     title,
     summary,
-    detail: readLocale(body.detail),
-    quote,
-    sentiment: sentiment.sentiment,
-    amountEur: readAmount(body.amountEur),
     sourceLabel: readLocale(body.sourceLabel) ?? { it: hostLabel(sourceUrl), en: hostLabel(sourceUrl) },
     sourceUrl,
-    personId: body.personId?.trim() || undefined,
-    actorId: body.actorId?.trim() || undefined,
   };
 
-  const store = await loadPipelineStore();
-  const created = createEvent(store, input);
-  if (!created) return NextResponse.json({ error: 'duplicate_source' }, { status: 409 });
+  const detail = readLocale(body.detail);
+  if (detail) event.detail = detail;
+  if (quote) event.quote = quote;
+  if (sentiment.sentiment) event.sentiment = sentiment.sentiment;
+  const amountEur = readAmount(body.amountEur);
+  if (amountEur !== undefined) event.amountEur = amountEur;
+  const personId = body.personId?.trim();
+  if (personId) event.personId = personId;
+  const actorId = body.actorId?.trim();
+  if (actorId) event.actorId = actorId;
 
-  await savePipelineStore(created.store);
-  return NextResponse.json({ ok: true, event: created.event });
+  await insertEvent(event);
+  return NextResponse.json({ ok: true, event });
 }
 
 /** PATCH: curated correction, or edit of a hand-written pin. */
@@ -188,16 +192,13 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
-  if (body.id.startsWith(MANUAL_PREFIX)) return patchManual(body);
+  if (body.id.startsWith(MANUAL_ID_PREFIX)) return patchManual(body);
   return patchCurated(body);
 }
 
 async function patchManual(body: PatchBody) {
   const id = body.id as string;
-  if (
-    body.sentiment &&
-    !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)
-  ) {
+  if (body.sentiment && !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
   }
   if (body.type && !(ALL_EVENT_TYPES as string[]).includes(body.type)) {
@@ -210,11 +211,10 @@ async function patchManual(body: PatchBody) {
     return NextResponse.json({ error: 'invalid_source' }, { status: 400 });
   }
 
-  const store = await loadPipelineStore();
-  const current = (store.createdEvents ?? []).find((e) => e.id === id);
+  const current = await getStoredEvent(id);
   if (!current) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const quote = body.quote === undefined ? current.quote : readLocale(body.quote);
+  const quote = body.quote === undefined ? current.event.quote : readLocale(body.quote);
   if (body.sentiment !== undefined) {
     const sentiment = sentimentOrError(body.sentiment, quote);
     if (!sentiment.ok) {
@@ -222,7 +222,7 @@ async function patchManual(body: PatchBody) {
     }
   }
 
-  const patch: Partial<Omit<CreatedEvent, 'id' | 'createdAt'>> = {};
+  const patch: EventPatch = {};
   if (body.date) patch.date = clampIsoToToday(body.date);
   if (body.type) patch.type = body.type as EventType;
   if (body.lens) patch.lens = body.lens as Lens;
@@ -230,23 +230,22 @@ async function patchManual(body: PatchBody) {
   if (title) patch.title = title;
   const summary = readLocale(body.summary);
   if (summary) patch.summary = summary;
-  if (body.detail !== undefined) patch.detail = readLocale(body.detail);
-  if (body.quote !== undefined) patch.quote = quote;
+  if (body.detail !== undefined) patch.detail = readLocale(body.detail) ?? null;
+  if (body.quote !== undefined) patch.quote = quote ?? null;
   if (body.sentiment !== undefined) {
-    patch.sentiment = body.sentiment ? (body.sentiment as SentimentTag) : undefined;
+    patch.sentiment = body.sentiment ? (body.sentiment as SentimentTag) : null;
   }
-  if (body.amountEur !== undefined) patch.amountEur = readAmount(body.amountEur);
+  if (body.amountEur !== undefined) patch.amountEur = readAmount(body.amountEur) ?? null;
   const sourceLabel = readLocale(body.sourceLabel);
   if (sourceLabel) patch.sourceLabel = sourceLabel;
   if (body.sourceUrl) patch.sourceUrl = body.sourceUrl.trim();
-  if (body.personId !== undefined) patch.personId = body.personId?.trim() || undefined;
-  if (body.actorId !== undefined) patch.actorId = body.actorId?.trim() || undefined;
+  if (body.personId !== undefined) patch.personId = body.personId?.trim() || null;
+  if (body.actorId !== undefined) patch.actorId = body.actorId?.trim() || null;
 
-  const next = patchCreatedEvent(store, id, patch);
+  const next = await updateEvent(id, patch);
   if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  await savePipelineStore(next);
 
-  return NextResponse.json({ ok: true, event: next.createdEvents?.find((e) => e.id === id) });
+  return NextResponse.json({ ok: true });
 }
 
 async function patchCurated(body: PatchBody) {
@@ -259,49 +258,38 @@ async function patchCurated(body: PatchBody) {
     return NextResponse.json({ error: 'present_locked' }, { status: 400 });
   }
 
-  if (
-    body.sentiment &&
-    !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)
-  ) {
+  if (body.sentiment && !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
   }
 
-  const edit: TimelineEventEdit = {};
+  const patch: EventPatch = {};
   const title = asLocale(body.title);
   const summary = asLocale(body.summary);
   const detail = asLocale(body.detail);
-  const quote = body.quote === null ? null : asLocale(body.quote);
   const sourceLabel = asLocale(body.sourceLabel);
 
-  if (typeof body.date === 'string' && body.date) {
-    edit.date = clampIsoToToday(body.date);
+  if (typeof body.date === 'string' && body.date) patch.date = clampIsoToToday(body.date);
+  if (title) patch.title = title;
+  if (summary) patch.summary = summary;
+  if (detail) patch.detail = detail;
+  if (body.quote === null) patch.quote = null;
+  else {
+    const quote = asLocale(body.quote);
+    if (quote) patch.quote = quote;
   }
-  if (title) edit.title = title;
-  if (summary) edit.summary = summary;
-  if (detail) edit.detail = detail;
-  if (quote !== undefined) edit.quote = quote;
-  if (body.sentiment !== undefined) {
-    edit.sentiment = body.sentiment ? body.sentiment : null;
-  }
-  if (body.personId !== undefined) edit.personId = body.personId || null;
-  if (body.actorId !== undefined) edit.actorId = body.actorId || null;
+  if (body.sentiment !== undefined) patch.sentiment = body.sentiment ? body.sentiment : null;
+  if (body.personId !== undefined) patch.personId = body.personId || null;
+  if (body.actorId !== undefined) patch.actorId = body.actorId || null;
+  if (body.hidden !== undefined) patch.hidden = body.hidden;
   if (typeof body.sourceUrl === 'string' && body.sourceUrl.trim()) {
-    edit.sourceUrl = body.sourceUrl.trim();
+    patch.sourceUrl = body.sourceUrl.trim();
   }
-  if (sourceLabel) edit.sourceLabel = sourceLabel;
+  if (sourceLabel) patch.sourceLabel = sourceLabel;
 
-  const store = await loadPipelineStore();
-  const next = patchCuratedEvent(store, id, {
-    hidden: body.hidden,
-    edit: Object.keys(edit).length > 0 ? edit : undefined,
-  });
-  await savePipelineStore(next);
+  const next = await updateEvent(id, patch);
+  if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  return NextResponse.json({
-    ok: true,
-    edits: next.edits,
-    hiddenIds: next.hiddenIds,
-  });
+  return NextResponse.json({ ok: true });
 }
 
 /** DELETE: remove a hand-written pin. Curated pins are hidden, never deleted. */
@@ -317,14 +305,12 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  if (typeof body.id !== 'string' || !body.id.startsWith(MANUAL_PREFIX)) {
+  if (typeof body.id !== 'string' || !body.id.startsWith(MANUAL_ID_PREFIX)) {
     return NextResponse.json({ error: 'not_deletable' }, { status: 400 });
   }
 
-  const store = await loadPipelineStore();
-  const next = deleteCreatedEvent(store, body.id);
-  if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  const removed = await deleteEvent(body.id);
+  if (!removed) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  await savePipelineStore(next);
   return NextResponse.json({ ok: true, deleted: 1 });
 }

@@ -15,8 +15,6 @@ import {
 } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
-  ALL_LENSES,
-  LENS_META,
   ALL_CAPABILITY_DOMAINS,
   CAPABILITY_DOMAIN_META,
   ALL_MODALITIES,
@@ -24,22 +22,19 @@ import {
   orderedModalities,
   type CapabilityDomain,
   type Modality,
-  SENTIMENT_FEAR_SCORE,
   formatEventDate,
-  lensOf,
   lobbyActors,
-  type EventType,
-  type Lens,
   type LobbyPerson,
   type PositionStance,
-  type SentimentTag,
   type TimelineEvent,
 } from '@/lib/data/trasparenza';
 import { MARKET_BASE_DATE, MARKET_SOURCE, type MarketSeries } from '@/lib/data/market';
 import { ZOOM_LEVELS, createTimeScale, timeTicks, type TimeTick } from '@/lib/trasparenza/scale';
+import { axisMap, lensOf, moodScores } from '@/lib/trasparenza/spec';
 import { cn } from '@/lib/utils';
 import type { ScrubState } from './TimelineFeed';
 import { MODALITY_ICON, SENTIMENT_META, STANCE_META } from './meta';
+import { useTimelineSpec } from './TimelineSpecProvider';
 import { PersonAvatar } from './PersonAvatar';
 import { LabMark, hasLabMark } from './LabMark';
 
@@ -153,8 +148,8 @@ type Props = {
   locale: 'it' | 'en';
   activeId: string | null;
   /** Lenses drawn as a compact strip. The data stays; only the room goes. */
-  collapsedLenses?: Lens[];
-  onToggleLensCollapsed?: (lens: Lens) => void;
+  collapsedLenses?: string[];
+  onToggleLensCollapsed?: (lens: string) => void;
   /** Feed scroll playhead: a moving cursor, no selection. */
   scrubId?: string | null;
   /**
@@ -166,10 +161,10 @@ type Props = {
   onSelect: (id: string) => void;
   emptyLabel: string;
   labels: LaneLabels;
-  typeLabel: (id: EventType) => string;
-  sentimentLabel?: (tag: SentimentTag) => string;
+  typeLabel: (id: string) => string;
+  sentimentLabel?: (tag: string) => string;
   /** Localised name of a lens, for the row header. */
-  lensLabel?: (lens: Lens) => string;
+  lensLabel?: (lens: string) => string;
   /**
    * When a thesis is selected: stance per event id. The mark then carries the
    * position instead of the tone of the quote.
@@ -213,7 +208,7 @@ type LaneMark = {
 
 type Lane = {
   key: string;
-  lens: Lens;
+  lens: string;
   name: string;
   /** One line on what the lane holds, under the name. */
   blurb: string;
@@ -228,7 +223,7 @@ type Lane = {
   marks: LaneMark[];
 };
 
-type VolumeSegment = { lens: Lens; count: number; y: number; h: number };
+type VolumeSegment = { lens: string; count: number; y: number; h: number };
 
 /** One day of the volume band: its voices, split by the lane they came from. */
 type VolumeBar = {
@@ -278,7 +273,7 @@ function formatPrice(value: number, locale: 'it' | 'en'): string {
  * the research, a measure for the market, a square for the institutions, a
  * round mark for what is said in public.
  */
-function lensShape(lens: Lens): { clipPath?: string; borderRadius?: string } {
+function lensShape(lens: string): { clipPath?: string; borderRadius?: string } {
   switch (lens) {
     case 'models':
       return { borderRadius: '3px' };
@@ -454,6 +449,9 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
   }: Props,
   ref,
 ) {
+  const spec = useTimelineSpec();
+  const lensAxes = useMemo(() => axisMap(spec.lenses), [spec]);
+  const toneScores = useMemo(() => moodScores(spec), [spec]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const moodGradId = useId().replace(/:/g, '');
   const volClipId = useId().replace(/:/g, '');
@@ -597,24 +595,29 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     // silhouette of its marks. The modality filter is applied here rather than
     // at render, so the surviving pins re-pack their caption lines instead of
     // leaving gaps where the hidden ones used to be.
-    const lanes: Lane[] = ALL_LENSES.map((lens) => ({
-      lens,
-      items: events.filter(
-        (event) =>
-          lensOf(event) === lens &&
-          (lens !== 'models' || passesModalityFilter(event, enabledModalities)),
-      ),
-    }))
+    const lanes: Lane[] = spec.lenses
+      .map((axis) => {
+        const lens = axis.key;
+        return {
+          lens,
+          items: events.filter(
+            (event) =>
+              lensOf(event, spec) === lens &&
+              (lens !== 'models' || passesModalityFilter(event, enabledModalities)),
+          ),
+        };
+      })
       .filter((entry) => entry.items.length > 0)
       .map(({ lens, items }) => {
         const collapsed = collapsedSet.has(lens);
         const lines = collapsed ? 1 : lineCount;
+        const axis = lensAxes.get(lens);
         return {
           key: `lens:${lens}`,
           lens,
-          name: lensLabel?.(lens) ?? LENS_META[lens].label[locale],
-          blurb: LENS_META[lens].blurb[locale],
-          accent: LENS_META[lens].color,
+          name: lensLabel?.(lens) ?? axis?.label?.[locale] ?? lens,
+          blurb: axis?.blurb?.[locale] ?? '',
+          accent: axis?.color ?? 'currentColor',
           collapsed,
           height: collapsed
             ? COLLAPSED_H
@@ -635,13 +638,13 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     // day's voices split by the lane that produced them, so the band reads
     // against the rows above it instead of on its own. Volume only — the tone
     // of a headline is not the stance of the person it mentions.
-    const buckets = new Map<string, { count: number; xSum: number; byLens: Map<Lens, number> }>();
+    const buckets = new Map<string, { count: number; xSum: number; byLens: Map<string, number> }>();
     for (const event of volumeEvents ?? []) {
       const key = event.date.slice(0, 10);
-      const bucket = buckets.get(key) ?? { count: 0, xSum: 0, byLens: new Map<Lens, number>() };
+      const bucket = buckets.get(key) ?? { count: 0, xSum: 0, byLens: new Map<string, number>() };
       bucket.count += 1;
       bucket.xSum += scale.xForDate(key);
-      const lens = lensOf(event);
+      const lens = lensOf(event, spec);
       bucket.byLens.set(lens, (bucket.byLens.get(lens) ?? 0) + 1);
       buckets.set(key, bucket);
     }
@@ -661,15 +664,16 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     const volume: VolumeBar[] = rawVolume.map((bar) => {
       const h = Math.max(2.5, (bar.count / maxVolume) * volumeRange);
       let cursor = VOLUME_H - 5;
-      const segments: VolumeSegment[] = ALL_LENSES.filter((lens) => bar.byLens.has(lens)).map(
-        (lens) => {
+      const segments: VolumeSegment[] = spec.lenses
+        .filter((axis) => bar.byLens.has(axis.key))
+        .map((axis) => {
+          const lens = axis.key;
           const count = bar.byLens.get(lens) ?? 0;
           const segH = (count / bar.count) * h;
           const y = cursor - segH;
           cursor = y;
           return { lens, count, y, h: segH };
-        },
-      );
+        });
       return { key: bar.key, date: bar.date, x: bar.x, count: bar.count, h, segments };
     });
 
@@ -680,7 +684,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
       if (!event.sentiment) continue;
       const key = event.date.slice(0, 10);
       const stat = dayStats.get(key) ?? { fear: 0, count: 0 };
-      stat.fear += SENTIMENT_FEAR_SCORE[event.sentiment];
+      stat.fear += toneScores[event.sentiment] ?? 0;
       stat.count += 1;
       dayStats.set(key, stat);
     }
@@ -723,6 +727,9 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
     lineH,
     labelGap,
     enabledModalities,
+    spec,
+    lensAxes,
+    toneScores,
   ]);
 
   const { scale, lanes, lanesHeight, ticks, volume, moodPoints } = layout;
@@ -1112,13 +1119,13 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
               className="sticky left-0 z-30 flex h-full items-center gap-1.5 border-r border-border/40 bg-background/95 pl-2.5 pr-2 backdrop-blur-sm sm:pl-4"
               style={{ width: labelW }}
             >
-              {ALL_LENSES.map((lens) => (
+              {spec.lenses.map((axis) => (
                 <span
-                  key={lens}
-                  title={LENS_META[lens].label[locale]}
+                  key={axis.key}
+                  title={axis.label?.[locale] ?? axis.key}
                   aria-hidden
                   className="block h-2.5 w-2.5 shrink-0"
-                  style={{ ...lensShape(lens), backgroundColor: LENS_META[lens].color }}
+                  style={{ ...lensShape(axis.key), backgroundColor: axis.color ?? 'currentColor' }}
                 />
               ))}
             </div>
@@ -1650,8 +1657,8 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           ? capDomainMeta.label[locale]
                           : stance && stanceLabel
                             ? stanceLabel(stance)
-                            : sentimentMeta && sentimentLabel
-                              ? sentimentLabel(event.sentiment as SentimentTag)
+                            : sentimentMeta && sentimentLabel && event.sentiment
+                              ? sentimentLabel(event.sentiment)
                               : typeLabel(event.type);
                     return (
                       <div
@@ -1905,7 +1912,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           y={segment.y}
                           width={VOLUME_BAR}
                           height={segment.h}
-                          fill={LENS_META[segment.lens].color}
+                          fill={lensAxes.get(segment.lens)?.color ?? 'currentColor'}
                         />
                       ))}
                     </g>
@@ -1949,10 +1956,10 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                           <span
                             aria-hidden
                             className="h-2 w-2 shrink-0 rounded-sm"
-                            style={{ backgroundColor: LENS_META[segment.lens].color }}
+                            style={{ backgroundColor: lensAxes.get(segment.lens)?.color ?? 'currentColor' }}
                           />
                           <span className="flex-1 truncate text-muted-foreground">
-                            {LENS_META[segment.lens].label[locale]}
+                            {lensAxes.get(segment.lens)?.label?.[locale] ?? segment.lens}
                           </span>
                           <span className="font-mono text-foreground/80">{segment.count}</span>
                         </span>

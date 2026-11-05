@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
+import {
+  assertPipelineConfigured,
+  isAuthorized,
+  SESSION_COOKIE,
+  unauthorized,
+} from '@/lib/pipeline/auth';
 import { discoverSentimentCandidates } from '@/lib/pipeline/discover';
-import { isAuthorized, unauthorized, assertPipelineConfigured, SESSION_COOKIE } from '@/lib/pipeline/auth';
-import { loadPipelineStore, savePipelineStore, upsertCandidates, upsertSignals } from '@/lib/pipeline/store';
+import { listCandidates, listSignals, upsertCandidates, upsertSignals } from '@/lib/db/queue';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -21,18 +26,18 @@ export async function POST(request: Request) {
   }
 
   const discovered = await discoverSentimentCandidates();
-  const current = await loadPipelineStore();
-  const queued = upsertCandidates(current, discovered.candidates);
-  const signaled = upsertSignals(queued.store, discovered.signals);
-  await savePipelineStore(signaled.store);
+  const added = await upsertCandidates(discovered.candidates);
+  const signalsAdded = await upsertSignals(discovered.signals);
+
+  const [candidates, signals] = await Promise.all([listCandidates(), listSignals()]);
 
   return NextResponse.json({
     ok: true,
-    added: queued.added,
-    signalsAdded: signaled.added,
-    pending: signaled.store.candidates.filter((c) => c.status === 'pending').length,
-    signals: signaled.store.signals?.length ?? 0,
-    total: signaled.store.candidates.length,
+    added,
+    signalsAdded,
+    pending: candidates.filter((c) => c.status === 'pending').length,
+    signals: signals.length,
+    total: candidates.length,
     scannedFeeds: discovered.scannedFeeds,
     matchedItems: discovered.matchedItems,
     rejectedBySource: discovered.rejectedBySource,
