@@ -1,4 +1,4 @@
-import type { EventType, Lens, LocaleText, Modality, SentimentTag } from '@/lib/data/trasparenza';
+import type { EventType, LocaleText, Modality, SentimentTag } from '@/lib/data/trasparenza';
 import { candidateIdFromUrl } from '@/lib/pipeline/ids';
 import { hintSentiment } from '@/lib/pipeline/match';
 import type { AutoSignal, CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
@@ -91,7 +91,7 @@ function rowToCandidate(row: CandidateRow): SentimentCandidate {
   if (row.quote) candidate.quote = row.quote;
   if (row.person_id) candidate.personId = row.person_id;
   if (row.actor_id) candidate.actorId = row.actor_id;
-  if (row.lens) candidate.lens = row.lens as Lens;
+  if (row.lens) candidate.lens = row.lens;
   if (row.type) candidate.type = row.type as EventType;
   if (row.suggested_sentiment) candidate.suggestedSentiment = row.suggested_sentiment as SentimentTag;
   if (row.raw_snippet) candidate.rawSnippet = row.raw_snippet;
@@ -150,7 +150,7 @@ function rowToSignal(row: SignalRow): AutoSignal {
 
   if (row.person_id) signal.personId = row.person_id;
   if (row.actor_id) signal.actorId = row.actor_id;
-  if (row.lens) signal.lens = row.lens as Lens;
+  if (row.lens) signal.lens = row.lens;
   if (row.type) signal.type = row.type as EventType;
   if (row.raw_snippet) signal.rawSnippet = row.raw_snippet;
   if (row.source_tier) signal.sourceTier = row.source_tier as 'primary' | 'secondary';

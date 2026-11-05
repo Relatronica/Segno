@@ -177,6 +177,9 @@ const translations = {
       loadError: 'Impossibile caricare i candidati.',
       runDiscover: 'Cerca novità',
       discoverDone: 'Aggiunti {n} candidati in coda e {s} segnali automatici.',
+      timelineLabel: 'Timeline',
+      manualOnly:
+        'Questa timeline si redige a mano: la coda di scoperta appartiene alla flagship. Crea o correggi i pin con “Nuovo pin”.',
       desksLabel: 'Banchi',
       desks: {
         queue: 'Coda',
@@ -522,6 +525,9 @@ const translations = {
       loadError: 'Could not load candidates.',
       runDiscover: 'Scan for updates',
       discoverDone: 'Added {n} queue candidates and {s} automatic signals.',
+      timelineLabel: 'Timeline',
+      manualOnly:
+        'This timeline is edited by hand: the discovery queue belongs to the flagship. Create or fix pins with “New pin”.',
       desksLabel: 'Desks',
       desks: {
         queue: 'Queue',

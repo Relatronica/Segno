@@ -1,3 +1,4 @@
+import type { RedactionSpec } from '@/lib/pipeline/types';
 import type {
   ActorAxis,
   Axis,
@@ -10,6 +11,7 @@ import type {
   TrackMeta,
 } from '@/lib/trasparenza/spec';
 import { db } from './client';
+import { TIMELINE_SLUG } from './timeline';
 
 /**
  * Fase C — lo spec vive nel database, non nel bundle.
@@ -213,6 +215,35 @@ export async function loadTimelineSpec(slug: string): Promise<TimelineSpec | nul
     },
     lensMarks: row.spec_config?.lensMarks ?? [],
     lensGlyphs: row.spec_config?.lensGlyphs ?? {},
+  };
+}
+
+/**
+ * I menù della redazione per una timeline: le corsie, le forme, i toni e il
+ * cast che quella timeline dichiara. L'editor di una seconda timeline vede le
+ * sue chiavi, mai quelle della flagship. `flagship` distingue l'unica timeline
+ * che ha la coda di scoperta e i temi curati.
+ */
+export async function loadRedactionSpec(slug: string): Promise<RedactionSpec | null> {
+  const spec = await loadTimelineSpec(slug);
+  if (!spec) return null;
+
+  return {
+    slug,
+    name: spec.track.name,
+    flagship: slug === TIMELINE_SLUG,
+    lenses: spec.lenses.map((axis) => ({
+      key: axis.key,
+      label: axis.label ?? { it: axis.key, en: axis.key },
+    })),
+    eventTypes: spec.eventTypes.map((axis) => axis.key),
+    sentimentTags: spec.sentimentTags.map((axis) => axis.key),
+    actors: spec.actors.map((actor) => ({ id: actor.id, name: actor.name })),
+    people: spec.people.map((person) => ({
+      id: person.id,
+      name: person.name,
+      shortName: person.shortName,
+    })),
   };
 }
 

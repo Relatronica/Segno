@@ -12,18 +12,15 @@ import {
   updateEvent,
   type EventPatch,
 } from '@/lib/db/events';
+import { loadRedactionSpec } from '@/lib/db/spec';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 import { createdEventIdFromUrl, MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
-import { findCuratedEvent } from '@/lib/trasparenza/resolve';
-import {
-  ALL_LENSES,
-  ALL_SENTIMENT_TAGS,
-  type EventType,
-  type Lens,
-  type LocaleText,
-  type SentimentTag,
-  type TimelineEvent,
+import type {
+  EventType,
+  LocaleText,
+  SentimentTag,
+  TimelineEvent,
 } from '@/lib/data/trasparenza';
-import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
 
 export const runtime = 'nodejs';
@@ -78,16 +75,22 @@ function isValidSource(url: unknown): url is string {
 function sentimentOrError(
   value: SentimentTag | null | '' | undefined,
   quote: LocaleText | undefined,
+  allowed: string[],
 ): { ok: true; sentiment?: SentimentTag } | { ok: false } {
   if (value === null || value === '' || value === undefined) return { ok: true };
-  if (!(ALL_SENTIMENT_TAGS as readonly string[]).includes(value)) return { ok: false };
+  if (!allowed.includes(value)) return { ok: false };
   // The tone of a headline is not a stance: no quote, no sentiment.
   if (!quote || (!quote.it.trim() && !quote.en.trim())) return { ok: false };
   return { ok: true, sentiment: value };
 }
 
+function timelineSlug(value: unknown): string {
+  return typeof value === 'string' && value.trim() ? value.trim() : TIMELINE_SLUG;
+}
+
 type PatchBody = {
   id?: string;
+  timeline?: string;
   hidden?: boolean;
   date?: string;
   type?: string;
@@ -119,6 +122,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
+  const slug = timelineSlug(body.timeline);
+  const spec = await loadRedactionSpec(slug);
+  if (!spec) return NextResponse.json({ error: 'unknown_timeline' }, { status: 400 });
+
   if (!isValidSource(body.sourceUrl)) {
     return NextResponse.json({ error: 'invalid_source' }, { status: 400 });
   }
@@ -129,22 +136,24 @@ export async function POST(request: Request) {
   if (!summary) return NextResponse.json({ error: 'summary_required' }, { status: 400 });
 
   const quote = readLocale(body.quote);
-  const sentiment = sentimentOrError(body.sentiment, quote);
+  const sentiment = sentimentOrError(body.sentiment, quote, spec.sentimentTags);
   if (!sentiment.ok) {
     return NextResponse.json({ error: 'sentiment_needs_quote' }, { status: 400 });
   }
 
-  const type = (ALL_EVENT_TYPES as string[]).includes(body.type ?? '')
+  // La corsia e la forma sono quelle che questa timeline dichiara: le chiavi
+  // arrivano dallo spec, non da un'unione nel bundle.
+  const type = spec.eventTypes.includes(body.type ?? '')
     ? (body.type as EventType)
-    : 'milestone';
-  const lens = (ALL_LENSES as string[]).includes(body.lens ?? '')
-    ? (body.lens as Lens)
-    : 'policy';
+    : ((spec.eventTypes[0] as EventType | undefined) ?? 'milestone');
+  const lens = spec.lenses.some((entry) => entry.key === (body.lens ?? ''))
+    ? (body.lens as string)
+    : (spec.lenses[0]?.key ?? '');
 
   const sourceUrl = body.sourceUrl.trim();
   // A hand-written pin is keyed on its source, so the url can only ever make one.
   const id = createdEventIdFromUrl(sourceUrl);
-  if (await getStoredEvent(id)) {
+  if (await getStoredEvent(id, slug)) {
     return NextResponse.json({ error: 'duplicate_source' }, { status: 409 });
   }
 
@@ -171,7 +180,7 @@ export async function POST(request: Request) {
   const actorId = body.actorId?.trim();
   if (actorId) event.actorId = actorId;
 
-  await insertEvent(event);
+  await insertEvent(event, slug);
   return NextResponse.json({ ok: true, event });
 }
 
@@ -192,31 +201,29 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
-  if (body.id.startsWith(MANUAL_ID_PREFIX)) return patchManual(body);
-  return patchCurated(body);
+  const slug = timelineSlug(body.timeline);
+  const spec = await loadRedactionSpec(slug);
+  if (!spec) return NextResponse.json({ error: 'unknown_timeline' }, { status: 400 });
+
+  if (body.id.startsWith(MANUAL_ID_PREFIX)) return patchManual(body, slug, spec.sentimentTags);
+  return patchCurated(body, slug, spec.sentimentTags);
 }
 
-async function patchManual(body: PatchBody) {
+async function patchManual(body: PatchBody, slug: string, sentimentTags: string[]) {
   const id = body.id as string;
-  if (body.sentiment && !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)) {
+  if (body.sentiment && !sentimentTags.includes(body.sentiment)) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
-  }
-  if (body.type && !(ALL_EVENT_TYPES as string[]).includes(body.type)) {
-    return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
-  }
-  if (body.lens && !(ALL_LENSES as string[]).includes(body.lens)) {
-    return NextResponse.json({ error: 'invalid_lens' }, { status: 400 });
   }
   if (body.sourceUrl !== undefined && !isValidSource(body.sourceUrl)) {
     return NextResponse.json({ error: 'invalid_source' }, { status: 400 });
   }
 
-  const current = await getStoredEvent(id);
+  const current = await getStoredEvent(id, slug);
   if (!current) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const quote = body.quote === undefined ? current.event.quote : readLocale(body.quote);
   if (body.sentiment !== undefined) {
-    const sentiment = sentimentOrError(body.sentiment, quote);
+    const sentiment = sentimentOrError(body.sentiment, quote, sentimentTags);
     if (!sentiment.ok) {
       return NextResponse.json({ error: 'sentiment_needs_quote' }, { status: 400 });
     }
@@ -225,7 +232,7 @@ async function patchManual(body: PatchBody) {
   const patch: EventPatch = {};
   if (body.date) patch.date = clampIsoToToday(body.date);
   if (body.type) patch.type = body.type as EventType;
-  if (body.lens) patch.lens = body.lens as Lens;
+  if (body.lens) patch.lens = body.lens;
   const title = readLocale(body.title);
   if (title) patch.title = title;
   const summary = readLocale(body.summary);
@@ -242,15 +249,15 @@ async function patchManual(body: PatchBody) {
   if (body.personId !== undefined) patch.personId = body.personId?.trim() || null;
   if (body.actorId !== undefined) patch.actorId = body.actorId?.trim() || null;
 
-  const next = await updateEvent(id, patch);
+  const next = await updateEvent(id, patch, slug);
   if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   return NextResponse.json({ ok: true });
 }
 
-async function patchCurated(body: PatchBody) {
+async function patchCurated(body: PatchBody, slug: string, sentimentTags: string[]) {
   const id = body.id as string;
-  if (!findCuratedEvent(id)) {
+  if (!(await getStoredEvent(id, slug))) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
@@ -258,7 +265,7 @@ async function patchCurated(body: PatchBody) {
     return NextResponse.json({ error: 'present_locked' }, { status: 400 });
   }
 
-  if (body.sentiment && !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.sentiment)) {
+  if (body.sentiment && !sentimentTags.includes(body.sentiment)) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
   }
 
@@ -286,7 +293,7 @@ async function patchCurated(body: PatchBody) {
   }
   if (sourceLabel) patch.sourceLabel = sourceLabel;
 
-  const next = await updateEvent(id, patch);
+  const next = await updateEvent(id, patch, slug);
   if (!next) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   return NextResponse.json({ ok: true });
@@ -298,9 +305,9 @@ export async function DELETE(request: Request) {
   if (missing) return missing;
   if (!isAuthorized(request, sessionFrom(request))) return unauthorized();
 
-  let body: { id?: unknown };
+  let body: { id?: unknown; timeline?: unknown };
   try {
-    body = (await request.json()) as { id?: unknown };
+    body = (await request.json()) as { id?: unknown; timeline?: unknown };
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
@@ -309,7 +316,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'not_deletable' }, { status: 400 });
   }
 
-  const removed = await deleteEvent(body.id);
+  const removed = await deleteEvent(body.id, timelineSlug(body.timeline));
   if (!removed) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   return NextResponse.json({ ok: true, deleted: 1 });

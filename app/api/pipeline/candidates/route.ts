@@ -14,12 +14,12 @@ import {
   updateCandidateStatus,
   updateCandidatesStatus,
 } from '@/lib/db/queue';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import {
   ALL_LENSES,
   ALL_SENTIMENT_TAGS,
   type EventType,
-  type Lens,
   type SentimentTag,
 } from '@/lib/data/trasparenza';
 import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
@@ -40,12 +40,17 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const status = url.searchParams.get('status') as CandidateStatus | null;
+  const slug = url.searchParams.get('timeline')?.trim() || TIMELINE_SLUG;
 
+  // La coda — candidati e diario automatico — è della flagship: le altre
+  // timeline si redigono a mano. I pin curati e quelli scritti a mano invece
+  // seguono lo slug, perché ogni timeline ha i suoi.
+  const flagship = slug === TIMELINE_SLUG;
   const [all, signals, curated, manual] = await Promise.all([
-    listCandidates(),
-    listSignals(),
-    listCuratedPins(),
-    listManualEvents(),
+    flagship ? listCandidates(undefined, slug) : Promise.resolve([]),
+    flagship ? listSignals(slug) : Promise.resolve([]),
+    listCuratedPins(slug),
+    listManualEvents(slug),
   ]);
   const candidates = status ? all.filter((c) => c.status === status) : all;
 
@@ -76,7 +81,7 @@ type PatchBody = {
   personId?: string;
   actorId?: string;
   date?: string;
-  lens?: Lens;
+  lens?: string;
   type?: EventType;
   reviewNote?: string;
 };

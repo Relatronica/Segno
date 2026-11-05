@@ -26,22 +26,12 @@ import { localIsoDate } from '@/lib/dates';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  ALL_LENSES,
-  ALL_SENTIMENT_TAGS,
-  LENS_META,
-  lobbyActors,
-  lobbyPeople,
-  type EventType,
-  type Lens,
-  type LocaleText,
-  type SentimentTag,
-} from '@/lib/data/trasparenza';
-import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
+import type { EventType, LocaleText, SentimentTag } from '@/lib/data/trasparenza';
 import type {
   AutoSignal,
   CreatedEvent,
   CuratedPin,
+  RedactionSpec,
   SentimentCandidate,
 } from '@/lib/pipeline/types';
 import { SignalDesk } from '@/app/redazione/SignalDesk';
@@ -58,6 +48,9 @@ type Counts = {
 
 type Desk = 'queue' | 'auto' | 'live' | 'rejected';
 
+/** Il registro come lo vede il selettore: slug e nome, nient'altro. */
+type TimelineChoice = { slug: string; name: LocaleText };
+
 type CuratedDraft = {
   date?: string;
   title?: LocaleText;
@@ -71,7 +64,8 @@ type CuratedDraft = {
 type ManualDraft = {
   id?: string;
   date: string;
-  lens: Lens;
+  /** Chiave di corsia dichiarata dallo spec della timeline attiva. */
+  lens: string;
   type: EventType;
   titleIt: string;
   titleEn: string;
@@ -113,11 +107,25 @@ function yesterdayIso(): string {
   return localIsoDate(d);
 }
 
-function emptyManualDraft(): ManualDraft {
+/** L'etichetta di una corsia è quella che lo spec dichiara, non un'unione. */
+function lensLabel(spec: RedactionSpec, key: string, locale: 'it' | 'en'): string {
+  return spec.lenses.find((axis) => axis.key === key)?.label[locale] ?? key;
+}
+
+/** Le forme note hanno un'etichetta i18n; una forma nuova ripiega sulla chiave. */
+function typeLabel(types: Record<EventType, string>, key: string): string {
+  return (types as Record<string, string>)[key] ?? key;
+}
+
+function sentimentLabel(sentiments: Record<SentimentTag, string>, key: string): string {
+  return (sentiments as Record<string, string>)[key] ?? key;
+}
+
+function emptyManualDraft(spec: RedactionSpec): ManualDraft {
   return {
     date: localIsoDate(),
-    lens: 'policy',
-    type: 'milestone',
+    lens: spec.lenses[0]?.key ?? '',
+    type: (spec.eventTypes[0] as EventType | undefined) ?? 'milestone',
     titleIt: '',
     titleEn: '',
     summaryIt: '',
@@ -182,6 +190,9 @@ export default function RedazioneContent() {
   const [loading, setLoading] = useState(false);
   const [discovering, setDiscovering] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [timelines, setTimelines] = useState<TimelineChoice[]>([]);
+  const [slug, setSlug] = useState('');
+  const [spec, setSpec] = useState<RedactionSpec | null>(null);
   const [candidates, setCandidates] = useState<SentimentCandidate[]>([]);
   const [signals, setSignals] = useState<AutoSignal[]>([]);
   const [curated, setCurated] = useState<CuratedPin[]>([]);
@@ -202,41 +213,74 @@ export default function RedazioneContent() {
 
   const today = localIsoDate();
   const yesterday = yesterdayIso();
+  const flagship = spec?.flagship ?? false;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const res = await fetch('/api/pipeline/candidates');
-      if (res.status === 401 || res.status === 503) {
+  const loadData = useCallback(
+    async (timelineSlug: string) => {
+      setLoading(true);
+      setMessage(null);
+      try {
+        const res = await fetch(
+          `/api/pipeline/candidates?timeline=${encodeURIComponent(timelineSlug)}`,
+        );
+        if (res.status === 401 || res.status === 503) {
+          setAuthed(false);
+          return;
+        }
+        if (!res.ok) throw new Error('load_failed');
+        const data = (await res.json()) as {
+          candidates: SentimentCandidate[];
+          signals?: AutoSignal[];
+          curated?: CuratedPin[];
+          manual?: CreatedEvent[];
+          counts: Counts;
+        };
+        setCandidates(data.candidates);
+        setSignals(data.signals ?? []);
+        setCurated(data.curated ?? []);
+        setManual(data.manual ?? []);
+        setCounts(data.counts);
+        setAuthed(true);
+      } catch {
+        setMessage(t.redazione.loadError);
         setAuthed(false);
-        return;
+      } finally {
+        setLoading(false);
       }
-      if (!res.ok) throw new Error('load_failed');
-      const data = (await res.json()) as {
-        candidates: SentimentCandidate[];
-        signals?: AutoSignal[];
-        curated?: CuratedPin[];
-        manual?: CreatedEvent[];
-        counts: Counts;
-      };
-      setCandidates(data.candidates);
-      setSignals(data.signals ?? []);
-      setCurated(data.curated ?? []);
-      setManual(data.manual ?? []);
-      setCounts(data.counts);
-      setAuthed(true);
+    },
+    [t.redazione.loadError],
+  );
+
+  /** Il registro e i menù di una timeline. Senza slug risponde per la flagship. */
+  const loadRedaction = useCallback(async (timelineSlug?: string): Promise<RedactionSpec | null> => {
+    const query = timelineSlug ? `?timeline=${encodeURIComponent(timelineSlug)}` : '';
+    const res = await fetch(`/api/pipeline/redaction${query}`);
+    if (res.status === 401 || res.status === 503) {
+      setAuthed(false);
+      return null;
+    }
+    if (!res.ok) throw new Error('redaction_failed');
+    const data = (await res.json()) as { timelines: TimelineChoice[]; spec: RedactionSpec };
+    setTimelines(data.timelines);
+    setSpec(data.spec);
+    setSlug(data.spec.slug);
+    return data.spec;
+  }, []);
+
+  const bootstrap = useCallback(async () => {
+    try {
+      const active = await loadRedaction();
+      if (!active) return;
+      await loadData(active.slug);
     } catch {
       setMessage(t.redazione.loadError);
       setAuthed(false);
-    } finally {
-      setLoading(false);
     }
-  }, [t.redazione.loadError]);
+  }, [loadRedaction, loadData, t.redazione.loadError]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void bootstrap();
+  }, [bootstrap]);
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,7 +295,7 @@ export default function RedazioneContent() {
       return;
     }
     setPassword('');
-    await load();
+    await bootstrap();
   };
 
   const logout = async () => {
@@ -263,6 +307,29 @@ export default function RedazioneContent() {
     setManual([]);
     setManualDraft(null);
     setSelected([]);
+  };
+
+  /** Cambio timeline: si azzerano le bozze e si rileggono menù e pin. */
+  const switchTimeline = async (next: string) => {
+    if (next === slug) return;
+    setMessage(null);
+    setManualDraft(null);
+    setConfirmManualDelete(false);
+    setConfirmDelete(false);
+    setDrafts({});
+    setCuratedDrafts({});
+    setSelected([]);
+    setExpandedId(null);
+    setOpenDays({});
+    try {
+      const active = await loadRedaction(next);
+      if (!active) return;
+      // La coda è della flagship: altrove resta la sola vista dei pin in timeline.
+      if (!active.flagship) setFilter('live');
+      await loadData(active.slug);
+    } catch {
+      setMessage(t.redazione.loadError);
+    }
   };
 
   const runDiscover = async () => {
@@ -277,7 +344,7 @@ export default function RedazioneContent() {
           .replace('{n}', String(data.added))
           .replace('{s}', String(data.signalsAdded ?? 0)),
       );
-      await load();
+      await loadData(slug);
     } catch {
       setMessage(t.redazione.discoverError);
     } finally {
@@ -340,7 +407,7 @@ export default function RedazioneContent() {
       return next;
     });
     setMessage(t.redazione.saved);
-    await load();
+    await loadData(slug);
   };
 
   const saveCurated = async (id: string, hidden?: boolean) => {
@@ -356,6 +423,7 @@ export default function RedazioneContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id,
+        timeline: slug,
         hidden,
         date: draft.date ?? event.date,
         title: draft.title ?? event.title,
@@ -378,7 +446,7 @@ export default function RedazioneContent() {
       return next;
     });
     setMessage(t.redazione.saved);
-    await load();
+    await loadData(slug);
   };
 
   const saveManual = async () => {
@@ -404,6 +472,7 @@ export default function RedazioneContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: draft.id,
+        timeline: slug,
         date: draft.date,
         lens: draft.lens,
         type: draft.type,
@@ -438,7 +507,7 @@ export default function RedazioneContent() {
 
     setManualDraft(null);
     setMessage(t.redazione.saved);
-    await load();
+    await loadData(slug);
   };
 
   const deleteManual = async (id: string) => {
@@ -451,7 +520,7 @@ export default function RedazioneContent() {
     const res = await fetch('/api/pipeline/events', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, timeline: slug }),
     });
     setManualSaving(false);
     setConfirmManualDelete(false);
@@ -461,7 +530,7 @@ export default function RedazioneContent() {
     }
     setManualDraft((current) => (current?.id === id ? null : current));
     setMessage(t.redazione.deletedPin);
-    await load();
+    await loadData(slug);
   };
 
   const bulkReject = async () => {
@@ -482,7 +551,7 @@ export default function RedazioneContent() {
     setSelected([]);
     setConfirmDelete(false);
     setMessage(t.redazione.rejectedBulk.replace('{n}', String(n)));
-    await load();
+    await loadData(slug);
   };
 
   const bulkDelete = async () => {
@@ -507,7 +576,7 @@ export default function RedazioneContent() {
     setSelected([]);
     setConfirmDelete(false);
     setMessage(t.redazione.deleted.replace('{n}', String(n)));
-    await load();
+    await loadData(slug);
   };
 
   const visible = useMemo(() => {
@@ -653,6 +722,15 @@ export default function RedazioneContent() {
     );
   }
 
+  if (!spec) {
+    return (
+      <div className="flex flex-1 items-center justify-center pb-24 pt-[calc(var(--nav-clearance)+4rem)] text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {t.redazione.loading}
+      </div>
+    );
+  }
+
   return (
     <div className={cn('mx-auto max-w-4xl px-4 pb-12 pt-[calc(var(--nav-clearance)+2rem)] sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -673,16 +751,18 @@ export default function RedazioneContent() {
             onClick={() => {
               setMessage(null);
               setConfirmManualDelete(false);
-              setManualDraft(emptyManualDraft());
+              setManualDraft(emptyManualDraft(spec));
             }}
           >
             <Plus className="h-4 w-4" />
             {t.redazione.newPin}
           </Button>
-          <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
-            {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {t.redazione.runDiscover}
-          </Button>
+          {flagship && (
+            <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
+              {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {t.redazione.runDiscover}
+            </Button>
+          )}
           <Button type="button" variant="ghost" onClick={() => void logout()}>
             <LogOut className="h-4 w-4" />
             {t.redazione.logout}
@@ -690,9 +770,40 @@ export default function RedazioneContent() {
         </div>
       </div>
 
+      {(timelines.length > 1 || !flagship) && (
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {timelines.length > 1 && (
+            <>
+              <Label
+                htmlFor="redazione-timeline"
+                className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+              >
+                {t.redazione.timelineLabel}
+              </Label>
+              <select
+                id="redazione-timeline"
+                value={slug}
+                onChange={(e) => void switchTimeline(e.target.value)}
+                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
+              >
+                {timelines.map((timeline) => (
+                  <option key={timeline.slug} value={timeline.slug}>
+                    {timeline.name[locale]}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          {!flagship && (
+            <p className="max-w-xl text-sm text-muted-foreground">{t.redazione.manualOnly}</p>
+          )}
+        </div>
+      )}
+
       {manualDraft && (
         <ManualForm
           draft={manualDraft}
+          spec={spec}
           locale={locale}
           saving={manualSaving}
           confirmDelete={confirmManualDelete}
@@ -706,41 +817,43 @@ export default function RedazioneContent() {
         />
       )}
 
-      <nav
-        className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
-        aria-label={t.redazione.desksLabel}
-      >
-        {(
-          [
-            { key: 'queue' as const, label: t.redazione.desks.queue, count: queueCount },
-            { key: 'auto' as const, label: t.redazione.desks.auto, count: signalsCount },
-            { key: 'live' as const, label: t.redazione.desks.live, count: liveCount },
-            { key: 'rejected' as const, label: t.redazione.desks.rejected, count: rejectedCount },
-          ] as const
-        ).map((desk) => (
-          <button
-            key={desk.key}
-            type="button"
-            onClick={() => setFilterAndClear(desk.key)}
-            className={cn(
-              'rounded-md border px-3 py-3 text-left transition-colors',
-              filter === desk.key
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border/70 bg-card/40 text-foreground hover:border-foreground/30',
-            )}
-          >
-            <span className="block text-sm font-medium">{desk.label}</span>
-            <span
+      {flagship && (
+        <nav
+          className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
+          aria-label={t.redazione.desksLabel}
+        >
+          {(
+            [
+              { key: 'queue' as const, label: t.redazione.desks.queue, count: queueCount },
+              { key: 'auto' as const, label: t.redazione.desks.auto, count: signalsCount },
+              { key: 'live' as const, label: t.redazione.desks.live, count: liveCount },
+              { key: 'rejected' as const, label: t.redazione.desks.rejected, count: rejectedCount },
+            ] as const
+          ).map((desk) => (
+            <button
+              key={desk.key}
+              type="button"
+              onClick={() => setFilterAndClear(desk.key)}
               className={cn(
-                'mt-1 block font-mono text-[11px]',
-                filter === desk.key ? 'text-background/70' : 'text-muted-foreground',
+                'rounded-md border px-3 py-3 text-left transition-colors',
+                filter === desk.key
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border/70 bg-card/40 text-foreground hover:border-foreground/30',
               )}
             >
-              {desk.count}
-            </span>
-          </button>
-        ))}
-      </nav>
+              <span className="block text-sm font-medium">{desk.label}</span>
+              <span
+                className={cn(
+                  'mt-1 block font-mono text-[11px]',
+                  filter === desk.key ? 'text-background/70' : 'text-muted-foreground',
+                )}
+              >
+                {desk.count}
+              </span>
+            </button>
+          ))}
+        </nav>
+      )}
 
       {message && (
         <p className="mt-4 text-sm text-muted-foreground" role="status">
@@ -752,6 +865,7 @@ export default function RedazioneContent() {
         {filter === 'auto' ? (
           <SignalDesk
             signals={signals}
+            spec={spec}
             locale={locale}
             labels={{
               hint: t.redazione.signalsHint,
@@ -767,7 +881,7 @@ export default function RedazioneContent() {
               yesterday: t.redazione.yesterday,
               itemsCount: t.redazione.itemsCount,
             }}
-            onChanged={() => void load()}
+            onChanged={() => void loadData(slug)}
           />
         ) : (
           <>
@@ -833,6 +947,7 @@ export default function RedazioneContent() {
                                 key={row.id}
                                 c={row.candidate}
                                 draft={drafts[row.id] || {}}
+                                spec={spec}
                                 locale={locale}
                                 saving={savingId === row.id}
                                 selected={selected.includes(row.id)}
@@ -853,6 +968,7 @@ export default function RedazioneContent() {
                               <ManualRow
                                 key={row.id}
                                 event={row.event}
+                                spec={spec}
                                 locale={locale}
                                 onEdit={() => {
                                   setMessage(null);
@@ -867,6 +983,7 @@ export default function RedazioneContent() {
                               key={row.id}
                               pin={row.pin}
                               draft={curatedDrafts[row.id] || {}}
+                              spec={spec}
                               locale={locale}
                               saving={savingId === row.id}
                               expanded={expandedId === row.id}
@@ -967,6 +1084,7 @@ function Thumb({ src, alt }: { src?: string; alt: string }) {
 function CandidateCard({
   c,
   draft,
+  spec,
   locale,
   saving,
   selected,
@@ -978,6 +1096,7 @@ function CandidateCard({
 }: {
   c: SentimentCandidate;
   draft: Partial<SentimentCandidate>;
+  spec: RedactionSpec;
   locale: 'it' | 'en';
   saving: boolean;
   selected: boolean;
@@ -1019,7 +1138,7 @@ function CandidateCard({
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {c.date} · {c.personId || '—'} · {t.redazione.pipeline} · {c.status} ·{' '}
             {assignedLens
-              ? `${LENS_META[assignedLens].label[locale]} · ${t.trasparenza.types[type]}`
+              ? `${lensLabel(spec, assignedLens, locale)} · ${typeLabel(t.trasparenza.types, type)}`
               : t.redazione.laneNone}
             {c.sourceTier ? ` · ${c.sourceTier}` : ''}
             {c.xQuoted ? ' · X' : ''}
@@ -1098,13 +1217,13 @@ function CandidateCard({
               <select
                 id={`lens-${c.id}`}
                 value={assignedLens ?? ''}
-                onChange={(e) => onDraft({ lens: e.target.value as Lens })}
+                onChange={(e) => onDraft({ lens: e.target.value })}
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
                 {!assignedLens && <option value="">{t.redazione.laneNone}</option>}
-                {ALL_LENSES.map((item) => (
-                  <option key={item} value={item}>
-                    {LENS_META[item].label[locale]}
+                {spec.lenses.map((axis) => (
+                  <option key={axis.key} value={axis.key}>
+                    {axis.label[locale]}
                   </option>
                 ))}
               </select>
@@ -1117,9 +1236,9 @@ function CandidateCard({
                 onChange={(e) => onDraft({ type: e.target.value as EventType })}
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
-                {ALL_EVENT_TYPES.map((item) => (
-                  <option key={item} value={item}>
-                    {t.trasparenza.types[item]}
+                {spec.eventTypes.map((key) => (
+                  <option key={key} value={key}>
+                    {typeLabel(t.trasparenza.types, key)}
                   </option>
                 ))}
               </select>
@@ -1140,7 +1259,7 @@ function CandidateCard({
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
                 <option value="">{t.redazione.sentimentNone}</option>
-                {ALL_SENTIMENT_TAGS.map((tag) => (
+                {spec.sentimentTags.map((tag) => (
                   <option key={tag} value={tag}>
                     {tag}
                   </option>
@@ -1166,7 +1285,7 @@ function CandidateCard({
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
                 <option value="">{t.redazione.personNone}</option>
-                {lobbyPeople.map((person) => (
+                {spec.people.map((person) => (
                   <option key={person.id} value={person.id}>
                     {person.name}
                   </option>
@@ -1229,6 +1348,7 @@ function CandidateCard({
 function CuratedCard({
   pin,
   draft,
+  spec,
   locale,
   saving,
   expanded,
@@ -1238,6 +1358,7 @@ function CuratedCard({
 }: {
   pin: CuratedPin;
   draft: CuratedDraft;
+  spec: RedactionSpec;
   locale: 'it' | 'en';
   saving: boolean;
   expanded: boolean;
@@ -1377,7 +1498,7 @@ function CuratedCard({
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
                 <option value="">{t.redazione.sentimentNone}</option>
-                {ALL_SENTIMENT_TAGS.map((tag) => (
+                {spec.sentimentTags.map((tag) => (
                   <option key={tag} value={tag}>
                     {tag}
                   </option>
@@ -1404,7 +1525,7 @@ function CuratedCard({
                 className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
               >
                 <option value="">{t.redazione.personNone}</option>
-                {lobbyPeople.map((person) => (
+                {spec.people.map((person) => (
                   <option key={person.id} value={person.id}>
                     {person.name}
                   </option>
@@ -1449,10 +1570,12 @@ function CuratedCard({
 
 function ManualRow({
   event,
+  spec,
   locale,
   onEdit,
 }: {
   event: CreatedEvent;
+  spec: RedactionSpec;
   locale: 'it' | 'en';
   onEdit: () => void;
 }) {
@@ -1463,7 +1586,7 @@ function ManualRow({
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {event.date} · {event.personId || '—'} · {t.redazione.manual} ·{' '}
-            {LENS_META[event.lens].label[locale]} · {t.trasparenza.types[event.type]}
+            {lensLabel(spec, event.lens, locale)} · {typeLabel(t.trasparenza.types, event.type)}
           </p>
           <h3 className="mt-1 text-base font-semibold tracking-tight">{event.title[locale]}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.summary[locale]}</p>
@@ -1490,6 +1613,7 @@ function ManualRow({
 
 function ManualForm({
   draft,
+  spec,
   locale,
   saving,
   confirmDelete,
@@ -1499,6 +1623,7 @@ function ManualForm({
   onDelete,
 }: {
   draft: ManualDraft;
+  spec: RedactionSpec;
   locale: 'it' | 'en';
   saving: boolean;
   confirmDelete: boolean;
@@ -1532,12 +1657,12 @@ function ManualForm({
           <select
             id="m-lens"
             value={draft.lens}
-            onChange={(e) => onChange({ lens: e.target.value as Lens })}
+            onChange={(e) => onChange({ lens: e.target.value })}
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
           >
-            {ALL_LENSES.map((lens) => (
-              <option key={lens} value={lens}>
-                {LENS_META[lens].label[locale]}
+            {spec.lenses.map((axis) => (
+              <option key={axis.key} value={axis.key}>
+                {axis.label[locale]}
               </option>
             ))}
           </select>
@@ -1550,9 +1675,9 @@ function ManualForm({
             onChange={(e) => onChange({ type: e.target.value as EventType })}
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
           >
-            {ALL_EVENT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {t.trasparenza.types[type]}
+            {spec.eventTypes.map((key) => (
+              <option key={key} value={key}>
+                {typeLabel(t.trasparenza.types, key)}
               </option>
             ))}
           </select>
@@ -1658,7 +1783,7 @@ function ManualForm({
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
           >
             <option value="">{t.redazione.personNone}</option>
-            {lobbyPeople.map((person) => (
+            {spec.people.map((person) => (
               <option key={person.id} value={person.id}>
                 {person.name}
               </option>
@@ -1674,7 +1799,7 @@ function ManualForm({
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
           >
             <option value="">{t.redazione.actorNone}</option>
-            {lobbyActors.map((actor) => (
+            {spec.actors.map((actor) => (
               <option key={actor.id} value={actor.id}>
                 {actor.name}
               </option>
@@ -1693,9 +1818,9 @@ function ManualForm({
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm disabled:opacity-50"
           >
             <option value="">{t.redazione.sentimentNone}</option>
-            {ALL_SENTIMENT_TAGS.map((tag) => (
+            {spec.sentimentTags.map((tag) => (
               <option key={tag} value={tag}>
-                {t.trasparenza.sentiments[tag]}
+                {sentimentLabel(t.trasparenza.sentiments, tag)}
               </option>
             ))}
           </select>

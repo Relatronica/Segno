@@ -3,9 +3,8 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { lobbyPeople, LENS_META } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
-import type { AutoSignal } from '@/lib/pipeline/types';
+import type { AutoSignal, RedactionSpec } from '@/lib/pipeline/types';
 
 export type SignalDeskLabels = {
   hint: string;
@@ -24,6 +23,7 @@ export type SignalDeskLabels = {
 
 type Props = {
   signals: AutoSignal[];
+  spec: RedactionSpec;
   locale: 'it' | 'en';
   labels: SignalDeskLabels;
   onChanged: () => void;
@@ -48,7 +48,7 @@ function groupSignals(signals: AutoSignal[]) {
     .map(([date, items]) => ({ date, items }));
 }
 
-export function SignalDesk({ signals, locale, labels, onChanged }: Props) {
+export function SignalDesk({ signals, spec, locale, labels, onChanged }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const today = localIsoDate();
@@ -134,8 +134,9 @@ export function SignalDesk({ signals, locale, labels, onChanged }: Props) {
                 {open && (
                   <ul className="divide-y divide-border/40 border-t border-border/50">
                     {group.items.map((signal) => {
-                      const person = lobbyPeople.find((item) => item.id === signal.personId);
-                      const laneLabel = LENS_META[signal.lens ?? 'culture'].label[locale];
+                      const person = spec.people.find((item) => item.id === signal.personId);
+                      const lens = spec.lenses.find((item) => item.key === signal.lens);
+                      const laneLabel = lens?.label[locale] ?? (signal.lens ?? '');
                       const saving = busy === signal.id;
                       return (
                         <li

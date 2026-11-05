@@ -1,6 +1,5 @@
 import type {
   EventType,
-  Lens,
   LocaleText,
   Modality,
   SentimentTag,
@@ -28,7 +27,7 @@ export type SentimentCandidate = {
    * when no rule matched, both stay absent and the item is queued for an editor
    * to place. It cannot be published before that.
    */
-  lens?: Lens;
+  lens?: string;
   type?: EventType;
   suggestedSentiment?: SentimentTag;
   rawTitle: string;
@@ -86,7 +85,7 @@ export type AutoSignal = {
   personId?: string;
   actorId?: string;
   /** Lane and type of the diary row; defaults to a culture statement. */
-  lens?: Lens;
+  lens?: string;
   type?: EventType;
   rawTitle: string;
   rawSnippet?: string;
@@ -113,7 +112,8 @@ export type CreatedEvent = {
   updatedAt?: string;
   date: string;
   type: EventType;
-  lens: Lens;
+  /** Chiave di corsia come la dichiara lo spec della timeline, non un'unione. */
+  lens: string;
   actorId?: string;
   personId?: string;
   title: LocaleText;
@@ -124,6 +124,23 @@ export type CreatedEvent = {
   amountEur?: number;
   sourceLabel: LocaleText;
   sourceUrl: string;
+};
+
+/**
+ * What the newsroom needs to place a pin on one timeline: the lanes, the forms,
+ * the tones and the cast that timeline declares. The menus are built from this,
+ * so the editor of a second timeline sees its own keys, never the flagship's.
+ */
+export type RedactionSpec = {
+  slug: string;
+  name: LocaleText;
+  /** The flagship alone has the discovery queue and the curated themes. */
+  flagship: boolean;
+  lenses: { key: string; label: LocaleText }[];
+  eventTypes: string[];
+  sentimentTags: string[];
+  actors: { id: string; name: string }[];
+  people: { id: string; name: string; shortName: string }[];
 };
 
 export function candidateToTimelineEvent(c: SentimentCandidate): TimelineEvent | null {

@@ -2,7 +2,6 @@ import {
   timelineThemes,
   type CapabilityDomain,
   type EventType,
-  type Lens,
   type LocaleText,
   type Modality,
   type SentimentTag,
@@ -11,7 +10,7 @@ import {
 import { MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
 import type { CreatedEvent, CuratedPin, TimelineEventEdit } from '@/lib/pipeline/types';
 import { db } from './client';
-import { TIMELINE_SLUG, resolveTimelineId, timelineId } from './timeline';
+import { TIMELINE_SLUG, resolveTimelineId } from './timeline';
 
 /**
  * La tabella `events` è l'unica sede del contenuto: pin curati, pin scritti a
@@ -65,7 +64,8 @@ export type EventPatch = Omit<TimelineEventEdit, 'detail'> & {
   detail?: LocaleText | null;
   hidden?: boolean;
   type?: EventType;
-  lens?: Lens;
+  /** Chiave di corsia dichiarata dallo spec della timeline, non un'unione. */
+  lens?: string;
   amountEur?: number | null;
 };
 
@@ -183,11 +183,14 @@ export async function listEvents(slug: string = TIMELINE_SLUG): Promise<Timeline
   return (await listStoredEvents(slug)).filter((row) => !row.hidden).map((row) => row.event);
 }
 
-export async function getStoredEvent(id: string): Promise<StoredEvent | null> {
+export async function getStoredEvent(
+  id: string,
+  slug: string = TIMELINE_SLUG,
+): Promise<StoredEvent | null> {
   const { data, error } = await db()
     .from('events')
     .select(COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id)
     .limit(1)
     .maybeSingle();
@@ -228,8 +231,12 @@ export async function seedEvents(
 }
 
 /** Pin scritto a mano: nasce editoriale, senza passare dalla moderazione. */
-export async function insertEvent(event: TimelineEvent, createdAt?: string): Promise<void> {
-  const tid = await timelineId();
+export async function insertEvent(
+  event: TimelineEvent,
+  slug: string = TIMELINE_SLUG,
+  createdAt?: string,
+): Promise<void> {
+  const tid = await resolveTimelineId(slug);
   const { error } = await db()
     .from('events')
     .insert({ timeline_id: tid, ...eventToRow(event, { createdAt }) });
@@ -240,8 +247,12 @@ export async function insertEvent(event: TimelineEvent, createdAt?: string): Pro
  * Corregge una riga esistente. Il tono resta subordinato alla citazione (P5):
  * se il patch lascia un tono senza quote, il tono cade.
  */
-export async function updateEvent(id: string, patch: EventPatch): Promise<StoredEvent | null> {
-  const current = await getStoredEvent(id);
+export async function updateEvent(
+  id: string,
+  patch: EventPatch,
+  slug: string = TIMELINE_SLUG,
+): Promise<StoredEvent | null> {
+  const current = await getStoredEvent(id, slug);
   if (!current) return null;
 
   const quote = patch.quote !== undefined ? patch.quote : (current.event.quote ?? null);
@@ -255,19 +266,19 @@ export async function updateEvent(id: string, patch: EventPatch): Promise<Stored
     const { error } = await db()
       .from('events')
       .update({ ...row, updated_at: new Date().toISOString() })
-      .eq('timeline_id', await timelineId())
+      .eq('timeline_id', await resolveTimelineId(slug))
       .eq('id', id);
     if (error) throw error;
   }
 
-  return getStoredEvent(id);
+  return getStoredEvent(id, slug);
 }
 
-export async function deleteEvent(id: string): Promise<boolean> {
+export async function deleteEvent(id: string, slug: string = TIMELINE_SLUG): Promise<boolean> {
   const { data, error } = await db()
     .from('events')
     .delete()
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id)
     .select('id');
 
@@ -286,16 +297,23 @@ function curatedThemes(): Map<string, { themeId: string; themeName: LocaleText }
   return map;
 }
 
-/** I pin curati come li vede la redazione: tema, stato e contenuto effettivo. */
-export async function listCuratedPins(): Promise<CuratedPin[]> {
+/**
+ * I pin curati come li vede la redazione: tema, stato e contenuto effettivo.
+ *
+ * Curato = editoriale e non scritto a mano. Sulla flagship il tema arriva dal
+ * dataset IA; su un'altra timeline, che non ha temi, il "tema" è la timeline
+ * stessa — l'elenco resta completo, cambia solo l'etichetta del gruppo.
+ */
+export async function listCuratedPins(slug: string = TIMELINE_SLUG): Promise<CuratedPin[]> {
   const themes = curatedThemes();
-  return (await listStoredEvents())
-    .filter((row) => themes.has(row.event.id))
+  const fallbackTheme: LocaleText = { it: 'Redazione', en: 'Editorial' };
+  return (await listStoredEvents(slug))
+    .filter((row) => row.event.origin !== 'auto' && !row.event.id.startsWith(MANUAL_ID_PREFIX))
     .map((row) => {
-      const theme = themes.get(row.event.id)!;
+      const theme = themes.get(row.event.id);
       return {
-        themeId: theme.themeId,
-        themeName: theme.themeName,
+        themeId: theme?.themeId ?? slug,
+        themeName: theme?.themeName ?? fallbackTheme,
         hidden: row.hidden,
         edited: row.edited,
         event: row.event,
@@ -311,8 +329,8 @@ function storedToCreatedEvent(row: StoredEvent): CreatedEvent {
     createdAt: row.createdAt,
     date: event.date,
     type: event.type,
-    /** La redazione scrive sulla sola timeline dell'IA: la corsia torna all'unione. */
-    lens: (event.lens ?? 'policy') as Lens,
+    /** La corsia è quella della timeline: le chiavi le dichiara lo spec, non un'unione. */
+    lens: event.lens ?? '',
     title: event.title,
     summary: event.summary,
     sourceLabel: event.sourceLabel,
@@ -331,8 +349,8 @@ function storedToCreatedEvent(row: StoredEvent): CreatedEvent {
 }
 
 /** I pin scritti a mano: nascono in redazione e portano il prefisso `man-`. */
-export async function listManualEvents(): Promise<CreatedEvent[]> {
-  return (await listStoredEvents())
+export async function listManualEvents(slug: string = TIMELINE_SLUG): Promise<CreatedEvent[]> {
+  return (await listStoredEvents(slug))
     .filter((row) => row.event.id.startsWith(MANUAL_ID_PREFIX))
     .map(storedToCreatedEvent)
     .sort(
