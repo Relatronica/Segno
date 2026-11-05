@@ -13,7 +13,8 @@ import type { MarketSnapshot } from './store';
     base cannot be compared over time. */
 const BASE_DATE = '2015-01-02';
 
-/** Every line the band draws, and the actor it stands for. */
+/** Every line any band draws, and the actor it stands for. One snapshot feeds
+    them all; each timeline keeps only the tickers its own spec declares. */
 const TICKERS: Record<string, { actorId: string; exchange: string }> = {
   GOOGL: { actorId: 'google', exchange: 'NASDAQ' },
   META: { actorId: 'meta', exchange: 'NASDAQ' },
@@ -21,6 +22,11 @@ const TICKERS: Record<string, { actorId: string; exchange: string }> = {
   AMZN: { actorId: 'amazon', exchange: 'NASDAQ' },
   AAPL: { actorId: 'apple', exchange: 'NASDAQ' },
   NVDA: { actorId: 'nvidia', exchange: 'NASDAQ' },
+  CRWD: { actorId: 'crowdstrike', exchange: 'NASDAQ' },
+  PANW: { actorId: 'paloaltonetworks', exchange: 'NASDAQ' },
+  FTNT: { actorId: 'fortinet', exchange: 'NASDAQ' },
+  ZS: { actorId: 'zscaler', exchange: 'NASDAQ' },
+  NET: { actorId: 'cloudflare', exchange: 'NYSE' },
 };
 
 /** Asked for from before the base date, so the last close at or before it exists. */
@@ -128,8 +134,8 @@ function closesFrom(payload: unknown): [string, number][] {
 }
 
 /**
- * All six lines or none. A partial pull would silently drop a company from the
- * band, so the caller is told to keep the snapshot it already has.
+ * All lines or none. A partial pull would silently drop a company from a band,
+ * so the caller is told to keep the snapshot it already has.
  */
 export async function refreshMarketSnapshot(): Promise<MarketSnapshot> {
   const entries = await Promise.all(
@@ -139,7 +145,10 @@ export async function refreshMarketSnapshot(): Promise<MarketSnapshot> {
           a[0].localeCompare(b[0]),
         );
         const window = all.filter(([date]) => date >= BASE_DATE);
-        const base = all.filter(([date]) => date <= BASE_DATE).at(-1);
+        // A company that lists after the base date (CrowdStrike, Zscaler,
+        // Cloudflare) has no close at or before it: 100 falls on its own first
+        // close instead. The level is still fixed, just later per company.
+        const base = all.filter(([date]) => date <= BASE_DATE).at(-1) ?? window[0];
         if (!window.length || !base) throw new Error(`no close around ${BASE_DATE}`);
 
         const sampled = window.filter(([date], i) => {

@@ -96,8 +96,18 @@ export const cybersecuritySpec: TimelineSpec = {
     { id: 'doj', name: 'US Department of Justice', shortName: 'DOJ', color: '#7c2d12' },
     { id: 'ofac', name: 'US Treasury — OFAC', shortName: 'OFAC', color: '#0f766e' },
     { id: 'eu', name: 'Unione europea', shortName: 'UE', color: '#3b6fe0' },
+    { id: 'whitehouse', name: 'Casa Bianca', shortName: 'Casa Bianca', color: '#1f2937' },
+    { id: 'un', name: 'Nazioni Unite', shortName: 'ONU', color: '#009edb' },
     { id: 'microsoft', name: 'Microsoft', shortName: 'Microsoft', color: '#00a4ef' },
     { id: 'projectzero', name: 'Google Project Zero', shortName: 'Project Zero', color: '#4285f4' },
+    // Chi diventa la storia su una falla: l'ente che l'ha divulgata. DIVD è
+    // l'istituto olandese che nel 2026 ha reso pubblici i due zero-day Zammad.
+    {
+      id: 'divd',
+      name: 'Dutch Institute for Vulnerability Disclosure',
+      shortName: 'DIVD',
+      color: '#0e7490',
+    },
     { id: 'lazarus', name: 'Lazarus Group', shortName: 'Lazarus', color: '#991b1b' },
     { id: 'apt41', name: 'APT41', shortName: 'APT41', color: '#7c2d12' },
     { id: 'sandworm', name: 'Sandworm', shortName: 'Sandworm', color: '#581c87' },
@@ -111,6 +121,24 @@ export const cybersecuritySpec: TimelineSpec = {
       shortName: 'Integrity Tech',
       color: '#b45309',
     },
+    // Gli attori nominati nel 2026: un gruppo ransomware-as-a-service, il
+    // gruppo di estorsione dietro il caso McKesson e quello della campagna
+    // guidata dall'IA segnalata da CERT-In.
+    { id: 'gunra', name: 'Gunra', shortName: 'Gunra', color: '#7a1f3d' },
+    { id: 'shinyhunters', name: 'ShinyHunters', shortName: 'ShinyHunters', color: '#a21caf' },
+    { id: 'craftyfalcon', name: 'Crafty Falcon', shortName: 'Crafty Falcon', color: '#be123c' },
+    // I venditori quotati: la banda di mercato disegna i loro corsi, quindi
+    // portano qui nome e colore, come ogni altro attore.
+    { id: 'crowdstrike', name: 'CrowdStrike', shortName: 'CrowdStrike', color: '#c8102e' },
+    {
+      id: 'paloaltonetworks',
+      name: 'Palo Alto Networks',
+      shortName: 'Palo Alto',
+      color: '#fa582d',
+    },
+    { id: 'fortinet', name: 'Fortinet', shortName: 'Fortinet', color: '#ee3124' },
+    { id: 'zscaler', name: 'Zscaler', shortName: 'Zscaler', color: '#0067b1' },
+    { id: 'cloudflare', name: 'Cloudflare', shortName: 'Cloudflare', color: '#f38020' },
   ],
 
   /** Nessuna figura pubblica tracciata: i pin parlano di fatti, non di persone. */
@@ -119,7 +147,15 @@ export const cybersecuritySpec: TimelineSpec = {
   /** Nessuna tesi: senza citazioni verificate non ci sono letture da registrare. */
   theses: [],
 
-  bands: [{ kind: 'volume' }],
+  bands: [
+    { kind: 'volume' },
+    {
+      kind: 'series',
+      id: 'market',
+      provider: 'yahoo',
+      tickers: ['CRWD', 'PANW', 'FTNT', 'ZS', 'NET'],
+    },
+  ],
 
   /**
    * La corsia dove l'attore è la storia: una falla porta il marchio di chi l'ha

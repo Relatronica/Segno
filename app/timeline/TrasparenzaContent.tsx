@@ -20,7 +20,7 @@ import {
   defaultCollapsedLenses,
 } from '@/lib/trasparenza/constants';
 import { haystack, matchesTerms, queryTerms } from '@/lib/trasparenza/search';
-import { axisMap, lensOf } from '@/lib/trasparenza/spec';
+import { axisMap, lensOf, seriesTickers } from '@/lib/trasparenza/spec';
 import {
   buildTrasparenzaSearch,
   parseTrasparenzaSearch,
@@ -132,6 +132,11 @@ export default function TrasparenzaContent({
   const lensAxes = useMemo(() => axisMap(spec.lenses), [spec]);
   const lensKeys = useMemo(() => spec.lenses.map((axis) => axis.key), [spec]);
   const sentimentKeys = useMemo(() => spec.sentimentTags.map((axis) => axis.key), [spec]);
+  /** The snapshot is global: keep only the lines this timeline's spec declares. */
+  const market = useMemo(() => {
+    const tickers = new Set(seriesTickers(spec));
+    return marketSeries.filter((series) => tickers.has(series.ticker));
+  }, [marketSeries, spec]);
 
   const [dbEvents, setDbEvents] = useState<TimelineEvent[]>(() => initialTimeline?.events ?? []);
   const [publishedEvents, setPublishedEvents] = useState<TimelineEvent[]>(
@@ -878,7 +883,7 @@ export default function TrasparenzaContent({
             stanceLabel={stanceLabel}
             volumeEvents={feedEvents}
             moodEvents={moodEvents}
-            marketSeries={marketSeries}
+            marketSeries={market}
             focusPresent
             presentFocusToken={presentFocusToken}
             focusEventToken={focusEventToken}

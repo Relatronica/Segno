@@ -140,3 +140,12 @@ export function moodScores(spec: TimelineSpec): Record<string, number> {
   );
   return band?.scoreByKey ?? {};
 }
+
+/**
+ * The tickers a timeline's series bands draw. The market snapshot is one global
+ * file, so a timeline keeps only the lines it declares: without this the
+ * flagship's closes would show up under a second timeline's band.
+ */
+export function seriesTickers(spec: TimelineSpec): string[] {
+  return spec.bands.flatMap((band) => (band.kind === 'series' ? band.tickers : []));
+}

@@ -123,8 +123,9 @@ export const aiSpec: TimelineSpec = {
   theses: aiTheses,
 
   /**
-   * The market band is drawn from a snapshot prop, not from this list: the
-   * declaration here is what the axis means, not where the closes come from.
+   * The market band draws the listed labs' closes. The closes come from the
+   * snapshot prop; the declaration here fixes which lines belong to this
+   * timeline, so a second timeline's tickers never leak into the band.
    */
   bands: [
     { kind: 'volume' },
@@ -139,6 +140,12 @@ export const aiSpec: TimelineSpec = {
         open_source: -0.45,
         optimism: -1,
       },
+    },
+    {
+      kind: 'series',
+      id: 'market',
+      provider: 'yahoo',
+      tickers: ['GOOGL', 'META', 'MSFT', 'AMZN', 'AAPL', 'NVDA'],
     },
   ],
 
