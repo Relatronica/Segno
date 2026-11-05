@@ -1,17 +1,19 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { lobbyActors } from '@/lib/data/trasparenza';
 
 /**
- * Lab marks. The models lane is the one row where the actor *is* the story, so
- * its pins wear the lab's own colour and a silhouette of its own instead of the
- * lane's generic dot. Every mark is a single shape, drawn to stay legible at
- * 16px: at that size a faithful logo turns to mud, and colour plus profile is
- * what actually guides the eye across the row.
+ * Actor marks. Some lanes are rows where the actor *is* the story — the models
+ * a lab ships, the vendor that discloses a flaw — so their pins wear the
+ * actor's own colour and a silhouette of its own instead of the lane's generic
+ * dot. Every mark is a single shape, drawn to stay legible at 16px: at that
+ * size a faithful logo turns to mud, and colour plus profile is what actually
+ * guides the eye across the row.
+ *
+ * This table is the only thing here that knows an actor by name. Which pins
+ * wear a mark is data — `actorId` on the pin, and the lane's `lensMarks` in the
+ * spec — and the tile's colour comes from the spec's actors too.
  */
-const COLOR_BY_ACTOR = new Map(lobbyActors.map((actor) => [actor.id, actor.color]));
-
 const GLYPHS: Record<string, ReactNode> = {
   // Hexagon in a hexagon: the knot reduced to its outline.
   openai: (
@@ -138,14 +140,59 @@ const GLYPHS: Record<string, ReactNode> = {
       <path d="M12 7.4c.1-1.6 1.3-2.9 2.9-3.1.1 1.6-1.2 3.1-2.9 3.1z" fill="currentColor" />
     </>
   ),
+  // The shield and the arrow it raises: the agency that flags what is exploited.
+  cisa: (
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2.4 20.4 6v6.2c0 4.6-3.4 7.9-8.4 9.4-5-1.5-8.4-4.8-8.4-9.4V6z M12 7.2 8.6 10.6h2.2v3.6h2.4v-3.6h2.2z"
+      fill="currentColor"
+    />
+  ),
+  // The zero: a ring left open, with the arrow that closes it.
+  projectzero: (
+    <>
+      <path
+        d="M15.9 5.5A7.5 7.5 0 1 1 19.2 9.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+      />
+      <path d="M20.1 12.3 17.3 10.6 21.1 9.2z" fill="currentColor" />
+    </>
+  ),
 };
 
 /** True when an actor ships a hand-drawn mark. The rest fall back to the lane. */
-export function hasLabMark(actorId?: string): actorId is string {
+export function hasActorMark(actorId?: string): actorId is string {
   return Boolean(actorId && GLYPHS[actorId]);
 }
 
-/** Black or white ink, whichever stays readable on the lab's colour. */
+/**
+ * Lane marks. Some rows are their own subject — the attack lane is where
+ * incidents live — so every pin of the row wears one fixed glyph of the lane's
+ * own instead of the generic dot. The glyph names what the row *is*, never how
+ * bad a single pin was: no grade is invented per event.
+ */
+const LANE_GLYPHS: Record<string, ReactNode> = {
+  // The warning: a solid triangle with the bang cut out of it.
+  danger: (
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2.6 22.4 20.8H1.6zM10.7 8h2.6v6.2h-2.6zM12 15.6a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"
+      fill="currentColor"
+    />
+  ),
+};
+
+/** True when the engine ships a fixed mark under this name. */
+export function hasLaneGlyph(key?: string): key is string {
+  return Boolean(key && LANE_GLYPHS[key]);
+}
+
+/** Black or white ink, whichever stays readable on the tile's colour. */
 function inkOn(hex: string): string {
   const h = hex.replace('#', '');
   const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
@@ -159,8 +206,13 @@ function inkOn(hex: string): string {
   return luminance > 0.2 ? '#111827' : '#ffffff';
 }
 
-type Props = {
-  actorId: string;
+/** Neutral ink for a subject the spec gives no colour. */
+const DEFAULT_TINT = '#475569';
+
+type TileProps = {
+  glyph: ReactNode;
+  /** The colour the spec declares for the actor or the lane. */
+  tint: string;
   /** Side of the tile, in px. */
   size: number;
   active?: boolean;
@@ -169,11 +221,8 @@ type Props = {
   round?: boolean;
 };
 
-/** A lab's badge: its colour as a tile, its mark as ink. */
-export function LabMark({ actorId, size, active = false, hot = false, round = false }: Props) {
-  const glyph = GLYPHS[actorId];
-  if (!glyph) return null;
-  const color = COLOR_BY_ACTOR.get(actorId) ?? '#475569';
+/** One hand-drawn glyph as ink, on a tinted tile. */
+function MarkTile({ glyph, tint, size, active = false, hot = false, round = false }: TileProps) {
   return (
     <span
       aria-hidden
@@ -182,21 +231,75 @@ export function LabMark({ actorId, size, active = false, hot = false, round = fa
         width: size,
         height: size,
         borderRadius: round ? size / 2 : Math.round(size * 0.26),
-        backgroundColor: color,
+        backgroundColor: tint,
         filter: active
-          ? `drop-shadow(0 0 3px ${color})`
+          ? `drop-shadow(0 0 3px ${tint})`
           : hot
-            ? `drop-shadow(0 0 2px ${color}aa)`
+            ? `drop-shadow(0 0 2px ${tint}aa)`
             : undefined,
       }}
     >
       <svg
         viewBox="0 0 24 24"
         aria-hidden
-        style={{ width: size * 0.72, height: size * 0.72, color: inkOn(color) }}
+        style={{ width: size * 0.72, height: size * 0.72, color: inkOn(tint) }}
       >
         {glyph}
       </svg>
     </span>
+  );
+}
+
+type Props = {
+  actorId: string;
+  /** The actor's colour, as the spec declares it. */
+  color?: string;
+  size: number;
+  active?: boolean;
+  hot?: boolean;
+  /** Circle instead of the default rounded tile. */
+  round?: boolean;
+};
+
+/** An actor's badge: its colour as a tile, its mark as ink. */
+export function ActorMark({ actorId, color, size, active = false, hot = false, round = false }: Props) {
+  const glyph = GLYPHS[actorId];
+  if (!glyph) return null;
+  return (
+    <MarkTile
+      glyph={glyph}
+      tint={color ?? DEFAULT_TINT}
+      size={size}
+      active={active}
+      hot={hot}
+      round={round}
+    />
+  );
+}
+
+type LaneProps = {
+  /** Name of the fixed mark, as the spec's `lensGlyphs` declares it. */
+  glyph: string;
+  /** The lane's colour. */
+  color?: string;
+  size: number;
+  active?: boolean;
+  hot?: boolean;
+  round?: boolean;
+};
+
+/** A row's badge: its colour as a tile, the row's own mark as ink. */
+export function LaneMark({ glyph, color, size, active = false, hot = false, round = false }: LaneProps) {
+  const mark = LANE_GLYPHS[glyph];
+  if (!mark) return null;
+  return (
+    <MarkTile
+      glyph={mark}
+      tint={color ?? DEFAULT_TINT}
+      size={size}
+      active={active}
+      hot={hot}
+      round={round}
+    />
   );
 }

@@ -14,7 +14,7 @@ import { localIsoDate, offsetIsoDate } from '@/lib/dates';
 import { axisMap, lensOf } from '@/lib/trasparenza/spec';
 import { EVENT_META, MODALITY_ICON, SENTIMENT_META } from './meta';
 import { useTimelineSpec } from './TimelineSpecProvider';
-import { LabMark, hasLabMark } from './LabMark';
+import { ActorMark, hasActorMark, hasLaneGlyph, LaneMark } from './ActorMark';
 import { PersonAvatar } from './PersonAvatar';
 import { paths } from '@/lib/seo';
 import { cn } from '@/lib/utils';
@@ -94,22 +94,27 @@ function groupByDay(events: TimelineEvent[]): { date: string; items: TimelineEve
 
 /**
  * One round marker per row, the same size everywhere. Who is speaking wins: a
- * face, then the lab's own mark, then the event icon on the lane's tint — so
- * identity reads at a glance without a card-sized media box.
+ * face, then the row's own mark, then the actor's, then the event icon on the
+ * lane's tint — so identity reads at a glance without a card-sized media box.
  */
 function FeedBadge({
   person,
   actorId,
+  actorColor,
   laneColor,
+  laneGlyph,
   TypeIcon,
 }: {
   person?: LobbyPerson;
   actorId?: string;
+  actorColor?: string;
   laneColor: string;
+  laneGlyph?: string;
   TypeIcon: LucideIcon;
 }) {
   if (person) return <PersonAvatar person={person} size="sm" />;
-  if (hasLabMark(actorId)) return <LabMark actorId={actorId} size={24} round />;
+  if (hasLaneGlyph(laneGlyph)) return <LaneMark glyph={laneGlyph} color={laneColor} size={24} round />;
+  if (hasActorMark(actorId)) return <ActorMark actorId={actorId} color={actorColor} size={24} round />;
 
   return (
     <span
@@ -304,7 +309,9 @@ export function TimelineFeed({
                           <FeedBadge
                             person={person}
                             actorId={event.actorId}
+                            actorColor={actor?.color}
                             laneColor={laneColor}
+                            laneGlyph={spec.lensGlyphs[lens]}
                             TypeIcon={TypeIcon}
                           />
 

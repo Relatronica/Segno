@@ -158,43 +158,47 @@ export function FilterSidebar({
           </div>
         </FilterSection>
 
-        <FilterSection title={labels.actorsLabel}>
-          <div className="flex flex-wrap gap-1">
-            <Chip
-              active={selectedActor === 'all'}
-              onClick={() => onActorChange('all')}
-              label={labels.allActors}
-            />
-            {actors.map((actor) => (
+        {actors.length > 0 && (
+          <FilterSection title={labels.actorsLabel}>
+            <div className="flex flex-wrap gap-1">
               <Chip
-                key={actor.id}
-                active={selectedActor === actor.id}
-                onClick={() => onActorChange(actor.id)}
-                label={actor.shortName}
-                dot={actor.color}
+                active={selectedActor === 'all'}
+                onClick={() => onActorChange('all')}
+                label={labels.allActors}
               />
-            ))}
-          </div>
-        </FilterSection>
+              {actors.map((actor) => (
+                <Chip
+                  key={actor.id}
+                  active={selectedActor === actor.id}
+                  onClick={() => onActorChange(actor.id)}
+                  label={actor.shortName}
+                  dot={actor.color}
+                />
+              ))}
+            </div>
+          </FilterSection>
+        )}
 
-        <FilterSection title={labels.peopleLabel}>
-          <div className="flex flex-wrap gap-1">
-            <Chip
-              active={selectedPerson === 'all'}
-              onClick={() => onPersonChange('all')}
-              label={labels.allPeople}
-            />
-            {people.map((person) => (
+        {people.length > 0 && (
+          <FilterSection title={labels.peopleLabel}>
+            <div className="flex flex-wrap gap-1">
               <Chip
-                key={person.id}
-                active={selectedPerson === person.id}
-                onClick={() => onPersonChange(person.id)}
-                label={person.shortName}
-                avatar={<PersonAvatar person={person} size="sm" />}
+                active={selectedPerson === 'all'}
+                onClick={() => onPersonChange('all')}
+                label={labels.allPeople}
               />
-            ))}
-          </div>
-        </FilterSection>
+              {people.map((person) => (
+                <Chip
+                  key={person.id}
+                  active={selectedPerson === person.id}
+                  onClick={() => onPersonChange(person.id)}
+                  label={person.shortName}
+                  avatar={<PersonAvatar person={person} size="sm" />}
+                />
+              ))}
+            </div>
+          </FilterSection>
+        )}
 
         {showSentiment && (
           <FilterSection title={labels.sentimentLabel}>

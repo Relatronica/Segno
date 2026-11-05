@@ -35,7 +35,7 @@ import type { ScrubState } from './TimelineFeed';
 import { MODALITY_ICON, SENTIMENT_META, STANCE_META } from './meta';
 import { useTimelineSpec } from './TimelineSpecProvider';
 import { PersonAvatar } from './PersonAvatar';
-import { LabMark, hasLabMark } from './LabMark';
+import { ActorMark, hasActorMark, hasLaneGlyph, LaneMark } from './ActorMark';
 
 /** There is no layout to measure on the server, and `useLayoutEffect` warns there. */
 const useLayoutEffectSafe = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -1559,14 +1559,33 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
                             className={cn('h-full w-full ring-0')}
                           />
                         </span>
-                      ) : (lane.lens === 'models' || isCapLane) && hasLabMark(event.actorId) ? (
-                        // Lab models wear their lab's mark and silhouette, with domain glow in capability lane
+                      ) : spec.lensMarks.includes(lane.lens) && hasActorMark(event.actorId) ? (
+                        // A lane where the actor is the story: its pins wear the
+                        // actor's own mark and colour instead of the lane dot.
                         <span
                           aria-hidden
                           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                         >
-                          <LabMark
+                          <ActorMark
                             actorId={event.actorId}
+                            color={actors[event.actorId]?.color ?? lane.accent}
+                            size={isActive ? 19 : isHot ? 18 : 16}
+                            active={isActive}
+                            hot={isHot}
+                          />
+                        </span>
+                      ) : hasLaneGlyph(spec.lensGlyphs[lane.lens]) ? (
+                        // A row that owns a mark: every pin wears the row's fixed
+                        // glyph in the row's colour — the attack lane's warning —
+                        // for the whole row, not the actor, whose role on an
+                        // incident is ambiguous.
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        >
+                          <LaneMark
+                            glyph={spec.lensGlyphs[lane.lens]}
+                            color={lane.accent}
                             size={isActive ? 19 : isHot ? 18 : 16}
                             active={isActive}
                             hot={isHot}

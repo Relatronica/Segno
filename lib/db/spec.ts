@@ -28,7 +28,12 @@ type TimelineRow = {
   id: string;
   slug: string;
   name: LocalizedText;
-  spec_config: { track?: TrackMeta; lensFallback?: LensFallback } | null;
+  spec_config: {
+    track?: TrackMeta;
+    lensFallback?: LensFallback;
+    lensMarks?: string[];
+    lensGlyphs?: Record<string, string>;
+  } | null;
   created_at: string;
 };
 
@@ -206,6 +211,8 @@ export async function loadTimelineSpec(slug: string): Promise<TimelineSpec | nul
       byEventType: {},
       default: lenses[0]?.key ?? '',
     },
+    lensMarks: row.spec_config?.lensMarks ?? [],
+    lensGlyphs: row.spec_config?.lensGlyphs ?? {},
   };
 }
 
@@ -321,7 +328,15 @@ export async function seedSpec(
 
   const { error: configError } = await db()
     .from('timelines')
-    .update({ name: spec.track.name, spec_config: { track: spec.track, lensFallback: spec.lensFallback } })
+    .update({
+      name: spec.track.name,
+      spec_config: {
+        track: spec.track,
+        lensFallback: spec.lensFallback,
+        lensMarks: spec.lensMarks,
+        lensGlyphs: spec.lensGlyphs,
+      },
+    })
     .eq('id', timelineId);
   if (configError) throw configError;
 

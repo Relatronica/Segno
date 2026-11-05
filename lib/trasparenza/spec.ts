@@ -106,6 +106,19 @@ export type TimelineSpec = {
   theses: ThesisAxis[];
   /** Bands under the lanes, top to bottom. */
   bands: BandSpec[];
+  /**
+   * Keys of the lenses whose pins wear their subject's own mark instead of the
+   * lane's dot, where the actor — not the row — is what a pin is about.
+   * Configuration, not an axis: it says how a row is drawn, not what it holds.
+   */
+  lensMarks: string[];
+  /**
+   * A fixed mark a whole row wears, keyed by lens and named in the engine's
+   * glyph table (`attacchi → danger`). The mark says what the row *is*, never a
+   * grade: it marks every pin of the lane alike, so no severity is invented.
+   * Configuration, like `lensMarks`.
+   */
+  lensGlyphs: Record<string, string>;
   lensFallback: LensFallback;
 };
 

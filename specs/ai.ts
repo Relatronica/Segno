@@ -143,6 +143,15 @@ export const aiSpec: TimelineSpec = {
   ],
 
   /**
+   * The two rows where the actor *is* the story: a release is its lab, a
+   * benchmark is whoever ran it.
+   */
+  lensMarks: ['models', 'capabilities'],
+
+  /** No row carries a fixed mark of its own: actor marks cover the identity. */
+  lensGlyphs: {},
+
+  /**
    * Curated pins predate the lens axis: the form of the event decides. A
    * statement is a cultural reading of the field, a declared spend is market,
    * everything else in the curated set is EU policy.

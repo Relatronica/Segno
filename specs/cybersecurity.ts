@@ -24,7 +24,9 @@ export const cybersecuritySpec: TimelineSpec = {
       it: 'Solo fatti con fonte primaria e link stabile (agenzie, autorità, registri CVE, EUR-Lex). L’attribuzione di un attacco è quella ufficiale dell’autorità che la firma: la vicinanza temporale non dimostra causalità.',
       en: 'Only facts with a primary source and a stable link (agencies, authorities, CVE records, EUR-Lex). An attack’s attribution is the official one of the authority that signs it: temporal proximity does not prove causation.',
     },
-    filterTypes: ['milestone', 'legislative', 'sanction', 'meeting', 'spending', 'statement'],
+    // Solo le forme presenti nei pin di questa timeline: niente "meeting" né
+    // "spending", che resterebbero filtri a vuoto.
+    filterTypes: ['milestone', 'legislative', 'sanction', 'statement'],
     peopleIds: [],
     showSentiment: false,
   },
@@ -118,6 +120,19 @@ export const cybersecuritySpec: TimelineSpec = {
   theses: [],
 
   bands: [{ kind: 'volume' }],
+
+  /**
+   * La corsia dove l'attore è la storia: una falla porta il marchio di chi l'ha
+   * divulgata o corretta, non il pallino della corsia.
+   */
+  lensMarks: ['vulnerabilita'],
+
+  /**
+   * La corsia dell'incidente porta un segno di allerta al posto del pallino:
+   * dice cos'è la riga — un attacco — senza graduare nulla. Il pericolo è della
+   * corsia, non un punteggio inventato pin per pin.
+   */
+  lensGlyphs: { attacchi: 'danger' },
 
   /** Ogni pin dichiara la sua corsia; il ripiego copre le forme, per sicurezza. */
   lensFallback: {
