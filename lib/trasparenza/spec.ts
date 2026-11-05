@@ -24,6 +24,57 @@ export type Axis = {
   blurb?: LocalizedText;
 };
 
+/** A person a timeline's pins refer to. */
+export type PersonAxis = {
+  id: string;
+  name: string;
+  shortName: string;
+  orgId?: string;
+  role: LocalizedText;
+  avatar?: string;
+};
+
+/** An organisation a timeline's pins refer to. */
+export type ActorAxis = {
+  id: string;
+  name: string;
+  shortName: string;
+  color: string;
+};
+
+/**
+ * A claim under test. Structure, not content: the claim is fixed, the readings
+ * against it move. A timeline brings its own claims.
+ */
+export type ThesisAxis = {
+  id: string;
+  slug: string;
+  /** Short chip label. */
+  label: LocalizedText;
+  /** The full, citable claim. */
+  claim: LocalizedText;
+  /** Reading key: what each stance means for this specific claim. */
+  definition: LocalizedText;
+  status: 'open' | 'settled';
+  since: string;
+};
+
+/** The reading frame of a timeline: who it is, and how it presents itself. */
+export type TrackMeta = {
+  id: string;
+  slug: string;
+  name: LocalizedText;
+  shortName: string;
+  period: LocalizedText;
+  intro: LocalizedText;
+  disclaimer: LocalizedText;
+  /** Event forms offered in the filter UI. */
+  filterTypes: string[];
+  /** People offered in the filter UI; the roster may be broader. */
+  peopleIds: string[];
+  showSentiment: boolean;
+};
+
 /**
  * From an event form to the lens it falls under when it carries none. A
  * fallback is data, not code: it is part of what makes a timeline's reading.
@@ -42,13 +93,17 @@ export type BandSpec =
   | { kind: 'series'; id: string; provider: string; tickers: string[] };
 
 export type TimelineSpec = {
-  id: string;
-  slug: string;
-  name: LocalizedText;
+  /** The timeline's own identity and reading frame. */
+  track: TrackMeta;
   /** Reading rows. Order is the reading order: top to bottom. */
   lenses: Axis[];
   eventTypes: Axis[];
   sentimentTags: Axis[];
+  /** The subjects its pins can refer to. */
+  actors: ActorAxis[];
+  people: PersonAxis[];
+  /** The claims its quotes are read against. */
+  theses: ThesisAxis[];
   /** Bands under the lanes, top to bottom. */
   bands: BandSpec[];
   lensFallback: LensFallback;

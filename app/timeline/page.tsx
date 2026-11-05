@@ -4,6 +4,8 @@ import { pages, SITE_URL } from '@/lib/seo';
 import { parseMarketSnapshot } from '@/lib/data/market';
 import { loadMarketSnapshot } from '@/lib/market/store';
 import { loadPublicTimeline } from '@/lib/db/public';
+import { loadTimelineSpec } from '@/lib/db/spec';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 import { TimelineSpecProvider } from '@/components/trasparenza/TimelineSpecProvider';
 import { aiSpec } from '@/specs/ai';
 import TrasparenzaContent from './TrasparenzaContent';
@@ -36,6 +38,15 @@ export default async function TimelinePage() {
     return undefined;
   });
 
+  // The spec — lenses, forms, tags, people, theses — now lives in Postgres;
+  // `specs/ai.ts` is only the seed source. Unreadable or unseeded (a timeline
+  // row with no axes yet), the bundled spec keeps the page drawing.
+  const loadedSpec = await loadTimelineSpec(TIMELINE_SLUG).catch((error: unknown) => {
+    console.warn('[timeline] spec unreadable, serving the bundled spec:', error);
+    return null;
+  });
+  const spec = loadedSpec && loadedSpec.lenses.length > 0 ? loadedSpec : aiSpec;
+
   return (
     <>
       <JsonLd
@@ -48,7 +59,7 @@ export default async function TimelinePage() {
           isPartOf: { '@id': `${SITE_URL}/#website` },
         }}
       />
-      <TimelineSpecProvider spec={aiSpec}>
+      <TimelineSpecProvider spec={spec}>
         <TrasparenzaContent
           marketSeries={snapshot ? parseMarketSnapshot(snapshot) : undefined}
           initialTimeline={timeline}

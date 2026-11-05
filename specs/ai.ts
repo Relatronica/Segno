@@ -1,16 +1,49 @@
-import type { TimelineSpec } from '@/lib/trasparenza/spec';
+import {
+  lobbyActors,
+  lobbyPeople,
+  sentimentPeople,
+  theses,
+  unifiedTheme,
+} from '@/lib/data/trasparenza';
+import type { ThesisAxis, TimelineSpec } from '@/lib/trasparenza/spec';
 
 /**
- * The AI ontology, transported verbatim from the domain layer.
+ * The AI ontology: the seed source of the live timeline.
  *
- * This file is the source of truth for the live timeline: the components read
- * it at runtime, so nothing here may drift from what the pins expect. Values
- * are unchanged from `lib/data/trasparenza.ts` — only their home moved.
+ * In Fase A this file *was* the runtime source — components imported it. In
+ * Fase C the database holds the spec and this file only *seeds* it: the values
+ * are unchanged, so re-seeding reproduces the same timeline. Editing a label or
+ * a colour here and re-running the seed updates the timeline without a deploy.
+ *
+ * Actors, people and theses live here too: they are structure, like the lenses.
  */
+
+/** The claims this timeline's quotes are read against. */
+const aiTheses: ThesisAxis[] = theses
+  .filter((thesis) => thesis.themeId === 'sentiment')
+  .map((thesis) => ({
+    id: thesis.id,
+    slug: thesis.slug,
+    label: thesis.label,
+    claim: thesis.claim,
+    definition: thesis.definition,
+    status: thesis.status,
+    since: thesis.since,
+  }));
+
 export const aiSpec: TimelineSpec = {
-  id: 'sentiment',
-  slug: 'sentiment',
-  name: { it: 'Evoluzione dell’IA', en: 'AI evolution' },
+  track: {
+    id: unifiedTheme.id,
+    slug: unifiedTheme.slug,
+    name: unifiedTheme.name,
+    shortName: unifiedTheme.shortName,
+    period: unifiedTheme.period,
+    intro: unifiedTheme.intro,
+    disclaimer: unifiedTheme.disclaimer,
+    filterTypes: unifiedTheme.filterTypes,
+    peopleIds: sentimentPeople.map((person) => person.id),
+    showSentiment: unifiedTheme.showSentiment,
+  },
 
   /** Reading order, top to bottom. */
   lenses: [
@@ -77,6 +110,17 @@ export const aiSpec: TimelineSpec = {
   sentimentTags: ['alarm', 'caution', 'optimism', 'deregulation', 'open_source'].map((key) => ({
     key,
   })),
+
+  actors: lobbyActors.map((actor) => ({
+    id: actor.id,
+    name: actor.name,
+    shortName: actor.shortName,
+    color: actor.color,
+  })),
+
+  people: lobbyPeople,
+
+  theses: aiTheses,
 
   /**
    * The market band is drawn from a snapshot prop, not from this list: the

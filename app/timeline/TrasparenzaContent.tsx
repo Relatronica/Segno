@@ -6,15 +6,7 @@ import { Calendar, PanelRight, RotateCcw, Search, X, ZoomIn, ZoomOut } from 'luc
 import { useAppStore } from '@/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { cn } from '@/lib/utils';
-import type { TimelineEvent } from '@/lib/data/trasparenza';
-import {
-  unifiedTheme,
-  timelineThemes,
-  lobbyPeople,
-  readingsForThesis,
-  thesesForTheme,
-  type PositionStance,
-} from '@/lib/data/trasparenza';
+import type { PositionStance, ThesisReading, TimelineEvent } from '@/lib/data/trasparenza';
 import { localIsoDate } from '@/lib/dates';
 import { type MarketSeries } from '@/lib/data/market';
 import { signalToTimelineEvent } from '@/lib/pipeline/signals';
@@ -115,6 +107,7 @@ function signalHaystack(signal: AutoSignal, people: PersonMap, actors: ActorMap)
 export default function TrasparenzaContent({
   marketSeries = NO_MARKET,
   initialTimeline,
+  eventBase,
 }: {
   /** Closes of the listed actors, read from the store on the server. */
   marketSeries?: MarketSeries[];
@@ -124,6 +117,13 @@ export default function TrasparenzaContent({
    * bundled base and the corrections the database holds.
    */
   initialTimeline?: PublicTimeline;
+  /**
+   * Where a pin's permalink points. The flagship opens its own event page; a
+   * registry timeline has none, so it points back at itself (`?event=<id>`).
+   * A base path — a string, not a closure: this component is a client one and
+   * its page is a server component.
+   */
+  eventBase?: string;
 }) {
   const t = useT();
   const locale = useAppStore((s) => s.locale) as 'it' | 'en';
@@ -133,12 +133,12 @@ export default function TrasparenzaContent({
   const lensKeys = useMemo(() => spec.lenses.map((axis) => axis.key), [spec]);
   const sentimentKeys = useMemo(() => spec.sentimentTags.map((axis) => axis.key), [spec]);
 
-  const [themeId] = useState(unifiedTheme.id);
   const [dbEvents, setDbEvents] = useState<TimelineEvent[]>(() => initialTimeline?.events ?? []);
   const [publishedEvents, setPublishedEvents] = useState<TimelineEvent[]>(
     () => initialTimeline?.published ?? [],
   );
   const [autoSignals, setAutoSignals] = useState<AutoSignal[]>(() => initialTimeline?.signals ?? []);
+  const [readings, setReadings] = useState<ThesisReading[]>(() => initialTimeline?.readings ?? []);
   const [presentFocusToken, setPresentFocusToken] = useState(0);
   const [focusEventToken, setFocusEventToken] = useState(0);
   /** Chart density step; the chart anchors each change, the chrome only shows it. */
@@ -149,23 +149,17 @@ export default function TrasparenzaContent({
 
   useEffect(() => {
     let cancelled = false;
+    const slug = spec.track.slug;
     const loadPublished = () => {
-      fetch('/api/pipeline/published', { cache: 'no-store' })
+      fetch(`/api/pipeline/published?timeline=${encodeURIComponent(slug)}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
-        .then(
-          (
-            data: {
-              events?: TimelineEvent[];
-              published?: TimelineEvent[];
-              signals?: AutoSignal[];
-            } | null,
-          ) => {
-            if (cancelled || !data) return;
-            setDbEvents(data.events ?? []);
-            setPublishedEvents(data.published ?? []);
-            setAutoSignals(data.signals ?? []);
-          },
-        )
+        .then((data: PublicTimeline | null) => {
+          if (cancelled || !data) return;
+          setDbEvents(data.events ?? []);
+          setPublishedEvents(data.published ?? []);
+          setAutoSignals(data.signals ?? []);
+          setReadings(data.readings ?? []);
+        })
         .catch(() => {
           /* pipeline optional offline */
         });
@@ -177,14 +171,18 @@ export default function TrasparenzaContent({
       cancelled = true;
       window.removeEventListener('focus', loadPublished);
     };
-  }, []);
+  }, [spec.track.slug]);
 
-  const track = useMemo(() => {
+  /** The timeline's own reading frame, from the spec — not from the domain. */
+  const track = spec.track;
+
+  /**
+   * The database holds the content, already corrected: `hidden` drops a row,
+   * an edit is a column. Here we only pin the closing "today" mark to the
+   * calendar and never let a pin run past it.
+   */
+  const events = useMemo(() => {
     const today = localIsoDate();
-    const base = timelineThemes.find((th) => th.id === themeId) ?? unifiedTheme;
-    // The database holds the content, already corrected: `hidden` drops a row,
-    // an edit is a column. Here we only pin the closing "today" mark to the
-    // calendar and never let a pin run past it.
     const merge = (e: TimelineEvent): TimelineEvent => {
       if (e.id === PRESENT_PIN_ID) return { ...e, date: today };
       return e.date > today ? { ...e, date: today } : e;
@@ -193,16 +191,16 @@ export default function TrasparenzaContent({
     const byId = new Map<string, TimelineEvent>();
     for (const e of dbEvents) byId.set(e.id, merge(e));
     for (const e of publishedEvents) byId.set(e.id, merge(e));
-    return { ...base, events: [...byId.values()] };
-  }, [themeId, dbEvents, publishedEvents]);
+    return [...byId.values()];
+  }, [dbEvents, publishedEvents]);
 
   const allYears = useMemo(() => {
     const years = [
-      ...track.events.map((e) => e.date.slice(0, 4)),
+      ...events.map((e) => e.date.slice(0, 4)),
       ...autoSignals.map((s) => s.date.slice(0, 4)),
     ];
     return [...new Set(years)].sort();
-  }, [track.events, autoSignals]);
+  }, [events, autoSignals]);
 
   const [selectedActor, setSelectedActor] = useState<string | 'all'>('all');
   const [selectedPerson, setSelectedPerson] = useState<string | 'all'>('all');
@@ -340,23 +338,25 @@ export default function TrasparenzaContent({
     sentimentKeys,
   ]);
 
-  const switchTheme = () => {
-    /* single unified track — theme switch retained for FilterSidebar API */
-  };
-
   const actorMap = useMemo(
-    () => Object.fromEntries(track.actors.map((a) => [a.id, a])),
-    [track.actors],
+    () => Object.fromEntries(spec.actors.map((a) => [a.id, a])),
+    [spec.actors],
   );
 
   const personMap = useMemo(
-    () => Object.fromEntries(lobbyPeople.map((p) => [p.id, p])),
-    [],
+    () => Object.fromEntries(spec.people.map((p) => [p.id, p])),
+    [spec.people],
+  );
+
+  /** The filterable roster: a subset of the spec's people, per the track. */
+  const filterPeople = useMemo(
+    () => spec.people.filter((person) => track.peopleIds.includes(person.id)),
+    [spec.people, track.peopleIds],
   );
 
   const needles = useMemo(() => queryTerms(query), [query]);
 
-  const theses = useMemo(() => thesesForTheme(track.id), [track.id]);
+  const theses = spec.theses;
   const activeThesis = useMemo(
     () => theses.find((thesis) => thesis.slug === selectedThesis) ?? null,
     [theses, selectedThesis],
@@ -369,12 +369,14 @@ export default function TrasparenzaContent({
    */
   const thesisReadings = useMemo(() => {
     if (!activeThesis) return null;
-    const eventsById = new Map(track.events.map((e) => [e.id, e]));
-    return readingsForThesis(activeThesis.id).flatMap((reading) => {
-      const event = eventsById.get(reading.eventId);
-      return event ? [{ event, stance: reading.stance, note: reading.note }] : [];
-    });
-  }, [activeThesis, track.events]);
+    const eventsById = new Map(events.map((e) => [e.id, e]));
+    return readings
+      .filter((reading) => reading.thesisId === activeThesis.id)
+      .flatMap((reading) => {
+        const event = eventsById.get(reading.eventId);
+        return event ? [{ event, stance: reading.stance, note: reading.note }] : [];
+      });
+  }, [activeThesis, events, readings]);
 
   const thesisReadingsById = useMemo(
     () =>
@@ -392,7 +394,7 @@ export default function TrasparenzaContent({
   }, [thesisReadings]);
 
   const filtered = useMemo(() => {
-    return [...track.events]
+    return [...events]
       .sort((a, b) => a.date.localeCompare(b.date))
       .filter((e) => matchesTerms(eventHaystack(e, personMap, actorMap), needles))
       .filter((e) => selectedTypes.includes(e.type))
@@ -421,7 +423,7 @@ export default function TrasparenzaContent({
         return thesisReadingsById.has(e.id);
       });
   }, [
-    track.events,
+    events,
     selectedActor,
     selectedPerson,
     selectedTypes,
@@ -617,7 +619,6 @@ export default function TrasparenzaContent({
   const lensLabel = (lens: string) => lensAxes.get(lens)?.label?.[locale] ?? lens;
 
   const filterLabels = {
-    themeLabel: t.trasparenza.themeLabel,
     lensesLabel: t.trasparenza.lensesLabel,
     allActors: t.trasparenza.allActors,
     allPeople: t.trasparenza.allPeople,
@@ -789,12 +790,9 @@ export default function TrasparenzaContent({
 
       {panelTab === 'filters' ? (
         <FilterSidebar
-          themes={timelineThemes}
-          selectedThemeId={track.id}
-          onThemeChange={switchTheme}
           locale={locale}
-          actors={track.actors}
-          people={track.people}
+          actors={spec.actors}
+          people={filterPeople}
           years={allYears}
           filterTypes={track.filterTypes}
           showSentiment={track.showSentiment}
@@ -837,6 +835,7 @@ export default function TrasparenzaContent({
           sourceLabel={t.trasparenza.source}
           permalinkLabel={t.trasparenza.permalink}
           permalinkHint={t.trasparenza.permalinkHint}
+          eventBase={eventBase}
           todayLabel={t.trasparenza.todayLabel}
           yesterdayLabel={t.trasparenza.yesterdayLabel}
           countLabel={t.trasparenza.eventsCount}
@@ -862,6 +861,7 @@ export default function TrasparenzaContent({
                alike, so the band mirrors exactly what the lanes draw. */
             events={feedEvents}
             people={personMap}
+            actors={actorMap}
             locale={locale}
             activeId={activeId}
             collapsedLenses={collapsedLenses}

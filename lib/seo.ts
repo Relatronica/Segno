@@ -31,6 +31,9 @@ export const SITE_KEYWORDS = [
 export const paths = {
   chiSiamo: '/chi-siamo',
   timeline: '/timeline',
+  lab: '/lab',
+  /** Any timeline in the registry, addressed by slug. */
+  timelineBySlug: (slug: string) => `/t/${encodeURIComponent(slug)}`,
   timelineEvento: (id: string) => `/timeline/evento/${encodeURIComponent(id)}`,
   timelinePersona: (id: string) => `/timeline/persona/${encodeURIComponent(id)}`,
   timelineTema: (slug: string) => `/timeline/tema/${encodeURIComponent(slug)}`,
@@ -51,5 +54,10 @@ export const pages = {
     title: 'Segnala',
     description:
       'Segnala un errore, una fonte mancante o proponi un contributo alla timeline di Segno.',
+  },
+  lab: {
+    title: 'Lab',
+    description:
+      'Le timeline di Segno: quella dell’IA e le altre in lavorazione. Stesso motore, assi diversi.',
   },
 } as const;

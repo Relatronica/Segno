@@ -3,15 +3,9 @@
 import { EVENT_META, SENTIMENT_META } from './meta';
 import { PersonAvatar } from './PersonAvatar';
 import { useTimelineSpec } from './TimelineSpecProvider';
-import type {
-  LobbyActor,
-  LobbyPerson,
-  Thesis,
-  TimelineTheme,
-} from '@/lib/data/trasparenza';
+import type { ActorAxis, PersonAxis, ThesisAxis } from '@/lib/trasparenza/spec';
 
 type Labels = {
-  themeLabel: string;
   lensesLabel: string;
   allActors: string;
   allPeople: string;
@@ -32,17 +26,14 @@ type Labels = {
 };
 
 type Props = {
-  themes: TimelineTheme[];
-  selectedThemeId: string;
-  onThemeChange: (id: string) => void;
   locale: 'it' | 'en';
-  actors: LobbyActor[];
-  people: LobbyPerson[];
+  actors: ActorAxis[];
+  people: PersonAxis[];
   years: string[];
   filterTypes: string[];
   showSentiment: boolean;
   /** Claims under test, with their reading key */
-  theses: Thesis[];
+  theses: ThesisAxis[];
   selectedActor: string | 'all';
   selectedPerson: string | 'all';
   selectedTypes: string[];
@@ -66,9 +57,6 @@ type Props = {
 };
 
 export function FilterSidebar({
-  themes,
-  selectedThemeId,
-  onThemeChange,
   locale,
   actors,
   people,
@@ -102,39 +90,6 @@ export function FilterSidebar({
   return (
     <aside className={`flex h-full flex-col ${className}`}>
       <div className="flex-1 space-y-4 overflow-y-auto px-3 py-3">
-        {themes.length > 1 && (
-        <FilterSection title={labels.themeLabel}>
-          <div className="flex flex-col gap-1">
-            {themes.map((theme) => {
-              const active = selectedThemeId === theme.id;
-              return (
-                <button
-                  key={theme.id}
-                  type="button"
-                  onClick={() => onThemeChange(theme.id)}
-                  className={`rounded-lg border px-2.5 py-2 text-left transition-colors ${
-                    active
-                      ? 'border-foreground/20 bg-foreground text-background'
-                      : 'border-border/50 bg-muted/30 text-foreground hover:bg-muted/60'
-                  }`}
-                >
-                  <span className="block text-[12px] font-semibold leading-tight">
-                    {theme.name[locale]}
-                  </span>
-                  <span
-                    className={`mt-0.5 block text-[10px] leading-snug ${
-                      active ? 'text-background/75' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {theme.period[locale]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </FilterSection>
-        )}
-
         {theses.length > 0 && (
           <FilterSection title={labels.thesesLabel}>
             <div className="flex flex-wrap gap-1">

@@ -65,6 +65,14 @@ export function Footer() {
                   {t.nav.chiSiamo}
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/lab"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t.nav.lab}
+                </Link>
+              </li>
             </ul>
           </div>
 

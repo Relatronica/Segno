@@ -56,6 +56,12 @@ type Props = {
   /** Label for the internal permalink to the single-event page */
   permalinkLabel?: string;
   permalinkHint?: string;
+  /**
+   * The path a pin's permalink hangs off (`<base>?event=<id>`). A string, not a
+   * function: the page that owns this feed is a server component and cannot
+   * pass closures to a client one. Absent, the flagship's own event page.
+   */
+  eventBase?: string;
   todayLabel: string;
   yesterdayLabel: string;
   /** `{count}` placeholder for the per-day counter */
@@ -133,6 +139,7 @@ export function TimelineFeed({
   sourceLabel,
   permalinkLabel,
   permalinkHint,
+  eventBase,
   todayLabel,
   yesterdayLabel,
   countLabel,
@@ -449,7 +456,11 @@ export function TimelineFeed({
 
                             {permalinkLabel && (
                               <a
-                                href={paths.timelineEvento(event.id)}
+                                href={
+                                  eventBase
+                                    ? `${eventBase}?event=${encodeURIComponent(event.id)}`
+                                    : paths.timelineEvento(event.id)
+                                }
                                 title={permalinkHint}
                                 className="inline-flex max-w-full items-center gap-1.5 text-[12px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                               >

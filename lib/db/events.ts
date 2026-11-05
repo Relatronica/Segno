@@ -11,7 +11,7 @@ import {
 import { MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
 import type { CreatedEvent, CuratedPin, TimelineEventEdit } from '@/lib/pipeline/types';
 import { db } from './client';
-import { timelineId } from './timeline';
+import { TIMELINE_SLUG, resolveTimelineId, timelineId } from './timeline';
 
 /**
  * La tabella `events` è l'unica sede del contenuto: pin curati, pin scritti a
@@ -87,7 +87,7 @@ function rowToStoredEvent(row: EventRow): StoredEvent {
     origin: row.origin === 'auto' ? 'auto' : 'editorial',
   };
 
-  if (row.axis_lens) event.lens = row.axis_lens as Lens;
+  if (row.axis_lens) event.lens = row.axis_lens;
   if (row.actor_id) event.actorId = row.actor_id;
   if (row.person_id) event.personId = row.person_id;
   if (row.detail) event.detail = row.detail;
@@ -167,11 +167,11 @@ function patchToRow(patch: EventPatch) {
 }
 
 /** Ogni pin, compreso quello nascosto: la redazione deve poterlo rivedere. */
-export async function listStoredEvents(): Promise<StoredEvent[]> {
+export async function listStoredEvents(slug: string = TIMELINE_SLUG): Promise<StoredEvent[]> {
   const { data, error } = await db()
     .from('events')
     .select(COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .order('date', { ascending: true });
 
   if (error) throw error;
@@ -179,8 +179,8 @@ export async function listStoredEvents(): Promise<StoredEvent[]> {
 }
 
 /** Il contenuto pubblico: stesso ordine del dataset, pin nascosti esclusi. */
-export async function listEvents(): Promise<TimelineEvent[]> {
-  return (await listStoredEvents()).filter((row) => !row.hidden).map((row) => row.event);
+export async function listEvents(slug: string = TIMELINE_SLUG): Promise<TimelineEvent[]> {
+  return (await listStoredEvents(slug)).filter((row) => !row.hidden).map((row) => row.event);
 }
 
 export async function getStoredEvent(id: string): Promise<StoredEvent | null> {
@@ -206,11 +206,15 @@ export type SeedEvent = {
 
 /**
  * Seed: inserisce i pin mancanti senza toccare quelli già presenti, così una
- * seconda esecuzione non cancella le correzioni fatte in redazione.
+ * seconda esecuzione non cancella le correzioni fatte in redazione. La timeline
+ * è quella dello slug: la flagship di default, o una seconda timeline.
  */
-export async function seedEvents(seed: SeedEvent[]): Promise<number> {
+export async function seedEvents(
+  seed: SeedEvent[],
+  slug: string = TIMELINE_SLUG,
+): Promise<number> {
   if (seed.length === 0) return 0;
-  const tid = await timelineId();
+  const tid = await resolveTimelineId(slug);
   const rows = seed.map(({ event, hidden, createdAt }) => ({
     timeline_id: tid,
     ...eventToRow(event, { hidden, createdAt }),
@@ -307,7 +311,8 @@ function storedToCreatedEvent(row: StoredEvent): CreatedEvent {
     createdAt: row.createdAt,
     date: event.date,
     type: event.type,
-    lens: event.lens ?? 'policy',
+    /** La redazione scrive sulla sola timeline dell'IA: la corsia torna all'unione. */
+    lens: (event.lens ?? 'policy') as Lens,
     title: event.title,
     summary: event.summary,
     sourceLabel: event.sourceLabel,

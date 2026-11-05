@@ -23,7 +23,6 @@ import {
   type CapabilityDomain,
   type Modality,
   formatEventDate,
-  lobbyActors,
   type LobbyPerson,
   type PositionStance,
   type TimelineEvent,
@@ -145,6 +144,8 @@ export type LaneLabels = {
 type Props = {
   events: TimelineEvent[];
   people: Record<string, LobbyPerson>;
+  /** Subjects of the market band, for line names and colours. */
+  actors?: Record<string, { name: string; color: string }>;
   locale: 'it' | 'en';
   activeId: string | null;
   /** Lenses drawn as a compact strip. The data stays; only the room goes. */
@@ -423,6 +424,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
   {
     events,
     people,
+    actors = {},
     locale,
     activeId,
     collapsedLenses,
@@ -772,7 +774,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
         x: scale.xForDate(date),
       })),
       lines: (marketSeries ?? []).map((series) => {
-        const actor = lobbyActors.find((candidate) => candidate.id === series.actorId);
+        const actor = actors[series.actorId];
         return {
           actorId: series.actorId,
           ticker: series.ticker,
@@ -793,7 +795,7 @@ export const LaneTimeline = forwardRef<LaneTimelineHandle, Props>(function LaneT
         };
       }),
     };
-  }, [marketSeries, scale]);
+  }, [marketSeries, scale, actors]);
 
   /** Credit: the source named when one is licensed, the third-party notice alone
       otherwise. The data is not ours, so it never rides the CC BY 4.0 grant. */

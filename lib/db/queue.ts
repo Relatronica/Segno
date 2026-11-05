@@ -3,7 +3,7 @@ import { candidateIdFromUrl } from '@/lib/pipeline/ids';
 import { hintSentiment } from '@/lib/pipeline/match';
 import type { AutoSignal, CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import { db } from './client';
-import { timelineId } from './timeline';
+import { TIMELINE_SLUG, resolveTimelineId, timelineId } from './timeline';
 
 /**
  * Le due code della redazione: `candidates` è ciò che aspetta un giudizio,
@@ -188,11 +188,14 @@ function signalToRow(signal: AutoSignal, discoveredAt: string) {
 
 // ------------------------------------------------------------------ candidates
 
-export async function listCandidates(status?: CandidateStatus): Promise<SentimentCandidate[]> {
+export async function listCandidates(
+  status?: CandidateStatus,
+  slug: string = TIMELINE_SLUG,
+): Promise<SentimentCandidate[]> {
   let query = db()
     .from('candidates')
     .select(CANDIDATE_COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .order('discovered_at', { ascending: false });
 
   if (status) query = query.eq('status', status);
@@ -317,11 +320,11 @@ export async function deleteCandidates(ids: string[]): Promise<number> {
 
 // --------------------------------------------------------------------- signals
 
-export async function listSignals(): Promise<AutoSignal[]> {
+export async function listSignals(slug: string = TIMELINE_SLUG): Promise<AutoSignal[]> {
   const { data, error } = await db()
     .from('signals')
     .select(SIGNAL_COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .order('date', { ascending: false })
     .order('discovered_at', { ascending: false });
 
@@ -399,8 +402,11 @@ export async function setSignalHidden(id: string, hidden: boolean): Promise<Auto
 }
 
 /** Il diario pubblico: righe non nascoste e non già promosse a candidato. */
-export async function listPublicSignals(): Promise<AutoSignal[]> {
-  const [signals, candidates] = await Promise.all([listSignals(), listCandidates()]);
+export async function listPublicSignals(slug: string = TIMELINE_SLUG): Promise<AutoSignal[]> {
+  const [signals, candidates] = await Promise.all([
+    listSignals(slug),
+    listCandidates(undefined, slug),
+  ]);
   const promoted = new Set(
     candidates
       .filter((c) => c.status === 'published' || c.status === 'approved')

@@ -5,6 +5,7 @@ const translations = {
     nav: {
       home: 'Home',
       timeline: 'Timeline',
+      lab: 'Lab',
       chiSiamo: 'Chi siamo',
       segnala: 'Segnala',
       donate: 'Dona',
@@ -57,7 +58,6 @@ const translations = {
       shareLabel: 'Condividi',
     },
     trasparenza: {
-      themeLabel: 'Tema',
       filterBy: 'Filtri',
       lanesHint: 'Ogni riga è una lente, ogni segno un dato con fonte.',
       laneCollapse: 'Comprimi la corsia',
@@ -266,6 +266,16 @@ const translations = {
       subtitle:
         'Errori, fonti mancanti, contributi o domande sul progetto. Ogni messaggio aiuta a tenere la timeline precisa.',
     },
+    lab: {
+      eyebrow: 'Sperimentale',
+      title: 'Le timeline di Segno',
+      subtitle:
+        'Stesso motore, assi diversi. Una timeline è la flagship; le altre sono in lavorazione e possono cambiare.',
+      flagshipBadge: 'Flagship',
+      experimentalBadge: 'Sperimentale',
+      open: 'Apri la timeline',
+      empty: 'Elenco non disponibile. Riprova più tardi.',
+    },
     contact: {
       name: 'Nome',
       email: 'Email',
@@ -343,6 +353,7 @@ const translations = {
     nav: {
       home: 'Home',
       timeline: 'Timeline',
+      lab: 'Lab',
       chiSiamo: 'About',
       segnala: 'Report',
       donate: 'Donate',
@@ -393,7 +404,6 @@ const translations = {
       shareLabel: 'Share',
     },
     trasparenza: {
-      themeLabel: 'Theme',
       filterBy: 'Filters',
       lanesHint: 'One row per lens, one mark per sourced datum.',
       laneCollapse: 'Collapse the lane',
@@ -599,7 +609,17 @@ const translations = {
     segnala: {
       title: 'Report',
       subtitle:
-        'Errors, missing sources, contributions or questions about the project. Every message helps keep the timeline precise.',
+        'Errors, missing sources, contributions or questions about the project. Every message helps keep the timeline accurate.',
+    },
+    lab: {
+      eyebrow: 'Experimental',
+      title: 'Segno’s timelines',
+      subtitle:
+        'Same engine, different axes. One timeline is the flagship; the others are in progress and may change.',
+      flagshipBadge: 'Flagship',
+      experimentalBadge: 'Experimental',
+      open: 'Open the timeline',
+      empty: 'The list is unavailable. Please try again later.',
     },
     contact: {
       name: 'Name',

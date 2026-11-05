@@ -224,8 +224,11 @@ export type TimelineEvent = {
   /**
    * Reading lens. Optional on the legacy curated pins, where `lensOf` derives
    * it from the event form; every pin added for the history track sets it.
+   *
+   * Keyed by `string`, not by the AI union: the engine draws whatever lane a
+   * spec declares, so a second timeline brings its own keys (see `Axis.key`).
    */
-  lens?: Lens;
+  lens?: string;
   actorId?: string;
   /** Linked public figure (statements, some meetings) */
   personId?: string;
@@ -2562,12 +2565,18 @@ function mergeContextEvents(
 }
 
 /**
- * The lens a pin belongs to. Curated pins predate the lens axis: the form of
- * the event decides. A statement is a cultural reading of the field, a
- * declared spend is market, everything else in the curated set is EU policy.
+ * The lens a pin belongs to, within the AI ontology. Curated pins predate the
+ * lens axis: the form of the event decides. A statement is a cultural reading
+ * of the field, a declared spend is market, everything else in the curated set
+ * is EU policy.
+ *
+ * A pin may carry a lane key from another timeline (`lens` is a plain string
+ * now); such a pin is not part of this ontology and falls through to the form.
  */
 export function lensOf(event: TimelineEvent): Lens {
-  if (event.lens) return event.lens;
+  if (event.lens && (ALL_LENSES as string[]).includes(event.lens)) {
+    return event.lens as Lens;
+  }
   if (event.type === "statement") return "culture";
   if (event.type === "spending") return "business";
   return "policy";
