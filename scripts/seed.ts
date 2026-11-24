@@ -1,11 +1,13 @@
 import { theses, thesisReadings, unifiedTheme } from '@/lib/data/trasparenza';
 import { cyberEvents } from '@/lib/data/cyber-history';
+import { dcEvents } from '@/lib/data/dc-history';
 import { aiSpec } from '@/specs/ai';
 import { cybersecuritySpec } from '@/specs/cybersecurity';
+import { datacenterSpec } from '@/specs/datacenter';
 import { seedEvents, type SeedEvent } from '@/lib/db/events';
 import { seedSpec } from '@/lib/db/spec';
 import { seedThesisReadings } from '@/lib/db/theses';
-import { CYBERSECURITY_SLUG, ensureTenant, ensureTimeline, TIMELINE_SLUG } from '@/lib/db/timeline';
+import { CYBERSECURITY_SLUG, DATACENTER_SLUG, ensureTenant, ensureTimeline, TIMELINE_SLUG } from '@/lib/db/timeline';
 
 /**
  * Fase B — porta il contenuto dell'IA sul primo tenant Postgres (§5).
@@ -55,6 +57,17 @@ async function main() {
   const cyberPins: SeedEvent[] = cyberEvents.map((event) => ({ event }));
   const cyberPinsWritten = await seedEvents(cyberPins, CYBERSECURITY_SLUG);
   console.log(`cyber events · ${cyberPinsWritten} righe`);
+
+  // La terza timeline: i data center in Italia. Stesso motore, corsie sue.
+  const dcId = await ensureTimeline(DATACENTER_SLUG, datacenterSpec.track.name);
+  console.log(`tenant pronto · timeline "${DATACENTER_SLUG}" = ${dcId}`);
+
+  const dcSpecResult = await seedSpec(dcId, datacenterSpec);
+  console.log(`datacenter spec · ${dcSpecResult.axes} assi · ${dcSpecResult.bands} bande`);
+
+  const dcPins: SeedEvent[] = dcEvents.map((event) => ({ event }));
+  const dcPinsWritten = await seedEvents(dcPins, DATACENTER_SLUG);
+  console.log(`datacenter events · ${dcPinsWritten} righe`);
 }
 
 main().catch((error) => {

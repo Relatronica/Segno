@@ -235,7 +235,7 @@ export default function TrasparenzaContent({
     }
   }, []);
   /** One panel on the right: filters and chronology are its two sections. */
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
   const [panelTab, setPanelTab] = useState<'filters' | 'feed'>('feed');
   /** Active claim under test. Scopes statements to its recorded readings. */
   const [selectedThesis, setSelectedThesis] = useState<string | 'all'>('all');
@@ -258,7 +258,17 @@ export default function TrasparenzaContent({
     setSelectedActor(parsed.actor ?? 'all');
     setSelectedTypes(parsed.types ?? defaults.current.types);
     explicitYears.current = Boolean(parsed.years);
-    setSelectedYears(parsed.years ?? defaults.current.years);
+    // `defaults.current.years` può essere vuoto se i dati arrivano dopo il mount
+    // (fetch Postgres più lento del render, o initialTimeline assente).
+    // In quel caso non sovrascriviamo l'anno corrente: il merge nell'effect
+    // su `allYears` recupererà non appena i dati saranno disponibili.
+    if (parsed.years) {
+      setSelectedYears(parsed.years);
+    } else if (defaults.current.years.length > 0) {
+      setSelectedYears(defaults.current.years);
+    }
+    // Se defaults.current.years è ancora [] (dati non ancora arrivati) lasciamo
+    // selectedYears invariato: l'effect su [allYears, urlApplied] lo correggerà.
     setSelectedSentiments(parsed.sentiments ?? sentimentKeys);
     setSelectedLenses(parsed.lenses ?? lensKeys);
     setCollapsedLenses(parsed.collapsedLenses ?? defaultCollapsedFor(spec, parsed.lenses));

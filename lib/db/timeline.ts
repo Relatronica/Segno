@@ -11,6 +11,7 @@ import { db } from './client';
  */
 export const TIMELINE_SLUG = 'sentiment';
 export const CYBERSECURITY_SLUG = 'cybersecurity';
+export const DATACENTER_SLUG = 'datacenter';
 export const TEMPLATE_SLUG = 'sei-lenti';
 export const WORKSPACE_NAME = 'Segno';
 
