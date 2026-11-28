@@ -15,6 +15,8 @@ import { TIMELINE_SLUG } from './timeline';
  * letture, che sono contenuto: una risposta editoriale a una citazione.
  */
 export type PublicTimeline = {
+  /** Identity guards the browser against accepting SSR/fetch data for another slug. */
+  slug: string;
   events: TimelineEvent[];
   published: TimelineEvent[];
   signals: AutoSignal[];
@@ -32,6 +34,7 @@ export async function loadPublicTimeline(
   ]);
 
   return {
+    slug,
     events,
     published: candidates
       .map(candidateToTimelineEvent)

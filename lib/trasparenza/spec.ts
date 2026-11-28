@@ -129,8 +129,10 @@ export function axisMap(axes: Axis[]): Map<string, Axis> {
 
 /** The lens an event belongs to: its own, or the spec's fallback by form. */
 export function lensOf(event: { lens?: string; type: string }, spec: TimelineSpec): string {
-  if (event.lens) return event.lens;
-  return spec.lensFallback.byEventType[event.type] ?? spec.lensFallback.default;
+  const lensKeys = new Set(spec.lenses.map((axis) => axis.key));
+  if (event.lens && lensKeys.has(event.lens)) return event.lens;
+  const fallback = spec.lensFallback.byEventType[event.type] ?? spec.lensFallback.default;
+  return lensKeys.has(fallback) ? fallback : (spec.lenses[0]?.key ?? '');
 }
 
 /** Scores of the tone band — the one `axis` band a timeline draws its curve from. */

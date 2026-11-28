@@ -138,12 +138,21 @@ export default function TrasparenzaContent({
     return marketSeries.filter((series) => tickers.has(series.ticker));
   }, [marketSeries, spec]);
 
-  const [dbEvents, setDbEvents] = useState<TimelineEvent[]>(() => initialTimeline?.events ?? []);
-  const [publishedEvents, setPublishedEvents] = useState<TimelineEvent[]>(
-    () => initialTimeline?.published ?? [],
+  const matchingInitialTimeline =
+    initialTimeline?.slug === spec.track.slug ? initialTimeline : undefined;
+
+  const [dbEvents, setDbEvents] = useState<TimelineEvent[]>(
+    () => matchingInitialTimeline?.events ?? [],
   );
-  const [autoSignals, setAutoSignals] = useState<AutoSignal[]>(() => initialTimeline?.signals ?? []);
-  const [readings, setReadings] = useState<ThesisReading[]>(() => initialTimeline?.readings ?? []);
+  const [publishedEvents, setPublishedEvents] = useState<TimelineEvent[]>(
+    () => matchingInitialTimeline?.published ?? [],
+  );
+  const [autoSignals, setAutoSignals] = useState<AutoSignal[]>(
+    () => matchingInitialTimeline?.signals ?? [],
+  );
+  const [readings, setReadings] = useState<ThesisReading[]>(
+    () => matchingInitialTimeline?.readings ?? [],
+  );
   const [presentFocusToken, setPresentFocusToken] = useState(0);
   const [focusEventToken, setFocusEventToken] = useState(0);
   /** Chart density step; the chart anchors each change, the chrome only shows it. */
@@ -155,11 +164,21 @@ export default function TrasparenzaContent({
   useEffect(() => {
     let cancelled = false;
     const slug = spec.track.slug;
+
+    // If navigation reuses the component without a keyed remount, never retain
+    // the previous timeline's SSR or live state while the new projection arrives.
+    if (!matchingInitialTimeline) {
+      setDbEvents([]);
+      setPublishedEvents([]);
+      setAutoSignals([]);
+      setReadings([]);
+    }
+
     const loadPublished = () => {
       fetch(`/api/pipeline/published?timeline=${encodeURIComponent(slug)}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .then((data: PublicTimeline | null) => {
-          if (cancelled || !data) return;
+          if (cancelled || !data || (data.slug && data.slug !== slug)) return;
           setDbEvents(data.events ?? []);
           setPublishedEvents(data.published ?? []);
           setAutoSignals(data.signals ?? []);
@@ -176,7 +195,7 @@ export default function TrasparenzaContent({
       cancelled = true;
       window.removeEventListener('focus', loadPublished);
     };
-  }, [spec.track.slug]);
+  }, [matchingInitialTimeline, spec.track.slug]);
 
   /** The timeline's own reading frame, from the spec — not from the domain. */
   const track = spec.track;

@@ -61,6 +61,7 @@ export default async function TimelinePage() {
       />
       <TimelineSpecProvider spec={spec}>
         <TrasparenzaContent
+          key={spec.track.slug}
           marketSeries={snapshot ? parseMarketSnapshot(snapshot) : undefined}
           initialTimeline={timeline}
         />

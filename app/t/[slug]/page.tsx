@@ -72,6 +72,7 @@ export default async function TimelineBySlugPage({ params }: PageProps) {
       />
       <TimelineSpecProvider spec={spec}>
         <TrasparenzaContent
+          key={spec.track.slug}
           marketSeries={snapshot ? parseMarketSnapshot(snapshot) : undefined}
           initialTimeline={timeline}
           eventBase={paths.timelineBySlug(slug)}
