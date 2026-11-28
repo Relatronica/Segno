@@ -46,7 +46,7 @@ const lensIndex = ALL_LENSES.map((lens) => ({
   count: unifiedTheme.events.filter((event) => lensOf(event) === lens).length,
 }));
 
-const METHOD_FAQ_IDS = ['what', 'sources', 'causation', 'sentiment'];
+const METHOD_FAQ_IDS = ['what', 'themes', 'sources', 'causation'];
 const methodFaqs = METHOD_FAQ_IDS.map((id) => homeFaqs.find((faq) => faq.id === id)).filter(
   (faq): faq is (typeof homeFaqs)[number] => Boolean(faq),
 );

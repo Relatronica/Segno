@@ -64,8 +64,8 @@ export const roadmapPhases: RoadmapPhase[] = [
       en: 'Stories for citizens & newsrooms',
     },
     description: {
-      it: 'Sintesi periodiche in italiano sui passaggi più rilevanti dell’evoluzione dell’IA — da condividere, non da archiviare.',
-      en: 'Periodic Italian digests of the most relevant steps in AI’s evolution — meant to share, not to archive.',
+      it: 'Sintesi periodiche sui passaggi più rilevanti di ogni timeline — da condividere, non da archiviare.',
+      en: 'Periodic digests of the most relevant events in each timeline — meant to share, not to archive.',
     },
   },
   {
