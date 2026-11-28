@@ -72,7 +72,7 @@ export default function OpenGraphImage() {
               maxWidth: 860,
             }}
           >
-            Incontri, dichiarazioni e decisioni pubbliche su una timeline — con fonti che puoi aprire e citare.
+            IA, cybersicurezza, data center e altri fatti complessi su timeline — con fonti che puoi aprire e citare.
           </div>
         </div>
 

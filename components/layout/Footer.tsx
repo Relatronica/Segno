@@ -15,6 +15,9 @@ export function Footer() {
   if (
     pathname === '/timeline' ||
     pathname.startsWith('/timeline/') ||
+    pathname === '/lab' ||
+    pathname === '/t' ||
+    pathname.startsWith('/t/') ||
     pathname === '/redazione' ||
     pathname.startsWith('/redazione/')
   ) {
@@ -43,7 +46,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/timeline"
+                  href="/lab"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {t.nav.timeline}

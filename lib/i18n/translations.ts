@@ -13,10 +13,10 @@ const translations = {
       themeToggle: 'Cambia tema',
     },
     hero: {
-      title: 'L’IA corre. Qui la metti in fila.',
+      title: 'Fatti complessi, finalmente in ordine.',
       subtitle:
-        'Modelli, ricerca, mercato, cultura e politica su una sola timeline, dal 2013 a oggi. Ogni punto ha la sua fonte.',
-      cta: 'Esplora la timeline',
+        'Segno costruisce timeline verificabili su temi diversi: IA, cybersicurezza, data center e altri sistemi da comprendere. Ogni punto ha una fonte.',
+      cta: 'Esplora le timeline',
       statsEvents: 'Punti in timeline',
       statsSources: 'Fonti citabili',
       volumeCaption: 'Punti in timeline, per anno e per lente',
@@ -26,12 +26,12 @@ const translations = {
     home: {
       roadmapTitle: 'Cosa stiamo costruendo',
       roadmapSubtitle:
-        'La timeline è viva e in aggiornamento: sei lenti dal 2013 a oggi. Intorno, fonti più precise, racconti da condividere e nuove letture.',
+        'Il motore è vivo: timeline dedicate a IA, cybersicurezza e data center condividono metodo, fonti verificabili e letture comparabili. Il prossimo passo sono nuovi domini.',
       statusDone: 'Online',
       statusActive: 'In corso',
       statusNext: 'Prossimo',
       shareText:
-        'Segno: l’evoluzione dell’IA dal modello alla regola — modelli, capacità, ricerca, mercato, cultura e politica su un’unica timeline con fonti. Guarda e condividi:',
+        'Segno: timeline sistemiche di fatti complessi, con fonti verificabili. Esplora IA, cybersicurezza, data center e nuovi domini:',
       copyLink: 'Copia link',
       copied: 'Copiato',
       shareNative: 'Condividi',
@@ -40,19 +40,24 @@ const translations = {
       updatedLabel: 'Aggiornato al',
       latestTitle: 'Ultimi inserimenti',
       latestSubtitle:
-        'Le ultime voci aggiunte alla timeline — data, lente, fonte. Niente di più.',
+        'Le ultime voci della timeline dell’IA — data, lente, fonte. Una finestra sull’aggiornamento principale del progetto.',
       latestAll: 'Tutta la timeline',
+      ecosystemsTitle: 'Le timeline attive',
+      ecosystemsSubtitle: 'Ogni dominio ha assi e fonti proprie, dentro lo stesso metodo di lettura sistemica.',
+      ecosystemAI: 'Evoluzione dell’IA',
+      ecosystemCyber: 'Cybersicurezza',
+      ecosystemDatacenter: 'Data center Italia',
       methodTitle: 'Metodo',
       methodSubtitle:
         'Cosa affermiamo e cosa non pretendiamo di dimostrare. Il resto è nella timeline.',
       aboutLink: 'Chi siamo e come lavoriamo',
       indexTitle: 'Indice dei dati',
       indexSubtitle:
-        'Sei lenti, un solo asse. Apri una lente per leggerne la timeline filtrata.',
+        'Le sei lenti della timeline IA. Ogni lente mantiene il proprio asse dentro il metodo comune delle timeline sistemiche.',
       indexEntries: '{count} inserimenti',
       citeTitle: 'Citare Segno',
       citeSubtitle: 'Ogni dato ha una fonte e un link stabile. Se lo usi, citalo così.',
-      citeWork: 'Evoluzione dell’IA — timeline con fonti',
+      citeWork: 'Timeline sistemiche — Segno con fonti',
       contactTitle: 'Contatti',
       contactText: 'Segnala un errore, proponi una fonte, scrivici. I dati devono circolare.',
       shareLabel: 'Condividi',
@@ -305,14 +310,14 @@ const translations = {
     },
     chiSiamo: {
       eyebrow: 'Chi siamo',
-      title: 'Segno mette l’evoluzione dell’IA su un unico asse, con le fonti.',
+      title: 'Segno mette fatti complessi su assi temporali verificabili.',
       intro:
-        'Segno è un progetto di Relatronica. Raccoglie rilasci dei laboratori, capacità, ricerca, mercato, cultura e politica dal 2013 a oggi su un’unica timeline: sei lenti, un solo racconto, ogni segno con la sua fonte.',
+        'Segno è un progetto di Relatronica. Costruisce timeline di sistemi complessi — dall’evoluzione dell’IA alla cybersicurezza e ai data center — con fonti primarie, assi di lettura e confini metodologici espliciti.',
       whyTitle: 'Perché lo facciamo',
       whyText1:
-        'L’IA avanza più in fretta di quanto riusciamo a leggerla. Comunicati, paper, investimenti, regole e dichiarazioni arrivano separati, senza un filo che li tenga insieme. Chi vuole capire cosa sta succedendo riparte ogni volta da zero.',
+        'Dati, incidenti, norme e decisioni arrivano separati, spesso pubblicati da fonti diverse e difficili da confrontare nel tempo. Chi vuole leggere un sistema complesso deve ricostruirne il contesto da zero.',
       whyText2:
-        'Segno costruisce quel filo. Non interpreta al posto tuo e non vende conclusioni: mette fatti verificabili in ordine cronologico, perché il contesto emerga dai fatti stessi. È un’infrastruttura civica prima che un prodotto: serve a chi studia, a chi scrive e a chi decide.',
+        'Segno costruisce quel contesto. Ogni timeline usa assi propri, ma il metodo resta comune: fatti verificabili, fonti citabili, limiti espliciti e nessuna causalità inventata. È un’infrastruttura civica prima che un prodotto.',
       identityTitle: 'Chi c’è dietro',
       identityText1:
         'Segno è sviluppato da Relatronica, una realtà indipendente che lavora su design speculativo, civic tech e mappatura della conoscenza. Il suo principio è semplice: il futuro è un progetto collettivo, non una previsione da subire.',
@@ -331,7 +336,7 @@ const translations = {
       methodText1:
         'Ogni voce è un fatto verificabile, con una fonte primaria o una testata citabile: comunicati, registri pubblici, documenti ottenuti con accesso agli atti. Preferiamo lasciare fuori un dato incerto piuttosto che pubblicarlo senza riscontro.',
       methodText2:
-        'I fatti stanno sullo stesso asse in ordine cronologico: non dimostriamo rapporti di causa tra un rilascio e la regola che ne è seguita. La vicinanza nel tempo aiuta a leggere, non prova. Il sentiment è una lettura editoriale delle citazioni verificate, non un punteggio oggettivo.',
+        'I fatti stanno sullo stesso asse in ordine cronologico: non dimostriamo rapporti di causa tra eventi diversi. La vicinanza nel tempo aiuta a leggere, non prova. Dove una timeline usa sentiment o stime, queste restano letture esplicitamente editoriali o metriche dichiarate.',
       methodCta: 'Leggi il metodo per intero',
       licenseTitle: 'Codice e dati aperti',
       licenseText:
@@ -344,7 +349,7 @@ const translations = {
     },
     footer: {
       description:
-        'Entusiasmo e timore sull’IA nelle parole pubbliche dei leader — su una timeline con fonti. Poi, se vuoi, le regole europee.',
+        'Timeline sistemiche di fatti complessi, con fonti verificabili: IA, cybersicurezza, data center e altri domini.',
       navigation: 'Progetto',
       contact: 'Partecipa',
       license: 'Codice sotto {code}, dati e testi sotto {content}.',
@@ -364,10 +369,10 @@ const translations = {
       themeToggle: 'Toggle theme',
     },
     hero: {
-      title: 'AI runs. Here you line it up.',
+      title: 'Complex facts, finally in context.',
       subtitle:
-        'Models, research, business, culture and policy on a single timeline, from 2013 to today. Every point has its source.',
-      cta: 'Explore the timeline',
+        'Segno builds sourced timelines across different subjects: AI, cybersecurity, data centres and other systems worth understanding. Every point has a source.',
+      cta: 'Explore timelines',
       statsEvents: 'Timeline points',
       statsSources: 'Citable sources',
       volumeCaption: 'Timeline points, by year and lens',
@@ -377,12 +382,12 @@ const translations = {
     home: {
       roadmapTitle: 'What we are building',
       roadmapSubtitle:
-        'The timeline is live and updating: six lenses from 2013 to today. Around it, sharper sources, stories worth sharing and new readings.',
+        'The engine is live: AI, cybersecurity and data-centre timelines share the same method, verifiable sources and comparable readings. The next step is new domains.',
       statusDone: 'Live',
       statusActive: 'In progress',
       statusNext: 'Next',
       shareText:
-        'Segno: AI’s evolution from the model to the rule — models, capabilities, research, business, culture and policy on one sourced timeline. Explore and share:',
+        'Segno: sourced systemic timelines for complex subjects. Explore AI, cybersecurity, data centres and new domains:',
       copyLink: 'Copy link',
       copied: 'Copied',
       shareNative: 'Share',
@@ -390,18 +395,23 @@ const translations = {
       mastheadOrg: 'a Relatronica project',
       updatedLabel: 'Updated',
       latestTitle: 'Latest entries',
-      latestSubtitle: 'The newest entries added to the timeline — date, lens, source. Nothing more.',
+      latestSubtitle: 'The newest entries in the AI timeline — date, lens, source. A view of the project’s principal active update.',
       latestAll: 'The whole timeline',
+      ecosystemsTitle: 'Active timelines',
+      ecosystemsSubtitle: 'Each domain has dedicated axes and sources, within the same systemic reading method.',
+      ecosystemAI: 'AI evolution',
+      ecosystemCyber: 'Cybersecurity',
+      ecosystemDatacenter: 'Data centres in Italy',
       methodTitle: 'Method',
       methodSubtitle:
         'What we assert and what we do not claim to prove. The rest is in the timeline.',
       aboutLink: 'About and how we work',
       indexTitle: 'Data index',
-      indexSubtitle: 'Six lenses, one axis. Open a lens to read its filtered timeline.',
+      indexSubtitle: 'The six lenses of the AI timeline. Each lens retains its axis within Segno’s shared systemic method.',
       indexEntries: '{count} entries',
       citeTitle: 'Cite Segno',
       citeSubtitle: 'Every datum has a source and a stable link. If you use it, cite it like this.',
-      citeWork: 'AI evolution — a sourced timeline',
+      citeWork: 'Systemic timelines — sourced by Segno',
       contactTitle: 'Contact',
       contactText: 'Report an error, suggest a source, write to us. Data should circulate.',
       shareLabel: 'Share',
@@ -653,14 +663,14 @@ const translations = {
     },
     chiSiamo: {
       eyebrow: 'About',
-      title: 'Segno puts the evolution of AI on a single sourced axis.',
+      title: 'Segno puts complex facts on verifiable timelines.',
       intro:
-        'Segno is a Relatronica project. It gathers lab releases, capabilities, research, business, culture and policy from 2013 to today on one timeline: six lenses, one story, every mark with its source.',
+        'Segno is a Relatronica project. It builds timelines of complex systems — from AI evolution to cybersecurity and data centres — with primary sources, dedicated reading axes and explicit methodological boundaries.',
       whyTitle: 'Why we do it',
       whyText1:
-        'AI moves faster than we can read it. Press releases, papers, investments, rules and statements arrive separately, with no thread holding them together. Anyone trying to understand what is happening starts from scratch every time.',
+        'Data, incidents, rules and decisions arrive separately, often from different sources and difficult to compare over time. Anyone trying to understand a complex system has to reconstruct the context from scratch.',
       whyText2:
-        'Segno builds that thread. It does not interpret for you and does not sell conclusions: it places verifiable facts in chronological order so the context emerges from the facts themselves. It is civic infrastructure before it is a product: built for those who study, write and decide.',
+        'Segno builds that context. Every timeline has its own axes, but the method stays shared: verifiable facts, cited sources, explicit limits and no invented causality. It is civic infrastructure before it is a product.',
       identityTitle: 'Who is behind it',
       identityText1:
         'Segno is developed by Relatronica, an independent practice working on speculative design, civic tech and knowledge mapping. Its principle is simple: the future is a collective project, not a forecast to endure.',
@@ -679,7 +689,7 @@ const translations = {
       methodText1:
         'Every entry is a verifiable fact, with a primary source or a citable outlet: press releases, public registers, documents obtained through freedom of information. We would rather leave out an uncertain datum than publish it without support.',
       methodText2:
-        'Facts sit on the same axis in chronological order: we do not prove causal links between a release and the rule that followed it. Temporal proximity helps you read, it does not prove. Sentiment is an editorial reading of verified quotes, not an objective score.',
+        'Facts sit on the same axis in chronological order: we do not prove causal links between separate events. Temporal proximity helps you read, it does not prove. Where a timeline uses sentiment or estimates, these remain explicitly editorial readings or declared metrics.',
       methodCta: 'Read the full method',
       licenseTitle: 'Open code and data',
       licenseText:
@@ -692,7 +702,7 @@ const translations = {
     },
     footer: {
       description:
-        'Enthusiasm and fear around AI in leaders’ public words — on a sourced timeline. Then, if you want, Europe’s rules.',
+        'Systemic timelines of complex facts, with verifiable sources: AI, cybersecurity, data centres and more domains.',
       navigation: 'Project',
       contact: 'Take part',
       license: 'Code under {code}, data and texts under {content}.',

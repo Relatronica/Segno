@@ -22,7 +22,12 @@ export function Navbar() {
     setLocale(locale === 'it' ? 'en' : 'it');
   };
 
-  const timelineActive = pathname === '/timeline' || pathname.startsWith('/timeline/');
+  const timelineActive =
+    pathname === '/timeline' ||
+    pathname.startsWith('/timeline/') ||
+    pathname === '/lab' ||
+    pathname === '/t' ||
+    pathname.startsWith('/t/');
   const segnalaActive = pathname === '/segnala' || pathname.startsWith('/segnala/');
   const homeActive = pathname === '/';
 
@@ -34,7 +39,7 @@ export function Navbar() {
 
   const items = [
     { href: '/', label: t.nav.home, active: homeActive },
-    { href: '/timeline', label: t.nav.timeline, active: timelineActive },
+    { href: '/lab', label: t.nav.timeline, active: timelineActive },
     { href: '/segnala', label: t.nav.segnala, active: segnalaActive },
   ];
 

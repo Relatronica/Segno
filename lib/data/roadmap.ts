@@ -12,12 +12,24 @@ export const roadmapPhases: RoadmapPhase[] = [
     id: 'timeline',
     status: 'done',
     title: {
-      it: 'Timeline: l’evoluzione dell’IA per lenti',
-      en: 'Timeline: AI’s evolution by lens',
+      it: 'Timeline IA: l’evoluzione per lenti',
+      en: 'AI timeline: evolution by lens',
     },
     description: {
-      it: 'Dal 2013 a oggi: rilasci dei laboratori, ricerca, mercato, cultura e politica su un solo asse. Ogni punto con la sua fonte.',
+      it: 'Dal 2013 a oggi: modelli, capacità, ricerca, mercato, cultura e politica su un solo asse. Ogni punto con la sua fonte.',
       en: 'From 2013 to today: lab releases, research, business, culture and policy on one axis. Every point with its source.',
+    },
+  },
+  {
+    id: 'multi-timeline',
+    status: 'done',
+    title: {
+      it: 'Timeline multitema',
+      en: 'Multi-domain timelines',
+    },
+    description: {
+      it: 'IA, cybersicurezza e data center condividono lo stesso motore con ontologie, corsie e fonti dedicate a ogni dominio.',
+      en: 'AI, cybersecurity and data centres share the same engine with ontologies, lanes and sources dedicated to each domain.',
     },
   },
   {
@@ -72,12 +84,12 @@ export const roadmapPhases: RoadmapPhase[] = [
     id: 'gdpr',
     status: 'next',
     title: {
-      it: 'Nodi chiave della privacy UE',
-      en: 'Key moments in EU privacy',
+      it: 'Nuovi domini e nuove letture',
+      en: 'New domains and reading axes',
     },
     description: {
-      it: 'I passaggi e le pressioni che hanno segnato le regole sulla privacy: enforcement, riforme, lobbying.',
-      en: 'The steps and pressures that shaped privacy rules: enforcement, reforms, lobbying.',
+      it: 'Il motore è pronto per nuovi sistemi complessi: energia, privacy, mercati, piattaforme e policy con assi e fonti proprie.',
+      en: 'The engine is ready for more complex systems: energy, privacy, markets, platforms and policy, each with dedicated axes and sources.',
     },
   },
 ];

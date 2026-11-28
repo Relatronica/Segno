@@ -12,7 +12,7 @@ export default function Home() {
         data={{
           '@context': 'https://schema.org',
           '@type': 'Dataset',
-          name: `${SITE_NAME} — Sentiment IA e regole europee`,
+          name: `${SITE_NAME} — Timeline sistemiche con fonti`,
           description: SITE_DESCRIPTION,
           url: SITE_URL,
           creator: {

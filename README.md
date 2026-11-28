@@ -4,9 +4,9 @@
 [![Code: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-blue.svg)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightgrey.svg)](LICENSE-CONTENT)
 
-A public timeline of how AI evolved, read through six lenses — with sources and quotes.
+A public system for sourced systemic timelines of complex subjects.
 
-Where is AI actually going? Segno puts model releases, research, capabilities, market moves, cultural shifts and policy decisions on a single time axis. Every point has a stable link and a citable source.
+Segno places verifiable events on domain-specific timelines. It covers AI evolution, cybersecurity and data centres today, with the same engine, shared source discipline and dedicated lenses for each domain.
 
 Site: [segno.app](https://segno.app) · A [Relatronica](https://relatronica.com) project
 
@@ -15,7 +15,9 @@ Site: [segno.app](https://segno.app) · A [Relatronica](https://relatronica.com)
 | Route | What it does |
 | --- | --- |
 | `/` | Home: the thesis, plus numbers read from the timeline dataset |
-| `/timeline` | Interactive timeline: one axis, six lenses (models, research, capabilities, business, culture, policy) |
+| `/lab` | Registry of available timelines |
+| `/timeline` | AI evolution: one axis, six lenses (models, research, capabilities, business, culture, policy) |
+| `/t/<slug>` | A domain-specific timeline such as cybersecurity or data centres |
 | `/segnala` | Errors, missing sources, contributions |
 | `/chi-siamo` | Project identity, method, independence and licensing |
 | `/redazione` | Candidate queue (protected, not indexed) |
@@ -24,7 +26,7 @@ Italian and English switch from the navbar.
 
 ## Data
 
-The curated timeline lives in `lib/data/trasparenza.ts`:
+The flagship AI data lives in `lib/data/trasparenza.ts`, while additional timelines keep their domain data and ontology under `lib/data/` and `specs/`:
 
 - one unified theme, "AI evolution" (`unifiedTheme` in [lib/data/trasparenza.ts](lib/data/trasparenza.ts))
 - six lenses in reading order — models, research, capabilities, business, culture, policy

@@ -219,7 +219,7 @@ export default function HomeContent() {
             </motion.p>
             <motion.div custom={3} variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-5">
               <Link
-                href="/timeline"
+                href="/lab"
                 className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
                 <History className="h-4 w-4" />
@@ -312,6 +312,42 @@ export default function HomeContent() {
               ))}
             </ul>
           </motion.figure>
+        </div>
+      </section>
+
+      {/* Active timelines */}
+      <section className="relative border-t border-border/50 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.home.ecosystemsTitle}</h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">{t.home.ecosystemsSubtitle}</p>
+            </div>
+            <Link
+              href="/lab"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+            >
+              Lab
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              { href: '/timeline', title: t.home.ecosystemAI },
+              { href: '/t/cybersecurity', title: t.home.ecosystemCyber },
+              { href: '/t/datacenter', title: t.home.ecosystemDatacenter },
+            ].map((timeline) => (
+              <li key={timeline.href}>
+                <Link
+                  href={timeline.href}
+                  className="group flex h-full items-center justify-between rounded-xl border border-border/60 bg-card/30 p-5 transition-colors hover:border-mark/40 hover:bg-muted/30"
+                >
+                  <span className="font-serif text-lg font-semibold">{timeline.title}</span>
+                  <ArrowRight className="h-4 w-4 text-mark transition-transform group-hover:translate-x-1" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
