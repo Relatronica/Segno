@@ -183,17 +183,17 @@ export async function discoverSentimentCandidates(slug: string = TIMELINE_SLUG):
   let rejectedOffTopic = 0;
   let unassignedItems = 0;
 
-  // Feeds are independent: one slow or broken sweep must not delay the rest.
-  const batches = await Promise.all(
-    discoveryFeeds.map(async (feed) => {
-      try {
-        return { feed, parsed: await parser.parseURL(feed.url) };
-      } catch (err) {
-        console.error('[pipeline] feed failed', feed.id, err);
-        return { feed, parsed: null };
-      }
-    }),
-  );
+  // Google News throttles bursts from parallel RSS requests. Scan each feed
+  // sequentially so manual and scheduled runs are less likely to receive 429.
+  const batches: { feed: (typeof discoveryFeeds)[number]; parsed: Awaited<ReturnType<typeof parser.parseURL>> | null }[] = [];
+  for (const feed of discoveryFeeds) {
+    try {
+      batches.push({ feed, parsed: await parser.parseURL(feed.url) });
+    } catch (err) {
+      console.error('[pipeline] feed failed', feed.id, err);
+      batches.push({ feed, parsed: null });
+    }
+  }
 
   for (const { feed, parsed } of batches) {
     for (const item of parsed?.items ?? []) {
@@ -260,7 +260,7 @@ export async function discoverSentimentCandidates(slug: string = TIMELINE_SLUG):
               );
               return rule
                 ? { lens: rule.lens, type: rule.type, confident: true }
-                : { lens: feed.lens, type: feed.type, confident: false };
+                : { lens: feed.lens, type: feed.type, confident: true };
             })();
 
       const sentiment = feed.requiresPerson ? hintSentiment(blob) : undefined;

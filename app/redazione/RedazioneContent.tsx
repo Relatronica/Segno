@@ -352,12 +352,23 @@ export default function RedazioneContent() {
         body: JSON.stringify({ timeline: slug }),
       });
       if (!res.ok) throw new Error('discover_failed');
-      const data = (await res.json()) as { added: number; signalsAdded?: number };
-      setMessage(
-        t.redazione.discoverDone
-          .replace('{n}', String(data.added))
-          .replace('{s}', String(data.signalsAdded ?? 0)),
-      );
+      const data = (await res.json()) as {
+        added: number;
+        signalsAdded?: number;
+        matchedItems?: number;
+        rejectedBySource?: number;
+        rejectedOffTopic?: number;
+        unassignedItems?: number;
+      };
+      const done = t.redazione.discoverDone
+        .replace('{n}', String(data.added))
+        .replace('{s}', String(data.signalsAdded ?? 0));
+      const stats = t.redazione.discoverStats
+        .replace('{m}', String(data.matchedItems ?? 0))
+        .replace('{r}', String(data.rejectedBySource ?? 0))
+        .replace('{o}', String(data.rejectedOffTopic ?? 0))
+        .replace('{u}', String(data.unassignedItems ?? 0));
+      setMessage(`${done} ${stats}`);
       await loadData(slug);
     } catch {
       setMessage(t.redazione.discoverError);
