@@ -1027,6 +1027,30 @@ export const cyberEvents: TimelineEvent[] = [
       "https://www.unodc.org/unodc/en/press/releases/2024/December/un-general-assembly-adopts-landmark-convention-on-cybercrime.html",
   },
   {
+    id: "cyber-2025-dora",
+    date: "2025-01-17",
+    type: "legislative",
+    lens: "politica",
+    actorId: "eu",
+    title: {
+      it: "DORA entra pienamente in applicazione nell’UE",
+      en: "DORA becomes fully applicable across the EU",
+    },
+    summary: {
+      it: "Il Regolamento (UE) 2022/2554 sulla resilienza operativa digitale diventa pienamente applicabile alle istituzioni finanziarie UE e ai loro principali fornitori ICT.",
+      en: "Regulation (EU) 2022/2554 on digital operational resilience becomes fully applicable to EU financial institutions and their major ICT providers.",
+    },
+    detail: {
+      it: "Il quadro disciplina gestione e classificazione dei rischi ICT, segnalazione degli incidenti rilevanti, test di resilienza, rischio di concentrazione dei fornitori e condivisione delle informazioni sulle minacce.",
+      en: "The framework covers ICT risk management and classification, major incident reporting, resilience testing, third-party concentration risk and threat-information sharing.",
+    },
+    sourceLabel: {
+      it: "EUR-Lex — Regolamento (UE) 2022/2554",
+      en: "EUR-Lex — Regulation (EU) 2022/2554",
+    },
+    sourceUrl: "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
+  },
+  {
     id: "cyber-2025-ivanti-csa",
     date: "2025-01-22",
     type: "milestone",
@@ -1120,6 +1144,77 @@ export const cyberEvents: TimelineEvent[] = [
       en: "NVD — CVE-2025-61882",
     },
     sourceUrl: "https://nvd.nist.gov/vuln/detail/CVE-2025-61882",
+  },
+  {
+    id: "cyber-2025-wsus",
+    date: "2025-10-24",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "microsoft",
+    title: {
+      it: "WSUS: esecuzione remota da deserializzazione non sicura",
+      en: "WSUS: remote code execution via unsafe deserialization",
+    },
+    summary: {
+      it: "CISA aggiunge CVE-2025-59287 al catalogo KEV: la vulnerabilità di deserializzazione non sicura permette l’esecuzione remota di codice nel Windows Server Update Service.",
+      en: "CISA adds CVE-2025-59287 to the KEV catalog: the unsafe-deserialization vulnerability allows remote code execution in Windows Server Update Service.",
+    },
+    detail: {
+      it: "Microsoft ha pubblicato la correzione; CISA ha imposto alle agenzie federali di applicarla entro il 14 novembre 2025.",
+      en: "Microsoft released a patch; CISA required federal agencies to apply it by 14 November 2025.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — CVE-2025-59287",
+      en: "CISA KEV — CVE-2025-59287",
+    },
+    sourceUrl: "https://www.cve.org/CVERecord?id=CVE-2025-59287",
+  },
+  {
+    id: "cyber-2025-fortiweb",
+    date: "2025-11-14",
+    type: "milestone",
+    lens: "vulnerabilita",
+    title: {
+      it: "FortiWeb: path traversal critico sfruttato",
+      en: "FortiWeb: critical path traversal exploited",
+    },
+    summary: {
+      it: "CISA inserisce CVE-2025-64446 nel catalogo KEV: una vulnerabilità relative path traversal in Fortinet FortiWeb può permettere a un attaccante remoto non autenticato di eseguire comandi amministrativi.",
+      en: "CISA adds CVE-2025-64446 to the KEV catalog: a relative path-traversal vulnerability in Fortinet FortiWeb may let an unauthenticated remote attacker execute administrative commands.",
+    },
+    detail: {
+      it: "La remediazione federale era richiesta entro il 21 novembre 2025. CISA non ha classificato pubblicamente il relativo uso da parte di ransomware.",
+      en: "Federal remediation was required by 21 November 2025. CISA does not publicly classify known ransomware use for this flaw.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — CVE-2025-64446",
+      en: "CISA KEV — CVE-2025-64446",
+    },
+    sourceUrl: "https://nvd.nist.gov/vuln/detail/CVE-2025-64446",
+  },
+  {
+    id: "cyber-2025-react2shell",
+    date: "2025-12-05",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "microsoft",
+    title: {
+      it: "React2Shell: RCE critica nei React Server Components",
+      en: "React2Shell: critical RCE in React Server Components",
+    },
+    summary: {
+      it: "CISA inserisce CVE-2025-55182 nel catalogo KEV dopo l’individuazione di sfruttamento attivo: la vulnerabilità permette esecuzione remota di codice in implementazioni esposte di React Server Components.",
+      en: "CISA adds CVE-2025-55182 to the KEV catalog after active exploitation is observed: the flaw permits remote code execution in exposed React Server Components implementations.",
+    },
+    detail: {
+      it: "CISA specifica che CVE-2025-66478 era un identificativo associato e successivamente respinto; il riferimento da usare per la vulnerabilità è CVE-2025-55182.",
+      en: "CISA states that CVE-2025-66478 was an associated identifier subsequently rejected; CVE-2025-55182 is the vulnerability identifier to use.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — CVE-2025-55182",
+      en: "CISA KEV — CVE-2025-55182",
+    },
+    sourceUrl: "https://www.cve.org/CVERecord?id=CVE-2025-55182",
   },
   {
     id: "cyber-2026-eu-package",
@@ -1229,8 +1324,8 @@ export const cyberEvents: TimelineEvent[] = [
       en: "Japanese cloud and data-centre provider Sakura Internet discloses unauthorised access to its sales management system, which holds contract and member data.",
     },
     detail: {
-      it: "L’indagine individua fino a 1.360.563 account potenzialmente coinvolti; in un incidente distinto su un server dedicato risultano interessati 951 account.",
-      en: "The investigation identifies up to 1,360,563 potentially affected accounts; in a separate incident on a dedicated server, 951 accounts are involved.",
+      it: "Il comunicato ufficiale distingue il sistema gestito per le vendite dal data set esposto e invita i clienti a monitorare attività insolite; i dettagli quantitativi completi sono stati aggiornati dall’azienda durante l’indagine.",
+      en: "The official notice distinguishes the sales-management system from the potentially exposed customer data and asks users to monitor for unusual activity; the company updated the quantitative details during its investigation.",
     },
     sourceLabel: {
       it: "Sakura Internet — Comunicato (19 ago 2026)",
@@ -1276,8 +1371,8 @@ export const cyberEvents: TimelineEvent[] = [
       en: "US pharmaceutical distributor McKesson discloses unauthorised access to third-party applications with data theft, detected on 25 August 2026.",
     },
     detail: {
-      it: "Il gruppo di estorsione ShinyHunters rivendica circa 284 milioni di record di pazienti (circa 1 TB); il numero riflette righe grezze, non pazienti unici confermati.",
-      en: "The ShinyHunters extortion group claims about 284 million patient records (roughly 1 TB); the figure reflects raw rows, not confirmed unique patients.",
+      it: "Il gruppo di estorsione ShinyHunters rivendica il furto in un messaggio pubblico; McKesson non conferma né la paternità né le quantità riportate dalla rivendicazione.",
+      en: "The ShinyHunters extortion group claims the theft in a public message; McKesson neither confirms the attribution nor the quantities reported in the claim.",
     },
     sourceLabel: {
       it: "BleepingComputer — 28 ago 2026",
@@ -1413,16 +1508,16 @@ export const cyberEvents: TimelineEvent[] = [
     lens: "attori",
     actorId: "lazarus",
     title: {
-      it: "Binance: 6 miliardi rubati, l’FBI accusa la Corea del Nord",
-      en: "Binance: $6 billion stolen, FBI blames North Korea",
+      it: "Binance: l’FBI attribuisce un furto alla Corea del Nord",
+      en: "Binance: FBI attributes a theft to North Korea",
     },
     summary: {
-      it: "L’FBI attribuisce alla Corea del Nord il furto di oltre 6 miliardi di dollari in criptovalute dalla piattaforma Binance, avvenuto il 29 ottobre 2026, e battezza l’attività «TraderTraitor».",
-      en: "The FBI attributes the theft of more than $6 billion in cryptocurrency from the Binance exchange, on 29 October 2026, to North Korea, naming the activity “TraderTraitor”.",
+      it: "L’FBI attribuisce alla Corea del Nord un incidente cripto rilevato sulla piattaforma Binance il 29 ottobre 2026 e collega l’attività alla campagna «TraderTraitor».",
+      en: "The FBI attributes a cryptocurrency incident detected on the Binance platform on 29 October 2026 to North Korea and links the activity to the “TraderTraitor” campaign.",
     },
     detail: {
-      it: "È il più grande furto di criptovalute mai documentato, circa quattro volte quello di Bybit del febbraio 2025. Con il Secret Service e l’IRS-CI, l’FBI pubblica oltre 600 indirizzi — in gran parte Ethereum — riconducibili al riciclaggio e chiede agli operatori di bloccarne le transazioni.",
-      en: "It is the largest cryptocurrency theft ever documented, about four times the February 2025 Bybit heist. With the Secret Service and IRS-CI, the FBI publishes over 600 addresses — mostly Ethereum — tied to the laundering and asks operators to block their transactions.",
+      it: "Con il Secret Service e l’IRS-CI, l’FBI pubblica indirizzi Ethereum riconducibili al riciclaggio e invita gli operatori a bloccare le transazioni relative. L’importo esatto del furto non è riprodotto senza una fonte primaria integrale.",
+      en: "With the Secret Service and IRS-CI, the FBI publishes Ethereum addresses tied to laundering and asks operators to block the relevant transactions. The exact theft amount is omitted until a complete primary source is available.",
     },
     sourceLabel: {
       it: "FBI — Cyber Alert (31 ott 2026)",
@@ -1441,12 +1536,12 @@ export const cyberEvents: TimelineEvent[] = [
       en: "Cold chain: attacks on refrigeration systems across Europe",
     },
     summary: {
-      it: "Tra la notte del 1º e il 2 novembre 2026 i sistemi di refrigerazione di catene di supermercati in diversi Paesi dell’UE vengono manipolati, con temperature portate fino a 50 °C e cibo deperito; è la seconda ondata di una campagna iniziata l’11 ottobre.",
-      en: "Between the night of 1 and 2 November 2026, refrigeration systems of supermarket chains in several EU countries are manipulated, with temperatures pushed up to 50 °C and food spoiling; it is the second wave of a campaign that began on 11 October.",
+      it: "ENISA comunica una serie coordinata di incidenti ai sistemi di refrigerazione di supermercati in diversi Paesi dell’UE nella notte tra il 1º e il 2 novembre 2026.",
+      en: "ENISA reports a coordinated series of incidents affecting supermarket refrigeration systems in several EU countries on the night of 1–2 November 2026.",
     },
     detail: {
-      it: "Gli attacchi sfruttano controllori industriali Danfoss AK-SM/AK-SC e Copeland/Dixell XWEB attivando lo sbrinamento; gruppi legati all’intelligence militare russa ne hanno rivendicato la paternità, ma l’attribuzione non è ufficiale.",
-      en: "The attacks exploit Danfoss AK-SM/AK-SC and Copeland/Dixell XWEB industrial controllers, triggering defrost; groups linked to Russian military intelligence have claimed them, but the attribution is not official.",
+      it: "La comunicazione congiunta segnala manipolazioni dei controllori industriali e invita operatori e autorità a indagare anche sulle vulnerabilità KEV dei dispositivi Danfoss. Le rivendicazioni pubbliche di attribuzione non sono tratte come confermate.",
+      en: "The joint statement reports manipulation of industrial controllers and asks operators and authorities to investigate the relevant Danfoss device vulnerabilities in the KEV catalog. Public claims of attribution are not treated as confirmed.",
     },
     sourceLabel: {
       it: "ENISA — Comunicato congiunto (4 nov 2026)",
@@ -1479,5 +1574,101 @@ export const cyberEvents: TimelineEvent[] = [
     },
     sourceUrl:
       "https://i4c.mha.gov.in/theme/resources/advisories/AI-Assisted-Cyber-Attack-on-Banks-NBFCs.pdf",
+  },
+  {
+    id: "cyber-2026-danfoss-kev",
+    date: "2026-11-25",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "cisa",
+    title: {
+      it: "Danfoss AK-SM: tre vulnerabilità aggiunte al KEV",
+      en: "Danfoss AK-SM: three vulnerabilities added to KEV",
+    },
+    summary: {
+      it: "CISA aggiunge al catalogo KEV CVE-2025-41450, CVE-2023-25914 e CVE-2023-25915 sui controllori Danfoss AK-SM 800A.",
+      en: "CISA adds CVE-2025-41450, CVE-2023-25914 and CVE-2023-25915 on Danfoss AK-SM 800A controllers to the KEV catalog.",
+    },
+    detail: {
+      it: "Le vulnerabilità riguardano autenticazione impropria, path traversal e validazione degli input. CISA le considera rilevanti per sistemi industriali esposti o difettosamente segmentati.",
+      en: "The flaws concern improper authentication, path traversal and input validation. CISA treats them as relevant to exposed or poorly segmented industrial systems.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — Danfoss AK-SM 800A",
+      en: "CISA KEV — Danfoss AK-SM 800A",
+    },
+    sourceUrl: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+  },
+  {
+    id: "cyber-2026-mitel-kev",
+    date: "2026-11-25",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "cisa",
+    title: {
+      it: "Mitel MiCollab: cinque vulnerabilità critiche nel KEV",
+      en: "Mitel MiCollab: five critical vulnerabilities added to KEV",
+    },
+    summary: {
+      it: "CISA aggiunge cinque vulnerabilità MiCollab al catalogo KEV, tra cui upload non sicuro, autenticazione debole, XML injection, assegnazione errata dei permessi e command injection.",
+      en: "CISA adds five MiCollab vulnerabilities to the KEV catalog, including unsafe file upload, weak authentication, XML injection, incorrect permission assignment and command injection.",
+    },
+    detail: {
+      it: "Le vulnerabilità sono identificate come CVE-2026-133275, CVE-2026-133311, CVE-2026-133303, CVE-2026-133324 e CVE-2026-133323.",
+      en: "The vulnerabilities are identified as CVE-2026-133275, CVE-2026-133311, CVE-2026-133303, CVE-2026-133324 and CVE-2026-133323.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — Mitel MiCollab",
+      en: "CISA KEV — Mitel MiCollab",
+    },
+    sourceUrl: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+  },
+  {
+    id: "cyber-2026-hpe-juniper-kev",
+    date: "2026-11-25",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "cisa",
+    title: {
+      it: "HPE Juniper: OS command injection nel KEV",
+      en: "HPE Juniper: OS command injection added to KEV",
+    },
+    summary: {
+      it: "CISA aggiunge CVE-2026-103406 al catalogo KEV: una vulnerabilità OS command injection riguarda HPE Juniper Session Smart Conductor e Session Smart Router.",
+      en: "CISA adds CVE-2026-103406 to the KEV catalog: an OS command-injection vulnerability affects HPE Juniper Session Smart Conductor and Session Smart Router.",
+    },
+    detail: {
+      it: "La falla può consentire l’esecuzione di comandi sul sistema interessato; CISA richiede alle agenzie federali l’applicazione delle mitigazioni indicate dal vendor.",
+      en: "The flaw may allow command execution on affected systems; CISA requires federal agencies to apply vendor mitigations.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — CVE-2026-103406",
+      en: "CISA KEV — CVE-2026-103406",
+    },
+    sourceUrl: "https://www.cve.org/CVERecord?id=CVE-2026-103406",
+  },
+  {
+    id: "cyber-2026-xen-orchestra-kev",
+    date: "2026-11-25",
+    type: "milestone",
+    lens: "vulnerabilita",
+    actorId: "cisa",
+    title: {
+      it: "Xen Orchestra: validazione non sicura nel KEV",
+      en: "Xen Orchestra: improper input validation added to KEV",
+    },
+    summary: {
+      it: "CISA inserisce CVE-2026-133469 nel catalogo KEV: una vulnerabilità di validazione non sicura riguarda Vates Xen Orchestra.",
+      en: "CISA adds CVE-2026-133469 to the KEV catalog: a vulnerability involving improper input validation affects Vates Xen Orchestra.",
+    },
+    detail: {
+      it: "La vulnerabilità interessa piattaforme di gestione dell’infrastruttura virtualizzata; applicare le correzioni o le mitigazioni pubblicate dal vendor.",
+      en: "The vulnerability affects virtual-infrastructure management platforms; apply the vendor-published fixes or mitigations.",
+    },
+    sourceLabel: {
+      it: "CISA KEV — CVE-2026-133469",
+      en: "CISA KEV — CVE-2026-133469",
+    },
+    sourceUrl: "https://www.cve.org/CVERecord?id=CVE-2026-133469",
   },
 ];
