@@ -789,8 +789,8 @@ export default function RedazioneContent() {
   }
 
   return (
-    <div className={cn('mx-auto max-w-[1600px] px-4 pb-12 pt-[calc(var(--nav-clearance)+2rem)] sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className={cn('min-h-[calc(100vh-var(--nav-clearance))] w-full pb-12 pt-[calc(var(--nav-clearance)+1.25rem)]', selected.length > 0 && 'pb-28')}>
+      <div className="mx-4 flex flex-wrap items-start justify-between gap-4 border-b border-border/50 pb-5 sm:mx-6 lg:mx-8">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-mark/80">
             {t.redazione.eyebrow}
@@ -838,8 +838,8 @@ export default function RedazioneContent() {
         />
       )}
 
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-[calc(var(--nav-clearance)+1rem)]">
+      <div className="grid items-start lg:grid-cols-[248px_minmax(0,1fr)]">
+        <aside className="border-b border-border/50 px-4 py-5 sm:px-6 lg:sticky lg:top-[var(--nav-clearance)] lg:min-h-[calc(100vh-var(--nav-clearance))] lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
           {timelines.length > 1 && (
             <div className="rounded-xl border border-border/60 bg-card/30 p-3">
               <Label
@@ -903,7 +903,7 @@ export default function RedazioneContent() {
           </Button>
         </aside>
 
-        <main className="min-w-0">
+        <main className="min-w-0 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
 
           {message && (
             <p className="mb-4 rounded-lg border border-border/60 bg-card/30 px-3 py-2 text-sm text-muted-foreground" role="status">
@@ -1090,7 +1090,7 @@ export default function RedazioneContent() {
 
       {selected.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
+          <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <p className="text-sm font-medium">
               {t.redazione.selectedCount.replace('{n}', String(selected.length))}
             </p>
