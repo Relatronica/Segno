@@ -25,7 +25,8 @@ import {
   lensOf,
   unifiedTheme,
 } from '@/lib/data/trasparenza';
-import { cn } from '@/lib/utils';
+import { cyberEvents } from '@/lib/data/cyber-history';
+import { dcEvents } from '@/lib/data/dc-history';
 import { SITE_NAME, SITE_URL, paths } from '@/lib/seo';
 
 const DONATE_URL = 'https://buymeacoffee.com/relatronica';
@@ -50,31 +51,48 @@ const methodFaqs = METHOD_FAQ_IDS.map((id) => homeFaqs.find((faq) => faq.id === 
   (faq): faq is (typeof homeFaqs)[number] => Boolean(faq),
 );
 
-/**
- * Hero volume chart: one stacked bar per year, split by lens, counted from the
- * same dataset the timeline reads. Mirrors the volume band under the lanes.
- */
-const volumeByYear = (() => {
-  const years = Array.from(
-    { length: homeSnapshot.toYear - homeSnapshot.fromYear + 1 },
-    (_, i) => homeSnapshot.fromYear + i,
-  );
-  const counts = years.map(() => ALL_LENSES.map(() => 0));
+const timelineOverview = (() => {
+  const domainRange = (events: typeof cyberEvents) => {
+    const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+    return {
+      fromYear: Number(sorted[0]?.date.slice(0, 4) ?? currentYear),
+      toYear: Number(sorted.at(-1)?.date.slice(0, 4) ?? currentYear),
+    };
+  };
 
-  for (const event of unifiedTheme.events) {
-    const yearIndex = years.indexOf(Number(event.date.slice(0, 4)));
-    const lensPos = ALL_LENSES.indexOf(lensOf(event));
-    if (yearIndex < 0 || lensPos < 0) continue;
-    counts[yearIndex][lensPos] += 1;
-  }
+  const cyberRange = domainRange(cyberEvents);
+  const dcRange = domainRange(dcEvents);
 
-  return years.map((year, i) => {
-    const segments = ALL_LENSES.map((lens, j) => ({ lens, count: counts[i][j] }));
-    return { year, segments, total: segments.reduce((sum, segment) => sum + segment.count, 0) };
-  });
+  return [
+    {
+      slug: 'ai',
+      titleKey: 'ecosystemAI',
+      href: '/timeline',
+      count: homeSnapshot.eventCount,
+      fromYear: homeSnapshot.fromYear,
+      toYear: homeSnapshot.toYear,
+      color: '#3b6fe0',
+    },
+    {
+      slug: 'cybersecurity',
+      titleKey: 'ecosystemCyber',
+      href: '/t/cybersecurity',
+      count: cyberEvents.length,
+      fromYear: cyberRange.fromYear,
+      toYear: cyberRange.toYear,
+      color: '#d97706',
+    },
+    {
+      slug: 'datacenter',
+      titleKey: 'ecosystemDatacenter',
+      href: '/t/datacenter',
+      count: dcEvents.length,
+      fromYear: dcRange.fromYear,
+      toYear: dcRange.toYear,
+      color: '#0f9d8f',
+    },
+  ] as const;
 })();
-
-const volumeMax = Math.max(1, ...volumeByYear.map((entry) => entry.total));
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -124,11 +142,6 @@ export default function HomeContent() {
   const shareText = t.home.shareText;
   const citation = `${SITE_NAME} (${currentYear}). ${t.home.citeWork}. Relatronica. ${SITE_URL}`;
 
-  const volumeLabel = (count: number) =>
-    (count === 1 ? t.hero.volumeBarLabelOne : t.hero.volumeBarLabel).replace(
-      '{count}',
-      String(count),
-    );
 
   const mastodonIntent = useMemo(() => {
     return (instance: string) => {
@@ -239,78 +252,58 @@ export default function HomeContent() {
           </motion.div>
 
           <motion.figure custom={5} variants={fadeUp} className="mt-14 sm:mt-20">
-            <figcaption className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                {t.hero.volumeCaption}
-              </span>
-              <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                {ALL_LENSES.map((lens) => (
-                  <li
-                    key={lens}
-                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-2 w-2 shrink-0 rounded-sm"
-                      style={{ backgroundColor: LENS_META[lens].color }}
-                    />
-                    {LENS_META[lens].label[locale]}
-                  </li>
-                ))}
-              </ul>
+            <figcaption className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              {t.hero.systemCaption}
             </figcaption>
 
-            <div aria-hidden className="mt-5 flex h-32 items-end gap-1 sm:h-44 sm:gap-1.5">
-              {volumeByYear.map(({ year, segments, total }) => (
-                <div
-                  key={year}
-                  title={`${year} · ${volumeLabel(total)}`}
-                  className="flex h-full min-w-0 flex-1 flex-col justify-end"
-                >
-                  {total === 0 ? (
-                    <span className="h-px w-full bg-border" />
-                  ) : (
-                    [...segments]
-                      .reverse()
-                      .filter((segment) => segment.count > 0)
-                      .map((segment, i) => (
+            <div className="mt-5 overflow-hidden rounded-xl border border-border/60 bg-card/30">
+              <div className="divide-y divide-border/50">
+                {timelineOverview.map((timeline) => {
+                  const globalFrom = 2013;
+                  const globalTo = currentYear;
+                  const left = ((timeline.fromYear - globalFrom) / (globalTo - globalFrom)) * 100;
+                  const width = ((timeline.toYear - timeline.fromYear) / (globalTo - globalFrom)) * 100;
+                  const title = t.home[timeline.titleKey];
+                  const range = t.hero.systemRange
+                    .replace('{count}', String(timeline.count))
+                    .replace('{from}', String(timeline.fromYear))
+                    .replace('{to}', String(timeline.toYear));
+
+                  return (
+                    <Link
+                      key={timeline.slug}
+                      href={timeline.href}
+                      className="group grid gap-3 px-4 py-4 transition-colors hover:bg-accent/40 sm:grid-cols-[160px_1fr] sm:items-center sm:px-5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold tracking-tight">{title}</p>
+                        <p className="mt-1 font-mono text-[10px] tabular-nums text-muted-foreground">{range}</p>
+                      </div>
+                      <div className="relative h-8" aria-label={`${title}: ${range}`}>
+                        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
+                        {[2016, 2019, 2022, 2025].map((year) => (
+                          <span
+                            key={year}
+                            aria-hidden
+                            className="absolute top-1/2 h-2 w-px -translate-y-1/2 bg-border"
+                            style={{ left: `${((year - globalFrom) / (globalTo - globalFrom)) * 100}%` }}
+                          />
+                        ))}
                         <span
-                          key={segment.lens}
-                          title={`${LENS_META[segment.lens].label[locale]} · ${volumeLabel(segment.count)}`}
-                          className={cn('block w-full shrink-0', i === 0 && 'rounded-t-[2px]')}
+                          aria-hidden
+                          className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full ring-4 ring-background/70"
                           style={{
-                            height: `${(segment.count / volumeMax) * 100}%`,
-                            backgroundColor: LENS_META[segment.lens].color,
+                            left: `${Math.max(0, left)}%`,
+                            width: `${Math.max(3, width)}%`,
+                            backgroundColor: timeline.color,
                           }}
                         />
-                      ))
-                  )}
-                </div>
-              ))}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-
-            <div aria-hidden className="mt-2 flex gap-1 sm:gap-1.5">
-              {volumeByYear.map(({ year }, i) => (
-                <span
-                  key={year}
-                  className="flex-1 text-center font-mono text-[10px] tabular-nums text-muted-foreground"
-                >
-                  <span
-                    className={cn(
-                      i % 3 !== 0 && i !== volumeByYear.length - 1 && 'hidden sm:inline',
-                    )}
-                  >
-                    {year}
-                  </span>
-                </span>
-              ))}
-            </div>
-
-            <ul className="sr-only">
-              {volumeByYear.map(({ year, total }) => (
-                <li key={year}>{`${year}: ${volumeLabel(total)}`}</li>
-              ))}
-            </ul>
           </motion.figure>
         </div>
       </section>

@@ -22,6 +22,8 @@ const translations = {
       volumeCaption: 'Punti in timeline, per anno e per lente',
       volumeBarLabel: '{count} punti',
       volumeBarLabelOne: '{count} punto',
+      systemCaption: 'Le timeline attive, per copertura temporale',
+      systemRange: '{count} punti · {from}–{to}',
     },
     home: {
       roadmapTitle: 'Cosa stiamo costruendo',
@@ -378,6 +380,8 @@ const translations = {
       volumeCaption: 'Timeline points, by year and lens',
       volumeBarLabel: '{count} entries',
       volumeBarLabelOne: '{count} entry',
+      systemCaption: 'Active timelines, by time coverage',
+      systemRange: '{count} points · {from}–{to}',
     },
     home: {
       roadmapTitle: 'What we are building',
