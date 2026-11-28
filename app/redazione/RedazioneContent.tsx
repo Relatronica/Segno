@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
+  Archive,
   Check,
   ChevronDown,
   ChevronRight,
@@ -11,12 +12,15 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  Inbox,
   Loader2,
   LogOut,
   Pencil,
   Plus,
+  Radio,
   RefreshCw,
   Save,
+  Search,
   Trash2,
   X,
 } from 'lucide-react';
@@ -214,12 +218,11 @@ export default function RedazioneContent() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [deskSearch, setDeskSearch] = useState('');
   const timelineRequest = useRef(0);
 
   const today = localIsoDate();
   const yesterday = yesterdayIso();
-  const flagship = spec?.flagship ?? false;
-
   const loadData = useCallback(
     async (timelineSlug: string, requestId?: number) => {
       setLoading(true);
@@ -332,6 +335,7 @@ export default function RedazioneContent() {
     setSelected([]);
     setExpandedId(null);
     setOpenDays({});
+    setDeskSearch('');
     try {
       const active = await loadRedaction(next, requestId);
       if (!active || timelineRequest.current !== requestId) return;
@@ -657,7 +661,28 @@ export default function RedazioneContent() {
     }));
   }, [filter, timelineRows, visible, drafts]);
 
-  const grouped = useMemo(() => groupByDay(rows), [rows]);
+  const grouped = useMemo(() => {
+    const needle = deskSearch.trim().toLocaleLowerCase(locale);
+    if (!needle) return groupByDay(rows);
+    const matches = (text: unknown) =>
+      typeof text === 'string' && text.toLocaleLowerCase(locale).includes(needle);
+    const filtered = rows.filter((row) => {
+      if (row.kind === 'pipeline') {
+        const c = row.candidate;
+        return [c.title.it, c.title.en, c.summary.it, c.summary.en, c.rawTitle, c.rawSnippet, c.sourceUrl]
+          .some(matches);
+      }
+      if (row.kind === 'manual') {
+        const e = row.event;
+        return [e.title.it, e.title.en, e.summary.it, e.summary.en, e.sourceUrl]
+          .some(matches);
+      }
+      const e = row.pin.event;
+      return [e.title.it, e.title.en, e.summary.it, e.summary.en, e.sourceUrl]
+        .some(matches);
+    });
+    return groupByDay(filtered);
+  }, [rows, deskSearch, locale]);
 
   const dayIsOpen = (date: string) => {
     if (openDays[date] !== undefined) return openDays[date];
@@ -703,6 +728,7 @@ export default function RedazioneContent() {
     setConfirmDelete(false);
     setExpandedId(null);
     setOpenDays({});
+    setDeskSearch('');
   };
 
   const queueCount = counts
@@ -763,7 +789,7 @@ export default function RedazioneContent() {
   }
 
   return (
-    <div className={cn('mx-auto max-w-4xl px-4 pb-12 pt-[calc(var(--nav-clearance)+2rem)] sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
+    <div className={cn('mx-auto max-w-[1600px] px-4 pb-12 pt-[calc(var(--nav-clearance)+2rem)] sm:px-6 lg:px-8', selected.length > 0 && 'pb-28')}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-mark/80">
@@ -788,43 +814,12 @@ export default function RedazioneContent() {
             <Plus className="h-4 w-4" />
             {t.redazione.newPin}
           </Button>
-          <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
-              {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {t.redazione.runDiscover}
-            </Button>
           <Button type="button" variant="ghost" onClick={() => void logout()}>
             <LogOut className="h-4 w-4" />
             {t.redazione.logout}
           </Button>
         </div>
       </div>
-
-      {(timelines.length > 1 || !flagship) && (
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {timelines.length > 1 && (
-            <>
-              <Label
-                htmlFor="redazione-timeline"
-                className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
-              >
-                {t.redazione.timelineLabel}
-              </Label>
-              <select
-                id="redazione-timeline"
-                value={slug}
-                onChange={(e) => void switchTimeline(e.target.value)}
-                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
-              >
-                {timelines.map((timeline) => (
-                  <option key={timeline.slug} value={timeline.slug}>
-                    {timeline.name[locale]}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
-      )}
 
       {manualDraft && (
         <ManualForm
@@ -843,49 +838,98 @@ export default function RedazioneContent() {
         />
       )}
 
-      <nav
-          className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
-          aria-label={t.redazione.desksLabel}
-        >
-          {(
-            [
-              { key: 'queue' as const, label: t.redazione.desks.queue, count: queueCount },
-              { key: 'auto' as const, label: t.redazione.desks.auto, count: signalsCount },
-              { key: 'live' as const, label: t.redazione.desks.live, count: liveCount },
-              { key: 'rejected' as const, label: t.redazione.desks.rejected, count: rejectedCount },
-            ] as const
-          ).map((desk) => (
-            <button
-              key={desk.key}
-              type="button"
-              onClick={() => setFilterAndClear(desk.key)}
-              className={cn(
-                'rounded-md border px-3 py-3 text-left transition-colors',
-                filter === desk.key
-                  ? 'border-foreground bg-foreground text-background'
-                  : 'border-border/70 bg-card/40 text-foreground hover:border-foreground/30',
-              )}
-            >
-              <span className="block text-sm font-medium">{desk.label}</span>
-              <span
-                className={cn(
-                  'mt-1 block font-mono text-[11px]',
-                  filter === desk.key ? 'text-background/70' : 'text-muted-foreground',
-                )}
+      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-[calc(var(--nav-clearance)+1rem)]">
+          {timelines.length > 1 && (
+            <div className="rounded-xl border border-border/60 bg-card/30 p-3">
+              <Label
+                htmlFor="redazione-timeline"
+                className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
               >
-                {desk.count}
-              </span>
-            </button>
-          ))}
-        </nav>
+                {t.redazione.timelineLabel}
+              </Label>
+              <select
+                id="redazione-timeline"
+                value={slug}
+                onChange={(e) => void switchTimeline(e.target.value)}
+                className="mt-2 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {timelines.map((timeline) => (
+                  <option key={timeline.slug} value={timeline.slug}>{timeline.name[locale]}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
-      {message && (
-        <p className="mt-4 text-sm text-muted-foreground" role="status">
-          {message}
-        </p>
-      )}
+          <nav className="mt-3 space-y-1" aria-label={t.redazione.desksLabel}>
+            {([
+              { key: 'queue' as const, label: t.redazione.desks.queue, count: queueCount, Icon: Inbox },
+              { key: 'auto' as const, label: t.redazione.desks.auto, count: signalsCount, Icon: Radio },
+              { key: 'live' as const, label: t.redazione.desks.live, count: liveCount, Icon: Eye },
+              { key: 'rejected' as const, label: t.redazione.desks.rejected, count: rejectedCount, Icon: Archive },
+            ] as const).map((desk) => {
+              const active = filter === desk.key;
+              return (
+                <button
+                  key={desk.key}
+                  type="button"
+                  onClick={() => setFilterAndClear(desk.key)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                    active
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                  )}
+                >
+                  <desk.Icon className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate font-medium">{desk.label}</span>
+                  <span className={cn('font-mono text-[11px]', active ? 'text-background/70' : 'text-muted-foreground')}>
+                    {desk.count}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
 
-      <div className="mt-8">
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 w-full justify-start"
+            onClick={() => void runDiscover()}
+            disabled={discovering}
+          >
+            {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {t.redazione.runDiscover}
+          </Button>
+        </aside>
+
+        <main className="min-w-0">
+
+          {message && (
+            <p className="mb-4 rounded-lg border border-border/60 bg-card/30 px-3 py-2 text-sm text-muted-foreground" role="status">
+              {message}
+            </p>
+          )}
+
+          <div className="mb-4 flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={deskSearch}
+                onChange={(e) => setDeskSearch(e.target.value)}
+                placeholder={t.trasparenza.searchPlaceholder}
+                className="h-10 w-full rounded-lg border border-border/70 bg-card/30 pl-9 pr-3 text-sm outline-none transition-colors focus:border-ring"
+              />
+            </div>
+            {deskSearch && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setDeskSearch('')}>
+                {t.trasparenza.searchClear}
+              </Button>
+            )}
+          </div>
+
+          <div>
         {filter === 'auto' ? (
           <SignalDesk
             signals={signals}
@@ -1033,6 +1077,8 @@ export default function RedazioneContent() {
             </div>
           </>
         )}
+          </div>
+        </main>
       </div>
 
       <p className="mt-12 text-center text-sm text-muted-foreground">
@@ -1044,7 +1090,7 @@ export default function RedazioneContent() {
 
       {selected.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-          <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-medium">
               {t.redazione.selectedCount.replace('{n}', String(selected.length))}
             </p>
