@@ -7,6 +7,7 @@ import {
 } from '@/lib/pipeline/auth';
 import { discoverSentimentCandidates } from '@/lib/pipeline/discover';
 import { listCandidates, listSignals, upsertCandidates, upsertSignals } from '@/lib/db/queue';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -25,11 +26,24 @@ export async function POST(request: Request) {
     return unauthorized();
   }
 
-  const discovered = await discoverSentimentCandidates();
-  const added = await upsertCandidates(discovered.candidates);
-  const signalsAdded = await upsertSignals(discovered.signals);
+  const url = new URL(request.url);
+  let bodySlug: unknown;
+  try {
+    const body = await request.json().catch(() => null);
+    bodySlug = body && typeof body === 'object' ? (body as { timeline?: unknown }).timeline : undefined;
+  } catch {
+    bodySlug = undefined;
+  }
+  const querySlug = url.searchParams.get('timeline')?.trim();
+  const slug = typeof bodySlug === 'string' && bodySlug.trim()
+    ? bodySlug.trim()
+    : (querySlug || TIMELINE_SLUG);
 
-  const [candidates, signals] = await Promise.all([listCandidates(), listSignals()]);
+  const discovered = await discoverSentimentCandidates(slug);
+  const added = await upsertCandidates(discovered.candidates, slug);
+  const signalsAdded = await upsertSignals(discovered.signals, slug);
+
+  const [candidates, signals] = await Promise.all([listCandidates(undefined, slug), listSignals(slug)]);
 
   return NextResponse.json({
     ok: true,

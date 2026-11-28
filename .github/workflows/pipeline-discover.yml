@@ -9,6 +9,10 @@ on:
 jobs:
   discover:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        timeline: [sentiment, cybersecurity, datacenter]
     steps:
       - name: Discover candidates and automatic signals
         env:
@@ -20,6 +24,6 @@ jobs:
             exit 0
           fi
           BASE_URL="${SITE_URL:-https://segno.app}"
-          curl -fsS --max-time 120 -X POST "$BASE_URL/api/pipeline/discover" \
+          curl -fsS --max-time 120 -X POST "$BASE_URL/api/pipeline/discover?timeline=${{ matrix.timeline }}" \
             -H "Authorization: Bearer $PIPELINE_SECRET" \
             -H "Content-Type: application/json"

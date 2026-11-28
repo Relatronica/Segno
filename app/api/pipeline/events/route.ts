@@ -15,6 +15,7 @@ import {
 import { loadRedactionSpec } from '@/lib/db/spec';
 import { TIMELINE_SLUG } from '@/lib/db/timeline';
 import { createdEventIdFromUrl, MANUAL_ID_PREFIX } from '@/lib/pipeline/ids';
+import type { RedactionSpec } from '@/lib/pipeline/types';
 import type {
   EventType,
   LocaleText,
@@ -206,7 +207,7 @@ export async function PATCH(request: Request) {
   if (!spec) return NextResponse.json({ error: 'unknown_timeline' }, { status: 400 });
 
   if (body.id.startsWith(MANUAL_ID_PREFIX)) return patchManual(body, slug, spec.sentimentTags);
-  return patchCurated(body, slug, spec.sentimentTags);
+  return patchCurated(body, slug, spec);
 }
 
 async function patchManual(body: PatchBody, slug: string, sentimentTags: string[]) {
@@ -255,7 +256,7 @@ async function patchManual(body: PatchBody, slug: string, sentimentTags: string[
   return NextResponse.json({ ok: true });
 }
 
-async function patchCurated(body: PatchBody, slug: string, sentimentTags: string[]) {
+async function patchCurated(body: PatchBody, slug: string, spec: RedactionSpec) {
   const id = body.id as string;
   if (!(await getStoredEvent(id, slug))) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
@@ -265,8 +266,14 @@ async function patchCurated(body: PatchBody, slug: string, sentimentTags: string
     return NextResponse.json({ error: 'present_locked' }, { status: 400 });
   }
 
-  if (body.sentiment && !sentimentTags.includes(body.sentiment)) {
+  if (body.sentiment && !spec.sentimentTags.includes(body.sentiment)) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
+  }
+  if (body.lens && !spec.lenses.some((axis) => axis.key === body.lens)) {
+    return NextResponse.json({ error: 'invalid_lens' }, { status: 400 });
+  }
+  if (body.type && !spec.eventTypes.includes(body.type)) {
+    return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   }
 
   const patch: EventPatch = {};
@@ -285,6 +292,9 @@ async function patchCurated(body: PatchBody, slug: string, sentimentTags: string
     if (quote) patch.quote = quote;
   }
   if (body.sentiment !== undefined) patch.sentiment = body.sentiment ? body.sentiment : null;
+  if (typeof body.lens === 'string' && body.lens) patch.lens = body.lens;
+  if (typeof body.type === 'string' && body.type) patch.type = body.type as EventType;
+  if (body.amountEur !== undefined) patch.amountEur = readAmount(body.amountEur) ?? null;
   if (body.personId !== undefined) patch.personId = body.personId || null;
   if (body.actorId !== undefined) patch.actorId = body.actorId || null;
   if (body.hidden !== undefined) patch.hidden = body.hidden;

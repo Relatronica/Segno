@@ -6,6 +6,7 @@ import {
   unauthorized,
 } from '@/lib/pipeline/auth';
 import { getSignal, promoteSignal, setSignalHidden } from '@/lib/db/queue';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,7 @@ function sessionFrom(request: Request) {
 
 type PatchBody = {
   id?: string;
+  timeline?: string;
   hidden?: boolean;
   promote?: boolean;
 };
@@ -37,19 +39,21 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
+  const slug = typeof body.timeline === 'string' && body.timeline.trim() ? body.timeline.trim() : TIMELINE_SLUG;
+
   if (body.promote) {
-    const promoted = await promoteSignal(body.id);
+    const promoted = await promoteSignal(body.id, slug);
     if (!promoted) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     return NextResponse.json({ ok: true, created: promoted.created });
   }
 
   if (typeof body.hidden !== 'boolean') {
-    const signal = await getSignal(body.id);
+    const signal = await getSignal(body.id, slug);
     if (!signal) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     return NextResponse.json({ ok: true, signal });
   }
 
-  const signal = await setSignalHidden(body.id, body.hidden);
+  const signal = await setSignalHidden(body.id, body.hidden, slug);
   if (!signal) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   return NextResponse.json({ ok: true, signal });
 }

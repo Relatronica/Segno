@@ -1,12 +1,12 @@
 import { siteFilter, type SiteGroup } from '@/lib/pipeline/sources';
-import type { EventType, Lens } from '@/lib/data/trasparenza';
+import type { EventType } from '@/lib/data/trasparenza';
 
 export type DiscoverFeed = {
   id: string;
   label: string;
   url: string;
   /** Lane the feed was built for. The classifier may still refine it. */
-  lens: Lens;
+  lens: string;
   /** Event type assumed before the classifier reads the headline. */
   type: EventType;
   group: SiteGroup;

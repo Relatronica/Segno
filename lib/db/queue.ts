@@ -3,7 +3,7 @@ import { candidateIdFromUrl } from '@/lib/pipeline/ids';
 import { hintSentiment } from '@/lib/pipeline/match';
 import type { AutoSignal, CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
 import { db } from './client';
-import { TIMELINE_SLUG, resolveTimelineId, timelineId } from './timeline';
+import { TIMELINE_SLUG, resolveTimelineId } from './timeline';
 
 /**
  * Le due code della redazione: `candidates` è ciò che aspetta un giudizio,
@@ -205,11 +205,11 @@ export async function listCandidates(
   return (data as unknown as CandidateRow[]).map(rowToCandidate);
 }
 
-export async function getCandidate(id: string): Promise<SentimentCandidate | null> {
+export async function getCandidate(id: string, slug: string = TIMELINE_SLUG): Promise<SentimentCandidate | null> {
   const { data, error } = await db()
     .from('candidates')
     .select(CANDIDATE_COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id)
     .limit(1)
     .maybeSingle();
@@ -222,9 +222,9 @@ export async function getCandidate(id: string): Promise<SentimentCandidate | nul
  * Inserisce i candidati nuovi. Un candidato già in coda non viene riscritto:
  * la redazione potrebbe averlo già corretto. Ritorna quanti ne sono entrati.
  */
-export async function upsertCandidates(incoming: SentimentCandidate[]): Promise<number> {
+export async function upsertCandidates(incoming: SentimentCandidate[], slug: string = TIMELINE_SLUG): Promise<number> {
   if (incoming.length === 0) return 0;
-  const tid = await timelineId();
+  const tid = await resolveTimelineId(slug);
 
   const { data: existing, error: readError } = await db()
     .from('candidates')
@@ -262,6 +262,7 @@ export async function updateCandidateStatus(
       | 'reviewNote'
     >
   > = {},
+  slug: string = TIMELINE_SLUG,
 ): Promise<SentimentCandidate | null> {
   const row: Record<string, unknown> = {
     status,
@@ -282,22 +283,23 @@ export async function updateCandidateStatus(
   const { error } = await db()
     .from('candidates')
     .update(row)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id);
   if (error) throw error;
 
-  return getCandidate(id);
+  return getCandidate(id, slug);
 }
 
 export async function updateCandidatesStatus(
   ids: string[],
   status: CandidateStatus,
+  slug: string = TIMELINE_SLUG,
 ): Promise<number> {
   if (ids.length === 0) return 0;
   const { data, error } = await db()
     .from('candidates')
     .update({ status, reviewed_at: new Date().toISOString() })
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .in('id', ids)
     .select('id');
 
@@ -305,12 +307,12 @@ export async function updateCandidatesStatus(
   return (data ?? []).length;
 }
 
-export async function deleteCandidates(ids: string[]): Promise<number> {
+export async function deleteCandidates(ids: string[], slug: string = TIMELINE_SLUG): Promise<number> {
   if (ids.length === 0) return 0;
   const { data, error } = await db()
     .from('candidates')
     .delete()
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .in('id', ids)
     .select('id');
 
@@ -332,11 +334,11 @@ export async function listSignals(slug: string = TIMELINE_SLUG): Promise<AutoSig
   return (data as unknown as SignalRow[]).map(rowToSignal);
 }
 
-export async function getSignal(id: string): Promise<AutoSignal | null> {
+export async function getSignal(id: string, slug: string = TIMELINE_SLUG): Promise<AutoSignal | null> {
   const { data, error } = await db()
     .from('signals')
     .select(SIGNAL_COLUMNS)
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id)
     .limit(1)
     .maybeSingle();
@@ -349,9 +351,9 @@ export async function getSignal(id: string): Promise<AutoSignal | null> {
  * Aggiorna il diario mantenendo data di scoperta e stato di visibilità: una
  * riga già nascosta resta nascosta, una già vista resta al suo posto.
  */
-export async function upsertSignals(incoming: AutoSignal[]): Promise<number> {
+export async function upsertSignals(incoming: AutoSignal[], slug: string = TIMELINE_SLUG): Promise<number> {
   if (incoming.length === 0) return 0;
-  const tid = await timelineId();
+  const tid = await resolveTimelineId(slug);
 
   const { data: existing, error: readError } = await db()
     .from('signals')
@@ -384,21 +386,21 @@ export async function upsertSignals(incoming: AutoSignal[]): Promise<number> {
     .upsert(rows, { onConflict: 'timeline_id,id' });
   if (error) throw error;
 
-  await pruneSignals();
+  await pruneSignals(slug);
 
   const fresh = incoming.filter((signal) => !previous.has(signal.id)).length;
   return fresh;
 }
 
-export async function setSignalHidden(id: string, hidden: boolean): Promise<AutoSignal | null> {
+export async function setSignalHidden(id: string, hidden: boolean, slug: string = TIMELINE_SLUG): Promise<AutoSignal | null> {
   const { error } = await db()
     .from('signals')
     .update({ hidden })
-    .eq('timeline_id', await timelineId())
+    .eq('timeline_id', await resolveTimelineId(slug))
     .eq('id', id);
   if (error) throw error;
 
-  return getSignal(id);
+  return getSignal(id, slug);
 }
 
 /** Il diario pubblico: righe non nascoste e non già promosse a candidato. */
@@ -416,8 +418,8 @@ export async function listPublicSignals(slug: string = TIMELINE_SLUG): Promise<A
 }
 
 /** Copia un segnale nella coda editoriale così può ricevere una citazione. Non lo rimuove. */
-export async function promoteSignal(id: string): Promise<{ created: boolean } | null> {
-  const signal = await getSignal(id);
+export async function promoteSignal(id: string, slug: string = TIMELINE_SLUG): Promise<{ created: boolean } | null> {
+  const signal = await getSignal(id, slug);
   if (!signal) return null;
 
   const candidate: SentimentCandidate = {
@@ -447,13 +449,13 @@ export async function promoteSignal(id: string): Promise<{ created: boolean } | 
     ...(signal.imageUrl ? { imageUrl: signal.imageUrl } : {}),
   };
 
-  const added = await upsertCandidates([candidate]);
+  const added = await upsertCandidates([candidate], slug);
   return { created: added > 0 };
 }
 
 /** Tetto del diario: cadono le righe più vecchie, mai quelle che l'editor ha nascosto. */
-async function pruneSignals(): Promise<void> {
-  const tid = await timelineId();
+async function pruneSignals(slug: string = TIMELINE_SLUG): Promise<void> {
+  const tid = await resolveTimelineId(slug);
   const { data, error } = await db()
     .from('signals')
     .select('id')

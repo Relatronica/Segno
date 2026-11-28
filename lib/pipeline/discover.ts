@@ -1,5 +1,5 @@
 import Parser from 'rss-parser';
-import { lobbyPeople, type Lens } from '@/lib/data/trasparenza';
+import { lobbyPeople } from '@/lib/data/trasparenza';
 import { SENTIMENT_FEEDS } from '@/lib/pipeline/feeds';
 import { classifyLane, isOnTopic } from '@/lib/pipeline/lanes';
 import { hintSentiment, matchPerson, matchPersonStrict } from '@/lib/pipeline/match';
@@ -7,6 +7,8 @@ import { classifySource, OFFICIAL_X_HANDLES } from '@/lib/pipeline/sources';
 import { candidateIdFromUrl, signalIdFromUrl } from '@/lib/pipeline/ids';
 import type { AutoSignal, SentimentCandidate } from '@/lib/pipeline/types';
 import { clampIsoToToday, localIsoDate } from '@/lib/dates';
+import { getDiscoveryProfile } from '@/lib/pipeline/profiles';
+import { TIMELINE_SLUG } from '@/lib/db/timeline';
 
 /** Automatic diary rows are capped per lane, per run. Editorial ones are not. */
 const LANE_SIGNALS_PER_RUN = 8;
@@ -147,7 +149,7 @@ function capLaneSignals(signals: AutoSignal[]): AutoSignal[] {
   return out;
 }
 
-export async function discoverSentimentCandidates(): Promise<{
+export async function discoverSentimentCandidates(slug: string = TIMELINE_SLUG): Promise<{
   candidates: SentimentCandidate[];
   signals: AutoSignal[];
   scannedFeeds: number;
@@ -155,7 +157,7 @@ export async function discoverSentimentCandidates(): Promise<{
   rejectedBySource: number;
   rejectedOffTopic: number;
   unassignedItems: number;
-  laneCounts: Partial<Record<Lens, number>>;
+  laneCounts: Partial<Record<string, number>>;
 }> {
   const parser = new Parser({
     timeout: 12000,
@@ -170,7 +172,12 @@ export async function discoverSentimentCandidates(): Promise<{
   const cultureSignals: AutoSignal[] = [];
   const laneSignals: AutoSignal[] = [];
   const seen = new Set<string>();
-  const laneCounts: Partial<Record<Lens, number>> = {};
+  const laneCounts: Partial<Record<string, number>> = {};
+  const profile = getDiscoveryProfile(slug);
+  if (slug !== TIMELINE_SLUG && !profile) {
+    throw new Error(`unknown discovery timeline: ${slug}`);
+  }
+  const discoveryFeeds = slug === TIMELINE_SLUG ? SENTIMENT_FEEDS : (profile?.feeds ?? []);
   let matchedItems = 0;
   let rejectedBySource = 0;
   let rejectedOffTopic = 0;
@@ -178,7 +185,7 @@ export async function discoverSentimentCandidates(): Promise<{
 
   // Feeds are independent: one slow or broken sweep must not delay the rest.
   const batches = await Promise.all(
-    SENTIMENT_FEEDS.map(async (feed) => {
+    discoveryFeeds.map(async (feed) => {
       try {
         return { feed, parsed: await parser.parseURL(feed.url) };
       } catch (err) {
@@ -206,7 +213,12 @@ export async function discoverSentimentCandidates(): Promise<{
 
       matchedItems += 1;
 
-      const classification = classifySource({ url, title, snippet });
+      const classification = classifySource({
+        url,
+        title,
+        snippet,
+        allowedHosts: slug === TIMELINE_SLUG ? undefined : profile?.allowedHosts,
+      });
       if (!classification.accepted) {
         rejectedBySource += 1;
         continue;
@@ -216,7 +228,10 @@ export async function discoverSentimentCandidates(): Promise<{
       // the sentence has, but neither says the sentence is about AI. This is
       // the gate that keeps unrelated coverage out of the desk, and it applies
       // to the person feeds too: a tracked name does not make a piece on topic.
-      if (!isOnTopic({ title, snippet, host: classification.host })) {
+      const onTopic = slug === TIMELINE_SLUG
+        ? isOnTopic({ title, snippet, host: classification.host })
+        : Boolean(profile?.topicWords.test(`${title} ${snippet}`));
+      if (!onTopic) {
         rejectedOffTopic += 1;
         continue;
       }
@@ -237,7 +252,16 @@ export async function discoverSentimentCandidates(): Promise<{
       // and an editor places it, instead of the feed guessing on its behalf.
       const lane = feed.requiresPerson
         ? { lens: feed.lens, type: feed.type, confident: true }
-        : classifyLane({ lens: feed.lens, type: feed.type, title, snippet });
+        : slug === TIMELINE_SLUG
+          ? classifyLane({ lens: feed.lens, type: feed.type, title, snippet })
+          : (() => {
+              const rule = profile?.laneRules.find((entry) =>
+                entry.re.test(`${title} ${snippet}`),
+              );
+              return rule
+                ? { lens: rule.lens, type: rule.type, confident: true }
+                : { lens: feed.lens, type: feed.type, confident: false };
+            })();
 
       const sentiment = feed.requiresPerson ? hintSentiment(blob) : undefined;
       const quoteSeed = feed.requiresPerson && snippet.length > 40 ? snippet.slice(0, 280) : undefined;
@@ -345,7 +369,7 @@ export async function discoverSentimentCandidates(): Promise<{
   return {
     candidates: found,
     signals: [...cultureSignals, ...capLaneSignals(laneSignals)],
-    scannedFeeds: SENTIMENT_FEEDS.length,
+    scannedFeeds: discoveryFeeds.length,
     matchedItems,
     rejectedBySource,
     rejectedOffTopic,

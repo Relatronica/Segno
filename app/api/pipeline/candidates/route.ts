@@ -16,14 +16,9 @@ import {
 } from '@/lib/db/queue';
 import { TIMELINE_SLUG } from '@/lib/db/timeline';
 import type { CandidateStatus, SentimentCandidate } from '@/lib/pipeline/types';
-import {
-  ALL_LENSES,
-  ALL_SENTIMENT_TAGS,
-  type EventType,
-  type SentimentTag,
-} from '@/lib/data/trasparenza';
-import { ALL_EVENT_TYPES } from '@/lib/trasparenza/constants';
+import type { EventType, SentimentTag } from '@/lib/data/trasparenza';
 import { clampIsoToToday } from '@/lib/dates';
+import { loadRedactionSpec } from '@/lib/db/spec';
 
 export const runtime = 'nodejs';
 
@@ -72,6 +67,7 @@ export async function GET(request: Request) {
 
 type PatchBody = {
   id?: string;
+  timeline?: string;
   ids?: string[];
   status?: CandidateStatus;
   title?: SentimentCandidate['title'];
@@ -112,7 +108,8 @@ export async function PATCH(request: Request) {
     if (bulkStatus !== 'rejected' && bulkStatus !== 'pending') {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
-    const updated = await updateCandidatesStatus(bulkIds, bulkStatus);
+    const slug = typeof body.timeline === 'string' && body.timeline.trim() ? body.timeline.trim() : TIMELINE_SLUG;
+    const updated = await updateCandidatesStatus(bulkIds, bulkStatus, slug);
     if (updated === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     return NextResponse.json({ ok: true, updated });
   }
@@ -121,7 +118,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   }
 
-  const current = await getCandidate(body.id);
+  const slug = typeof body.timeline === 'string' && body.timeline.trim() ? body.timeline.trim() : TIMELINE_SLUG;
+  const spec = await loadRedactionSpec(slug);
+  if (!spec) return NextResponse.json({ error: 'unknown_timeline' }, { status: 400 });
+
+  const current = await getCandidate(body.id, slug);
   if (!current) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -134,14 +135,14 @@ export async function PATCH(request: Request) {
 
   if (
     body.suggestedSentiment &&
-    !(ALL_SENTIMENT_TAGS as readonly string[]).includes(body.suggestedSentiment)
+    !spec.sentimentTags.includes(body.suggestedSentiment)
   ) {
     return NextResponse.json({ error: 'invalid_sentiment' }, { status: 400 });
   }
-  if (body.lens && !(ALL_LENSES as string[]).includes(body.lens)) {
+  if (body.lens && !spec.lenses.some((axis) => axis.key === body.lens)) {
     return NextResponse.json({ error: 'invalid_lens' }, { status: 400 });
   }
-  if (body.type && !(ALL_EVENT_TYPES as string[]).includes(body.type)) {
+  if (body.type && !spec.eventTypes.includes(body.type)) {
     return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   }
 
@@ -172,7 +173,7 @@ export async function PATCH(request: Request) {
     lens: body.lens,
     type: body.type,
     reviewNote: body.reviewNote,
-  });
+  }, slug);
 
   return NextResponse.json({ ok: true, candidate: updated });
 }
@@ -182,7 +183,7 @@ export async function DELETE(request: Request) {
   if (missing) return missing;
   if (!isAuthorized(request, sessionFrom(request))) return unauthorized();
 
-  let body: { ids?: unknown };
+  let body: { ids?: unknown; timeline?: unknown };
   try {
     body = (await request.json()) as { ids?: unknown };
   } catch {
@@ -194,7 +195,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'invalid_ids' }, { status: 400 });
   }
 
-  const deleted = await deleteCandidates(ids);
+  const slug = typeof body.timeline === 'string' && body.timeline.trim() ? body.timeline.trim() : TIMELINE_SLUG;
+  const deleted = await deleteCandidates(ids, slug);
   if (deleted === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   return NextResponse.json({ ok: true, deleted });

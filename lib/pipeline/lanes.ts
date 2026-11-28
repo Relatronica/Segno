@@ -1,4 +1,4 @@
-import type { EventType, Lens } from '@/lib/data/trasparenza';
+import type { EventType } from '@/lib/data/trasparenza';
 import { isFirstPartyAiHost } from '@/lib/pipeline/sources';
 
 /**
@@ -6,7 +6,7 @@ import { isFirstPartyAiHost } from '@/lib/pipeline/sources';
  * the sentence and decide which lane it belongs to and what kind of event it
  * describes. The first match wins, so the order below is the priority order.
  */
-type LaneRule = { lens: Lens; type: EventType; re: RegExp };
+type LaneRule = { lens: string; type: EventType; re: RegExp };
 
 const LANE_RULES: LaneRule[] = [
   // Money moved: the strongest signal, it rarely means anything else.
@@ -42,7 +42,7 @@ const LANE_RULES: LaneRule[] = [
 ];
 
 export type LaneClassification = {
-  lens: Lens;
+  lens: string;
   type: EventType;
   /** A rule matched: the headline is recognisably about that kind of event. */
   confident: boolean;
@@ -83,7 +83,7 @@ export function isOnTopic(input: { title: string; snippet?: string; host?: strin
  * editorial queue, but never the automatic diary.
  */
 export function classifyLane(input: {
-  lens: Lens;
+  lens: string;
   type: EventType;
   title: string;
   snippet?: string;

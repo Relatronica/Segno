@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -58,6 +58,10 @@ type CuratedDraft = {
   quote?: LocaleText;
   sentiment?: SentimentTag | '';
   personId?: string;
+  actorId?: string;
+  lens?: string;
+  type?: EventType;
+  amountEur?: number;
 };
 
 /** Everything the hand-written pin form edits, in flat strings. */
@@ -210,13 +214,14 @@ export default function RedazioneContent() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const timelineRequest = useRef(0);
 
   const today = localIsoDate();
   const yesterday = yesterdayIso();
   const flagship = spec?.flagship ?? false;
 
   const loadData = useCallback(
-    async (timelineSlug: string) => {
+    async (timelineSlug: string, requestId?: number) => {
       setLoading(true);
       setMessage(null);
       try {
@@ -235,6 +240,7 @@ export default function RedazioneContent() {
           manual?: CreatedEvent[];
           counts: Counts;
         };
+        if (requestId !== undefined && timelineRequest.current !== requestId) return;
         setCandidates(data.candidates);
         setSignals(data.signals ?? []);
         setCurated(data.curated ?? []);
@@ -242,17 +248,18 @@ export default function RedazioneContent() {
         setCounts(data.counts);
         setAuthed(true);
       } catch {
+        if (requestId !== undefined && timelineRequest.current !== requestId) return;
         setMessage(t.redazione.loadError);
         setAuthed(false);
       } finally {
-        setLoading(false);
+        if (requestId === undefined || timelineRequest.current === requestId) setLoading(false);
       }
     },
     [t.redazione.loadError],
   );
 
   /** Il registro e i menù di una timeline. Senza slug risponde per la flagship. */
-  const loadRedaction = useCallback(async (timelineSlug?: string): Promise<RedactionSpec | null> => {
+  const loadRedaction = useCallback(async (timelineSlug?: string, requestId?: number): Promise<RedactionSpec | null> => {
     const query = timelineSlug ? `?timeline=${encodeURIComponent(timelineSlug)}` : '';
     const res = await fetch(`/api/pipeline/redaction${query}`);
     if (res.status === 401 || res.status === 503) {
@@ -261,6 +268,7 @@ export default function RedazioneContent() {
     }
     if (!res.ok) throw new Error('redaction_failed');
     const data = (await res.json()) as { timelines: TimelineChoice[]; spec: RedactionSpec };
+    if (requestId !== undefined && timelineRequest.current !== requestId) return null;
     setTimelines(data.timelines);
     setSpec(data.spec);
     setSlug(data.spec.slug);
@@ -312,6 +320,9 @@ export default function RedazioneContent() {
   /** Cambio timeline: si azzerano le bozze e si rileggono menù e pin. */
   const switchTimeline = async (next: string) => {
     if (next === slug) return;
+    const requestId = ++timelineRequest.current;
+    setSlug(next);
+    setLoading(true);
     setMessage(null);
     setManualDraft(null);
     setConfirmManualDelete(false);
@@ -322,11 +333,10 @@ export default function RedazioneContent() {
     setExpandedId(null);
     setOpenDays({});
     try {
-      const active = await loadRedaction(next);
-      if (!active) return;
-      // La coda è della flagship: altrove resta la sola vista dei pin in timeline.
-      if (!active.flagship) setFilter('live');
-      await loadData(active.slug);
+      const active = await loadRedaction(next, requestId);
+      if (!active || timelineRequest.current !== requestId) return;
+      setFilter(active.flagship ? 'queue' : 'live');
+      await loadData(active.slug, requestId);
     } catch {
       setMessage(t.redazione.loadError);
     }
@@ -336,7 +346,11 @@ export default function RedazioneContent() {
     setDiscovering(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/pipeline/discover', { method: 'POST' });
+      const res = await fetch('/api/pipeline/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeline: slug }),
+      });
       if (!res.ok) throw new Error('discover_failed');
       const data = (await res.json()) as { added: number; signalsAdded?: number };
       setMessage(
@@ -362,7 +376,8 @@ export default function RedazioneContent() {
         setMessage(t.redazione.laneRequired);
         return;
       }
-      if (!quote?.en?.trim()) {
+      const nextSentiment = draft.suggestedSentiment ?? current?.suggestedSentiment;
+      if (nextSentiment && !quote?.en?.trim()) {
         setMessage(t.redazione.quoteRequired);
         return;
       }
@@ -375,6 +390,7 @@ export default function RedazioneContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id,
+        timeline: slug,
         status,
         quote,
         title: draft.title ?? current?.title,
@@ -431,6 +447,10 @@ export default function RedazioneContent() {
         quote: draft.quote ?? event.quote ?? null,
         sentiment: (draft.sentiment ?? event.sentiment ?? '') || null,
         personId: draft.personId ?? event.personId ?? '',
+        actorId: draft.actorId ?? event.actorId ?? '',
+        lens: draft.lens ?? event.lens,
+        type: draft.type ?? event.type,
+        amountEur: draft.amountEur,
       }),
     });
     setSavingId(null);
@@ -540,7 +560,7 @@ export default function RedazioneContent() {
     const res = await fetch('/api/pipeline/candidates', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selected, status: 'rejected' }),
+      body: JSON.stringify({ ids: selected, timeline: slug, status: 'rejected' }),
     });
     setBulkBusy(false);
     if (!res.ok) {
@@ -565,7 +585,7 @@ export default function RedazioneContent() {
     const res = await fetch('/api/pipeline/candidates', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selected }),
+      body: JSON.stringify({ ids: selected, timeline: slug }),
     });
     setBulkBusy(false);
     if (!res.ok) {
@@ -757,12 +777,10 @@ export default function RedazioneContent() {
             <Plus className="h-4 w-4" />
             {t.redazione.newPin}
           </Button>
-          {flagship && (
-            <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
+          <Button type="button" variant="outline" onClick={() => void runDiscover()} disabled={discovering}>
               {discovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {t.redazione.runDiscover}
             </Button>
-          )}
           <Button type="button" variant="ghost" onClick={() => void logout()}>
             <LogOut className="h-4 w-4" />
             {t.redazione.logout}
@@ -794,9 +812,6 @@ export default function RedazioneContent() {
               </select>
             </>
           )}
-          {!flagship && (
-            <p className="max-w-xl text-sm text-muted-foreground">{t.redazione.manualOnly}</p>
-          )}
         </div>
       )}
 
@@ -817,8 +832,7 @@ export default function RedazioneContent() {
         />
       )}
 
-      {flagship && (
-        <nav
+      <nav
           className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4"
           aria-label={t.redazione.desksLabel}
         >
@@ -853,7 +867,6 @@ export default function RedazioneContent() {
             </button>
           ))}
         </nav>
-      )}
 
       {message && (
         <p className="mt-4 text-sm text-muted-foreground" role="status">
@@ -867,6 +880,7 @@ export default function RedazioneContent() {
             signals={signals}
             spec={spec}
             locale={locale}
+            timeline={slug}
             labels={{
               hint: t.redazione.signalsHint,
               empty: t.redazione.signalsEmpty,
@@ -1011,7 +1025,7 @@ export default function RedazioneContent() {
       </div>
 
       <p className="mt-12 text-center text-sm text-muted-foreground">
-        <Link href="/timeline" className="inline-flex items-center gap-1 hover:text-foreground">
+        <Link href={slug === 'sentiment' ? '/timeline' : `/t/${slug}`} className="inline-flex items-center gap-1 hover:text-foreground">
           {t.redazione.backTimeline}
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -1531,6 +1545,60 @@ function CuratedCard({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor={`c-lens-${event.id}`}>{t.redazione.lens}</Label>
+              <select
+                id={`c-lens-${event.id}`}
+                value={draft.lens ?? event.lens ?? ''}
+                onChange={(e) => onDraft({ lens: e.target.value })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                {spec.lenses.map((axis) => (
+                  <option key={axis.key} value={axis.key}>{axis.label[locale]}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`c-type-${event.id}`}>{t.redazione.eventType}</Label>
+              <select
+                id={`c-type-${event.id}`}
+                value={draft.type ?? event.type}
+                onChange={(e) => onDraft({ type: e.target.value as EventType })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                {spec.eventTypes.map((key) => (
+                  <option key={key} value={key}>{typeLabel(t.trasparenza.types, key)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`c-actor-${event.id}`}>{t.redazione.actor}</Label>
+              <select
+                id={`c-actor-${event.id}`}
+                value={draft.actorId ?? event.actorId ?? ''}
+                onChange={(e) => onDraft({ actorId: e.target.value })}
+                className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">{t.redazione.actorNone}</option>
+                {spec.actors.map((actor) => (
+                  <option key={actor.id} value={actor.id}>{actor.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`c-amount-${event.id}`}>{t.redazione.amount}</Label>
+              <Input
+                id={`c-amount-${event.id}`}
+                type="number"
+                min={0}
+                step={1}
+                value={draft.amountEur ?? event.amountEur ?? ''}
+                onChange={(e) => onDraft({ amountEur: e.target.value ? Number(e.target.value) : undefined })}
+              />
             </div>
           </div>
 

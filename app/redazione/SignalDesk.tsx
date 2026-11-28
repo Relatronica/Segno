@@ -26,6 +26,7 @@ type Props = {
   spec: RedactionSpec;
   locale: 'it' | 'en';
   labels: SignalDeskLabels;
+  timeline: string;
   onChanged: () => void;
 };
 
@@ -48,7 +49,7 @@ function groupSignals(signals: AutoSignal[]) {
     .map(([date, items]) => ({ date, items }));
 }
 
-export function SignalDesk({ signals, spec, locale, labels, onChanged }: Props) {
+export function SignalDesk({ signals, spec, locale, labels, timeline, onChanged }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const today = localIsoDate();
@@ -81,7 +82,7 @@ export function SignalDesk({ signals, spec, locale, labels, onChanged }: Props) 
       const res = await fetch('/api/pipeline/signals', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...body }),
+        body: JSON.stringify({ id, timeline, ...body }),
       });
       if (!res.ok) throw new Error('signal_patch_failed');
       if (done) setNote(done);

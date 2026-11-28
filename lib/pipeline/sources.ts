@@ -101,6 +101,26 @@ export const PUBLISHER_ALIASES: Record<string, string> = {
   forbes: 'forbes.com',
   'business insider': 'businessinsider.com',
   'the information': 'theinformation.com',
+  cisa: 'cisa.gov',
+  'cybersecurity and infrastructure security agency': 'cisa.gov',
+  nist: 'nist.gov',
+  europol: 'europol.europa.eu',
+  enisa: 'enisa.europa.eu',
+  ncsc: 'ncsc.gov.uk',
+  'national crime agency': 'nationalcrimeagency.gov.uk',
+  'department of justice': 'justice.gov',
+  'gazzetta ufficiale': 'gazzettaufficiale.it',
+  terna: 'terna.it',
+  arera: 'arera.it',
+  acn: 'acn.gov.it',
+  'agenzia per la cybersicurezza nazionale': 'acn.gov.it',
+  gse: 'gse.it',
+  camera: 'camera.it',
+  senato: 'senato.it',
+  ansa: 'ansa.it',
+  repubblica: 'repubblica.it',
+  corriere: 'corriere.it',
+  'il sole 24 ore': 'ilsole24ore.com',
   openai: 'openai.com',
   anthropic: 'anthropic.com',
   nvidia: 'nvidia.com',
@@ -330,6 +350,7 @@ export function classifySource(input: {
   url: string;
   title: string;
   snippet?: string;
+  allowedHosts?: string[];
 }): SourceClassification {
   const blob = `${input.title}\n${input.snippet || ''}\n${input.url}`;
   const xRefs = findOfficialXStatuses(blob);
@@ -345,7 +366,15 @@ export function classifySource(input: {
     host = publisherLabelToHost(publisher) ?? null;
   }
 
-  const tier = host ? lookupHostTier(host) : null;
+  const tier = host
+    ? (input.allowedHosts
+        ? (input.allowedHosts.some((allowed) =>
+            allowed === host || (allowed.includes('*') && false) || host.endsWith(`.${allowed}`) || host === allowed,
+          )
+          ? 'primary'
+          : null)
+        : lookupHostTier(host))
+    : null;
   const xQuoted = xRefs.length > 0;
   const xPrimary = xRefs[0];
 
