@@ -102,14 +102,21 @@ export const PUBLISHER_ALIASES: Record<string, string> = {
   'business insider': 'businessinsider.com',
   'the information': 'theinformation.com',
   cisa: 'cisa.gov',
-  'cybersecurity and infrastructure security agency': 'cisa.gov',
-  nist: 'nist.gov',
-  europol: 'europol.europa.eu',
+  'cisa newsroom': 'cisa.gov',
+  'department of justice': 'justice.gov',
+  doj: 'justice.gov',
+  fbi: 'fbi.gov',
+  'federal bureau of investigation': 'fbi.gov',
   enisa: 'enisa.europa.eu',
+  europol: 'europol.europa.eu',
   ncsc: 'ncsc.gov.uk',
   'national crime agency': 'nationalcrimeagency.gov.uk',
-  'department of justice': 'justice.gov',
+  nist: 'nist.gov',
+  'cve': 'cve.org',
   'gazzetta ufficiale': 'gazzettaufficiale.it',
+  'ministry of enterprises': 'mise.gov.it',
+  mise: 'mise.gov.it',
+  mase: 'mase.gov.it',
   terna: 'terna.it',
   arera: 'arera.it',
   acn: 'acn.gov.it',
@@ -119,8 +126,17 @@ export const PUBLISHER_ALIASES: Record<string, string> = {
   senato: 'senato.it',
   ansa: 'ansa.it',
   repubblica: 'repubblica.it',
+  'la repubblica': 'repubblica.it',
   corriere: 'corriere.it',
+  'corriere della sera': 'corriere.it',
   'il sole 24 ore': 'ilsole24ore.com',
+  'la stampa': 'lastampa.it',
+  'il giorno': 'ilgiorno.it',
+  'milano finanza': 'milanofinanza.it',
+  corcom: 'corrierecomunicazioni.it',
+  'canale energia': 'canaleenergia.com',
+  'the innovation group': 'theinnovationgroup.it',
+  'cybersecurity and infrastructure security agency': 'cisa.gov',
   openai: 'openai.com',
   anthropic: 'anthropic.com',
   nvidia: 'nvidia.com',
@@ -368,9 +384,15 @@ export function classifySource(input: {
 
   const tier = host
     ? (input.allowedHosts
-        ? (input.allowedHosts.some((allowed) =>
-            allowed === host || (allowed.includes('*') && false) || host.endsWith(`.${allowed}`) || host === allowed,
-          )
+        ? (input.allowedHosts.some((allowed) => {
+            if (allowed === host) return true;
+            if (allowed.startsWith('*.')) return host.endsWith(allowed.slice(1));
+            if (allowed.endsWith('.*')) {
+              const suffix = allowed.slice(0, -2);
+              return host === suffix || host.endsWith(`.${suffix}`);
+            }
+            return host.endsWith(`.${allowed}`);
+          })
           ? 'primary'
           : null)
         : lookupHostTier(host))
